@@ -24,9 +24,10 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【修正】將模型改為 gemini-1.5-flash，這是最穩定的版本
+    // 【修正】改用最通用的 'gemini-pro' (1.0 版本)
+    // 這可以解決 'model not found' 的問題，確保先能連線成功
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -34,7 +35,12 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           contents: history,
-          systemInstruction: { parts: [{ text: systemInstruction }] },
+          // 注意：gemini-pro 1.0 的 systemInstruction 格式略有不同，
+          // 但 v1beta 為了相容性通常能接受，或是我們將其合併到 history 的第一條
+          contents: [
+            { role: 'user', parts: [{ text: systemInstruction }] }, // 將系統提示作為第一條訊息
+            ...history
+          ],
           generationConfig: {
             temperature: 0.7,
           }

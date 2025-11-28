@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // 1. 設定 CORS 允許跨域請求
+  // 1. 設定 CORS (允許網頁呼叫)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -8,26 +8,25 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // 處理 OPTIONS 預檢請求
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
 
-  // 2. 取得 API Key
+  // 2. 取得 Key
   const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Server Config Error: API Key missing' });
+    return res.status(500).json({ error: 'Server Error: API Key is missing in Vercel Env Vars' });
   }
 
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【修正】改用最通用的 'gemini-pro' (1.0 版本)
-    // 這可以解決 'model not found' 的問題，確保先能連線成功
+    // 【終極修正】使用 gemini-1.5-flash
+    // 這是目前 Google 主推的免費模型，如果這個也不行，那肯定是 API 沒開通
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -35,12 +34,7 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           contents: history,
-          // 注意：gemini-pro 1.0 的 systemInstruction 格式略有不同，
-          // 但 v1beta 為了相容性通常能接受，或是我們將其合併到 history 的第一條
-          contents: [
-            { role: 'user', parts: [{ text: systemInstruction }] }, // 將系統提示作為第一條訊息
-            ...history
-          ],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: {
             temperature: 0.7,
           }
@@ -51,14 +45,15 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Google API Error');
+      // 捕捉詳細錯誤
+      const errorMsg = data.error?.message || response.statusText;
+      console.error('Google API Error:', errorMsg);
+      throw new Error(errorMsg);
     }
 
-    // 4. 回傳結果
     return res.status(200).json(data);
 
   } catch (error) {
-    console.error('Proxy Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

@@ -1,43 +1,30 @@
-
 export type Language = 'zh' | 'en';
-
-export type UserRole = 'citizen' | 'volunteer' | null;
-
-export type Priority = 'low' | 'medium' | 'high' | 'critical';
-
+export type Priority = 'critical' | 'high' | 'medium' | 'low';
 export type TicketStatus = 'waiting' | 'active' | 'resolved';
 
 export interface Ticket {
   id: string;
   name: string;
   issue: string;
-  time: string; // Display string like "2 mins ago"
+  time: string;
   status: TicketStatus;
   priority: Priority;
   tags: string[];
-  gender?: string;
-  ageRange?: string;
-  safetySafe?: boolean;
+  createdAt?: number;
 }
 
 export interface Message {
-  id: number | string;
+  id: string | number;
   text: string;
   isUser: boolean;
   sender: string;
-  isVerified?: boolean; // For verified counselors
-  timestamp?: number;
-}
-
-export interface SafetyCheckResult {
-  safe: boolean;
-  reason?: string;
-  type?: 'privacy' | 'offensive' | 'safe' | 'promotional' | 'illegal' | 'hkid' | 'offensive_en' | 'offensive_zh' | 'illegal_en' | 'illegal_zh' | 'harm_zh';
+  isVerified?: boolean;
+  timestamp: number;
 }
 
 export interface VolunteerProfile {
   name: string;
-  role: 'Peer Listener' | 'Social Worker';
+  role: string;
   isVerified: boolean;
 }
 
@@ -50,4 +37,5 @@ export interface PublicMemo {
     animationDelay: string;
     scale: number;
   };
+  createdAt?: number;
 }

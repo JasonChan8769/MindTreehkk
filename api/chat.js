@@ -23,23 +23,17 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【關鍵更新】擴充模型列表，包含所有可能的版本號
-    // 程式會依序嘗試，直到找到你的 Key 能用的那個
+    // 【客製化更新】根據你的 API 列表，優先使用 2.5 和 2.0 系列
     const modelsToTry = [
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-001',
-      'gemini-1.5-flash-002',
-      'gemini-1.5-flash-latest',
-      'gemini-2.0-flash-exp',
-      'gemini-1.5-pro',
-      'gemini-1.5-pro-001',
-      'gemini-1.5-pro-002',
-      'gemini-1.0-pro',
-      'gemini-pro'
+      'gemini-2.5-flash',          // 列表 index 2
+      'gemini-2.0-flash',          // 列表 index 7
+      'gemini-2.0-flash-001',      // 列表 index 8
+      'gemini-flash-latest',       // 列表 index 29 (自動指向最新版)
+      'gemini-2.0-flash-lite',     // 列表 index 11 (輕量版)
+      'gemini-1.5-flash'           // 備用
     ];
 
     let lastError = null;
-    let successModel = '';
 
     // 3. 自動迴圈嘗試
     for (const model of modelsToTry) {

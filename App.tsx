@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, Menu, X, Send, Bot, 
   Users, AlertCircle, Globe, Wifi, Lock, BadgeCheck, Flag, AlertTriangle, 
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, Info, UserCheck, XCircle, LogOut,
-  Moon, Sun, HelpCircle, ChevronRight, MessageSquarePlus, Link, ExternalLink, Share2
+  Moon, Sun, HelpCircle, ChevronRight, MessageSquarePlus, Link, ExternalLink, Share2,
+  Loader2 // 新增 Loading 圖示
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { 
@@ -108,7 +109,8 @@ export const CONTENT = {
       q4_opt4: "緊急/自傷念頭",
       q5: "還有什麼想告訴我們？",
       q5_placeholder: "簡述你的情況...",
-      submit: "送出請求"
+      submit: "送出請求",
+      submitting: "處理中..."
     },
     volunteer: {
       login: "義工登入",
@@ -215,7 +217,8 @@ export const CONTENT = {
       q4_opt4: "Urgent/Self-harm thoughts",
       q5: "Anything else?",
       q5_placeholder: "Briefly describe...",
-      submit: "Submit Request"
+      submit: "Submit Request",
+      submitting: "Processing..."
     },
     volunteer: {
       login: "Volunteer Login",
@@ -643,8 +646,10 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (name: string, i
   const [distress, setDistress] = useState(3);
   const [category, setCategory] = useState("");
   const [remarks, setRemarks] = useState("");
+  // New loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     let priority: Priority = 'low';
     if (category === t.intake.q4_opt4) priority = 'critical';
     else if (distress >= 5) priority = 'high';
@@ -654,7 +659,17 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (name: string, i
     if (category) tags.push(category);
     const issueSummary = `${category} (Lv:${distress}) ${remarks ? `- ${remarks}` : ''}`;
     const displayName = `${userName || "Anonymous"} (${gender === "Male" || gender === "男" ? "M" : "F"}, ${ageRange})`;
-    onComplete(displayName, issueSummary, priority, tags, true);
+    
+    // Start loading
+    setIsSubmitting(true);
+    try {
+      // Ensure onComplete is awaited if it returns a promise
+      await onComplete(displayName, issueSummary, priority, tags, true);
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Submission failed. Please check your internet connection or try again later.");
+      setIsSubmitting(false); // Stop loading on error
+    }
   };
 
   return (
@@ -710,7 +725,9 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (name: string, i
                 <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">{t.intake.q5}</label>
                 <textarea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder={t.intake.q5_placeholder} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-white dark:placeholder-slate-600 resize-none" />
             </div>
-            <button onClick={handleSubmit} disabled={!category || !userName.trim() || !ageRange || !gender} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] text-lg">{t.intake.submit} <ArrowRight size={20} /></button>
+            <button onClick={handleSubmit} disabled={!category || !userName.trim() || !ageRange || !gender || isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] text-lg">
+                {isSubmitting ? <><Loader2 className="animate-spin" size={20} /> {t.intake.submitting}</> : <>{t.intake.submit} <ArrowRight size={20} /></>}
+            </button>
         </div>
       </div>
     </div>

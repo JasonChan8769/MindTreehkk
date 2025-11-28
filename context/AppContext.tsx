@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Ticket, Message, VolunteerProfile, Priority, TicketStatus, PublicMemo } from '../types';
-import { db } from '../firebaseConfig'; // 匯入設定檔
+import { db } from '../firebaseConfig'; 
 import { 
   collection, 
   addDoc, 
@@ -16,7 +16,8 @@ interface AppContextType {
   chats: Record<string, Message[]>;
   volunteerProfile: VolunteerProfile;
   publicMemos: PublicMemo[];
-  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<void>;
+  // 【修正 1】將回傳型別從 Promise<void> 改為 Promise<string>
+  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
   updateTicketStatus: (ticketId: string, status: TicketStatus) => void;
   addMessage: (ticketId: string, msg: Message) => void;
   getMessages: (ticketId: string) => Message[];
@@ -38,7 +39,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   const [chats, setChats] = useState<Record<string, Message[]>>({});
   const [publicMemos, setPublicMemos] = useState<PublicMemo[]>([]);
 
-  // 義工個人資料存本地 (因為這是這台電腦的使用者設定)
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>(() => {
     try {
       const saved = localStorage.getItem('mindtree_volunteer');
@@ -46,7 +46,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     } catch (e) { return { name: "Volunteer", role: "Peer Listener", isVerified: false }; }
   });
 
-  // 1. 監聽案件 (雲端同步)
   useEffect(() => {
     const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -59,17 +58,14 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  // 2. 監聽聊天訊息 (雲端同步)
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newChats: Record<string, Message[]> = {};
-      
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         const ticketId = data.ticketId;
         if (!newChats[ticketId]) newChats[ticketId] = [];
-        
         newChats[ticketId].push({
           id: doc.id,
           text: data.text,
@@ -83,7 +79,6 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  // 3. 監聽留言 (雲端同步 + 本地動畫)
   useEffect(() => {
     const generateInitial = () => Array.from({ length: 40 }).map((_, i) => {
       const text = INITIAL_MEMOS_TEXT[i % INITIAL_MEMOS_TEXT.length];
@@ -106,19 +101,18 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       })) as PublicMemo[];
       setPublicMemos([...generateInitial(), ...cloudMemos]);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // 儲存義工資料到本地
   useEffect(() => {
     localStorage.setItem('mindtree_volunteer', JSON.stringify(volunteerProfile));
   }, [volunteerProfile]);
 
-  // --- 寫入雲端 Actions ---
+  // --- Actions ---
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    await addDoc(collection(db, "tickets"), {
+    // 【修正 2】將新增的 Document 存入變數 docRef
+    const docRef = await addDoc(collection(db, "tickets"), {
       name,
       issue,
       priority,
@@ -127,6 +121,9 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       time: "Just now",
       createdAt: Date.now()
     });
+    
+    // 【修正 3】回傳 docRef.id (這是修復白畫面的關鍵！)
+    return docRef.id;
   };
 
   const updateTicketStatus = async (ticketId: string, status: TicketStatus) => {

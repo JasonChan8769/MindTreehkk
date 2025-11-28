@@ -1,7 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Use process.env.API_KEY as per Google GenAI SDK guidelines
+// @ts-ignore
+const apiKey = process.env.API_KEY;
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 const SYSTEM_PROMPTS = {
   zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
@@ -35,11 +38,12 @@ export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'):
     }));
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview', // Use 3.0 Pro for thinking capabilities
       contents: recentHistory,
       config: {
         systemInstruction: systemInstruction,
-        temperature: 0.7, // Slightly creative but balanced
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 32768 } // Max thinking budget for deep reasoning
       }
     });
 
@@ -47,7 +51,6 @@ export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'):
 
   } catch (error) {
     console.error("Gemini API Error:", error);
-    // Fallback logic could go here, but for now we throw to handle in UI
-    throw error;
+    return lang === 'zh' ? "抱歉，AI 暫時繁忙，請稍後再試。" : "Sorry, AI is busy. Please try again later.";
   }
 };

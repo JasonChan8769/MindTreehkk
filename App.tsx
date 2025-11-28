@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, Menu, X, Send, Bot, 
@@ -29,23 +28,55 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
   );
 };
 
+const TypingIndicator = () => (
+  <div className="flex items-start gap-2 mb-4 animate-fade-in">
+    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800">
+      <Trees size={16} />
+    </div>
+    <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white dark:bg-slate-800 border border-teal-100 dark:border-slate-700 shadow-sm flex items-center gap-1">
+      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+      <div className="w-2 h-2 bg-teal-400 rounded-full animate-bounce"></div>
+    </div>
+  </div>
+);
+
 const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) => {
   const isAI = sender.includes('(AI)');
   const isSystem = sender === 'System';
   const timeString = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
   if (isSystem) {
-    return <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-2 rounded-lg text-center text-xs my-3 border border-blue-100 dark:border-blue-800 mx-auto w-3/4">{text}</div>;
+    return <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 p-2 rounded-lg text-center text-xs my-3 border border-blue-100 dark:border-blue-800 mx-auto w-3/4 animate-fade-in">{text}</div>;
   }
 
+  // Styles for different bubble types
+  const userBubbleStyle = "bg-gradient-to-br from-indigo-600 to-blue-600 text-white rounded-tr-sm shadow-md border-transparent";
+  const aiBubbleStyle = "bg-white dark:bg-slate-800 border border-teal-100 dark:border-teal-900/30 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm border-l-4 border-l-teal-500";
+  const peerBubbleStyle = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm";
+
+  let bubbleClass = isUser ? userBubbleStyle : (isAI ? aiBubbleStyle : peerBubbleStyle);
+
   return (
-    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-4 animate-fade-in`}>
-      <div className={`flex items-end gap-2 max-w-[85%] md:max-w-[70%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${isUser ? 'bg-indigo-600 text-white' : (isAI ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-300')}`}>
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-6 animate-fade-in group`}>
+      <div className={`flex items-end gap-3 max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        
+        {/* Avatar */}
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm border ${
+          isUser 
+            ? 'bg-indigo-100 border-indigo-200 text-indigo-600' 
+            : (isAI 
+                ? 'bg-teal-50 border-teal-200 text-teal-600 dark:bg-teal-900/30 dark:border-teal-800 dark:text-teal-400' 
+                : 'bg-white border-slate-200 text-pink-500')
+        }`}>
           {isUser ? <User size={16} /> : (isAI ? <Trees size={16} /> : <Heart size={16} />)}
         </div>
-        <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm relative whitespace-pre-wrap ${isUser ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-none'}`}>
+
+        {/* Bubble Content */}
+        <div className={`px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed relative ${bubbleClass}`}>
           {text}
+          
+          {/* Tags for Non-User/Non-AI */}
           {!isUser && !isAI && (
              isVerified 
              ? <div className="absolute -top-3 -right-2 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800 flex items-center gap-1 shadow-sm"><BadgeCheck size={10} /> Verified</div>
@@ -53,8 +84,13 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 mt-1 px-2 opacity-70">
-        <span className="text-[10px] text-slate-400 dark:text-slate-500">{sender}</span>
+
+      {/* Meta Info */}
+      <div className={`flex items-center gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isUser ? 'pr-12' : 'pl-12'}`}>
+        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1">
+          {sender}
+          {isVerified && <BadgeCheck size={12} className="text-green-500" />}
+        </span>
         {timeString && <span className="text-[10px] text-slate-300 dark:text-slate-600">• {timeString}</span>}
       </div>
     </div>
@@ -220,8 +256,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       </div>
       
       {/* --- Main Content Area (Flex Grow - Scrolls independently) --- */}
-      <div className="flex-1 w-full overflow-y-auto z-10 no-scrollbar">
-        <div className="min-h-full flex flex-col justify-center p-4 py-6">
+      <div className="flex-1 w-full overflow-y-auto z-10 no-scrollbar relative">
+        <div className="min-h-full flex flex-col items-center justify-center p-4 pb-20">
             <div className="w-full max-w-md mx-auto bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden p-6 md:p-8 text-center border border-white/50 dark:border-slate-700 animate-fade-in ring-1 ring-white/60 dark:ring-white/10">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
                 <Trees size={32} className="md:w-10 md:h-10" />
@@ -422,11 +458,7 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
       <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
             {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
-            {isTyping && (
-            <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 ml-2 mb-4 animate-pulse">
-                <Trees size={16} /> {t.aiRole.typing}
-            </div>
-            )}
+            {isTyping && <TypingIndicator />}
             <div ref={messagesEndRef} />
         </div>
       </div>
@@ -840,15 +872,27 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
             {isVolunteer ? <User size={24} /> : <Heart size={24} />}
           </div>
           <div>
-            <h2 className="font-bold text-base md:text-lg">{isVolunteer ? ticket.name : (volunteerProfile.isVerified ? t.humanRole.headerVerified : t.humanRole.headerPeer)}</h2>
+            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">
+              {isVolunteer ? ticket.name : (volunteerProfile.isVerified ? t.humanRole.headerVerified : t.humanRole.headerPeer)}
+              {!isVolunteer && volunteerProfile.isVerified && (
+                  <BadgeCheck size={18} className="text-green-500 fill-green-100" />
+              )}
+            </h2>
             <p className={`text-xs ${isVolunteer ? 'text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>
               {isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}${ticket.issue.length > 40 ? '...' : ''}` : t.humanRole.systemJoin}
             </p>
           </div>
         </div>
-        <button onClick={handleEndChat} className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg text-xs md:text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
-          {isVolunteer ? t.actions.leaveChat : t.actions.endChat}
-        </button>
+        <div className="flex items-center gap-2">
+            {isVolunteer && (
+                <button onClick={() => alert("Report submitted. Admins will review.")} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs md:text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1">
+                    <Flag size={14} /> <span className="hidden md:inline">{t.humanRole.report}</span>
+                </button>
+            )}
+            <button onClick={handleEndChat} className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg text-xs md:text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+            {isVolunteer ? t.actions.leaveChat : t.actions.endChat}
+            </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">

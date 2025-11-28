@@ -1,5 +1,3 @@
-
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Ticket, Message, VolunteerProfile, Priority, TicketStatus, PublicMemo } from '../types';
 
@@ -38,7 +36,7 @@ const INITIAL_MEMOS_TEXT: string[] = [
 
 const AppContext = createContext<AppContextType | null>(null);
 
-export const AppProvider = ({ children }: { children: ReactNode }) => {
+export const AppProvider = ({ children }: { children?: ReactNode }) => {
   // Load initial state from LocalStorage if available
   const [tickets, setTickets] = useState<Ticket[]>(() => {
     try {

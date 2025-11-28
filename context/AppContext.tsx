@@ -1,12 +1,22 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Ticket, Message, VolunteerProfile, Priority, TicketStatus, PublicMemo } from '../types';
+import { db } from '../firebaseConfig'; // 匯入設定檔
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
 
 interface AppContextType {
   tickets: Ticket[];
   chats: Record<string, Message[]>;
   volunteerProfile: VolunteerProfile;
   publicMemos: PublicMemo[];
-  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Ticket;
+  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<void>;
   updateTicketStatus: (ticketId: string, status: TicketStatus) => void;
   addMessage: (ticketId: string, msg: Message) => void;
   getMessages: (ticketId: string) => Message[];
@@ -14,44 +24,21 @@ interface AppContextType {
   addPublicMemo: (text: string) => void;
 }
 
-const INITIAL_TICKETS: Ticket[] = [
-  { id: 't1', name: "Ms. Chan (F, 26-40)", issue: "Anxious about returning home after fire", time: "2m ago", status: 'waiting', priority: 'medium', tags: ['Anxiety', 'Housing'] },
-  { id: 't2', name: "Mr. Wong (M, 41-60)", issue: "Flashbacks of fire, insomnia", time: "5m ago", status: 'waiting', priority: 'high', tags: ['Trauma', 'Sleep'] },
-];
-
 const INITIAL_MEMOS_TEXT: string[] = [
-  "大埔人加油！💪",
-  "Stay strong everyone ❤️",
-  "平安就好 🙏",
-  "We are with you",
-  "小心身體，多飲水",
-  "有事慢慢講，大家都會幫手",
-  "Love from Tai Po ❤️",
-  "富亨邨加油！",
-  "撐住呀！",
-  "You are not alone",
-  "大埔一家人",
-  "雨後總有彩虹 🌈"
+  "大埔人加油！💪", "Stay strong everyone ❤️", "平安就好 🙏",
+  "We are with you", "小心身體，多飲水", "有事慢慢講，大家都會幫手",
+  "Love from Tai Po ❤️", "富亨邨加油！", "撐住呀！",
+  "You are not alone", "大埔一家人", "雨後總有彩虹 🌈"
 ];
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children?: ReactNode }) => {
-  // Load initial state from LocalStorage if available
-  const [tickets, setTickets] = useState<Ticket[]>(() => {
-    try {
-      const saved = localStorage.getItem('mindtree_tickets');
-      return saved ? JSON.parse(saved) : INITIAL_TICKETS;
-    } catch (e) { return INITIAL_TICKETS; }
-  });
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [chats, setChats] = useState<Record<string, Message[]>>({});
+  const [publicMemos, setPublicMemos] = useState<PublicMemo[]>([]);
 
-  const [chats, setChats] = useState<Record<string, Message[]>>(() => {
-    try {
-      const saved = localStorage.getItem('mindtree_chats');
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) { return {}; }
-  });
-
+  // 義工個人資料存本地 (因為這是這台電腦的使用者設定)
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>(() => {
     try {
       const saved = localStorage.getItem('mindtree_volunteer');
@@ -59,24 +46,45 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     } catch (e) { return { name: "Volunteer", role: "Peer Listener", isVerified: false }; }
   });
 
-  const [publicMemos, setPublicMemos] = useState<PublicMemo[]>([]);
-
-  // Persist to LocalStorage whenever state changes
+  // 1. 監聽案件 (雲端同步)
   useEffect(() => {
-    localStorage.setItem('mindtree_tickets', JSON.stringify(tickets));
-  }, [tickets]);
+    const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const cloudTickets = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Ticket[];
+      setTickets(cloudTickets);
+    });
+    return () => unsubscribe();
+  }, []);
 
+  // 2. 監聽聊天訊息 (雲端同步)
   useEffect(() => {
-    localStorage.setItem('mindtree_chats', JSON.stringify(chats));
-  }, [chats]);
+    const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const newChats: Record<string, Message[]> = {};
+      
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const ticketId = data.ticketId;
+        if (!newChats[ticketId]) newChats[ticketId] = [];
+        
+        newChats[ticketId].push({
+          id: doc.id,
+          text: data.text,
+          sender: data.sender,
+          isUser: data.isUser,
+          timestamp: data.timestamp,
+        });
+      });
+      setChats(newChats);
+    });
+    return () => unsubscribe();
+  }, []);
 
+  // 3. 監聽留言 (雲端同步 + 本地動畫)
   useEffect(() => {
-    localStorage.setItem('mindtree_volunteer', JSON.stringify(volunteerProfile));
-  }, [volunteerProfile]);
-
-  // Initialize memos (Client-side only to ensure animation randomness)
-  useEffect(() => {
-    // Generate bubbles
     const generateInitial = () => Array.from({ length: 40 }).map((_, i) => {
       const text = INITIAL_MEMOS_TEXT[i % INITIAL_MEMOS_TEXT.length];
       return {
@@ -91,73 +99,71 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       };
     });
 
-    // Try to load user added memos from LS
-    const savedUserMemos = localStorage.getItem('mindtree_user_memos');
-    const userMemos = savedUserMemos ? JSON.parse(savedUserMemos) : [];
-    
-    setPublicMemos([...generateInitial(), ...userMemos]);
+    const unsubscribe = onSnapshot(collection(db, "memos"), (snapshot) => {
+      const cloudMemos = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as PublicMemo[];
+      setPublicMemos([...generateInitial(), ...cloudMemos]);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const createTicket = (name: string, issue: string, priority: Priority, tags: string[]) => {
-    const newTicket: Ticket = { 
-      id: `t${Date.now()}`, 
-      name, 
-      issue, 
-      time: "Just now", 
-      status: 'waiting', 
-      priority, 
-      tags
-    };
-    setTickets(prev => [newTicket, ...prev]);
-    return newTicket;
+  // 儲存義工資料到本地
+  useEffect(() => {
+    localStorage.setItem('mindtree_volunteer', JSON.stringify(volunteerProfile));
+  }, [volunteerProfile]);
+
+  // --- 寫入雲端 Actions ---
+
+  const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
+    await addDoc(collection(db, "tickets"), {
+      name,
+      issue,
+      priority,
+      tags,
+      status: 'waiting',
+      time: "Just now",
+      createdAt: Date.now()
+    });
   };
 
-  const updateTicketStatus = (ticketId: string, status: TicketStatus) => {
-    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
+  const updateTicketStatus = async (ticketId: string, status: TicketStatus) => {
+    const ticketRef = doc(db, "tickets", ticketId);
+    await updateDoc(ticketRef, { status });
   };
 
-  const addMessage = (ticketId: string, msg: Message) => {
-    setChats(prev => ({ 
-      ...prev, 
-      [ticketId]: [...(prev[ticketId] || []), { ...msg, timestamp: Date.now() }] 
-    }));
+  const addMessage = async (ticketId: string, msg: Message) => {
+    await addDoc(collection(db, "messages"), {
+      ticketId,
+      text: msg.text,
+      sender: msg.sender,
+      isUser: msg.isUser,
+      timestamp: Date.now()
+    });
   };
 
-  const addPublicMemo = (text: string) => {
-    const newMemo: PublicMemo = {
-      id: `memo-${Date.now()}`,
+  const addPublicMemo = async (text: string) => {
+    await addDoc(collection(db, "memos"), {
       text,
       style: {
         left: `${Math.random() * 90}%`,
-        animationDuration: `${Math.random() * 20 + 40}s`, 
-        animationDelay: '0s', 
-        scale: Math.random() * 0.5 + 1.0 
-      }
-    };
-    
-    setPublicMemos(prev => {
-        const updated = [...prev.slice(-59), newMemo];
-        // Identify which are user-created (non-init) to save to LS
-        const userCreated = updated.filter(m => m.id.startsWith('memo-'));
-        localStorage.setItem('mindtree_user_memos', JSON.stringify(userCreated));
-        return updated;
-    }); 
+        animationDuration: `${Math.random() * 20 + 40}s`,
+        animationDelay: '0s',
+        scale: Math.random() * 0.5 + 1.0
+      },
+      createdAt: Date.now()
+    });
   };
 
   const getMessages = (ticketId: string) => chats[ticketId] || [];
 
   return (
     <AppContext.Provider value={{ 
-      tickets, 
-      chats,
-      createTicket, 
-      updateTicketStatus, 
-      addMessage, 
-      getMessages, 
-      volunteerProfile, 
-      setVolunteerProfile,
-      publicMemos,
-      addPublicMemo
+      tickets, chats, createTicket, updateTicketStatus, 
+      addMessage, getMessages, volunteerProfile, 
+      setVolunteerProfile, publicMemos, addPublicMemo
     }}>
       {children}
     </AppContext.Provider>

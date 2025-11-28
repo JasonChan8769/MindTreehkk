@@ -1,10 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// Use process.env.API_KEY as per Google GenAI SDK guidelines
-// @ts-ignore
-const apiKey = process.env.API_KEY;
-const ai = new GoogleGenAI({ apiKey: apiKey });
+// Use process.env.API_KEY as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_PROMPTS = {
   zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。

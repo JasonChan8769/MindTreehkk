@@ -24,9 +24,9 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 3. 由 Vercel 伺服器向 Google 發送請求
+    // 【修正】將模型改為 gemini-1.5-flash，這是最穩定的版本
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {

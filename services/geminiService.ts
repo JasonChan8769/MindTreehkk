@@ -1,11 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// 1. 從環境變數讀取 API Key (Vite 專用寫法)
+// 1. 從環境變數讀取 API Key
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 // 2. 初始化 AI
-// 如果沒有 Key，先給一個空值，讓程式不要立刻崩潰，讓我們可以在下方捕捉錯誤
 const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
 
 const SYSTEM_PROMPTS = {
@@ -29,11 +28,10 @@ const SYSTEM_PROMPTS = {
 };
 
 export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
-  // 檢查是否真的讀取到了 Key
   if (!apiKey) {
     return lang === 'zh' 
-      ? "[系統錯誤] 找不到 API Key。請檢查 Vercel 設定 (變數名稱必須是 VITE_GEMINI_API_KEY)。" 
-      : "System Error: API Key missing. Check Vercel settings.";
+      ? "[系統錯誤] 找不到 API Key。請檢查 Vercel 設定。" 
+      : "System Error: API Key missing.";
   }
 
   try {
@@ -44,9 +42,10 @@ export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'):
       parts: [{ text: msg.text }]
     }));
 
-    // 使用最穩定的模型 gemini-1.5-flash
+    // 【重要修改】使用 gemini-1.5-pro (目前最強穩定版)
+    // 如果未來 Gemini 3 上線，你只需要將下方的 'gemini-1.5-pro' 改成 'gemini-3.0-pro' 即可
     const response = await ai.models.generateContent({
-      model: 'gemini-1.5-flash', 
+      model: 'gemini-1.5-pro', 
       contents: recentHistory,
       config: {
         systemInstruction: systemInstruction,
@@ -59,17 +58,15 @@ export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'):
   } catch (error: any) {
     console.error("Gemini API Error:", error);
     
-    // --- 除錯模式：將真實錯誤顯示在聊天視窗中 ---
+    // --- 除錯模式 ---
     const errorMessage = error.message || JSON.stringify(error);
     
-    if (errorMessage.includes("API key not valid")) {
-      return `[除錯模式] API Key 無效 (Invalid Key)。請檢查 Vercel 變數值是否正確，或是否有複製到空格。`;
-    }
     if (errorMessage.includes("404") || errorMessage.includes("not found")) {
-      return `[除錯模式] 找不到模型 (Model Not Found)。此 API Key 可能無權限使用 gemini-1.5-flash，或 Key 類別錯誤。`;
+      return `[除錯模式] 找不到模型 (404)。你嘗試使用的模型名稱可能不存在或無權限。目前已設定為 gemini-1.5-pro。`;
     }
-    if (errorMessage.includes("403") || errorMessage.includes("permission") || errorMessage.includes("location")) {
-      return `[除錯模式] 權限不足 (403)。這通常是因為 Google AI Studio 的 Key 設定限制了來源，或者該服務在當前地區不可用。`;
+    
+    if (errorMessage.includes("403") || errorMessage.includes("permission")) {
+      return `[除錯模式] 權限不足 (403)。請確認 API Key 是否有 IP/Referrer 限制，或該服務在目前地區(如香港)不可用。`;
     }
 
     return `[除錯模式] 連線錯誤: ${errorMessage}`;

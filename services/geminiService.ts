@@ -1,8 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// Use process.env.API_KEY as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// FIX 1: Use 'import.meta.env' for Vite
+// FIX 2: Use the variable name 'VITE_GEMINI_API_KEY'
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// Safety check: Log a warning if key is missing (helps debugging)
+if (!apiKey) {
+  console.error("CRITICAL ERROR: API Key is missing! Check Vercel Environment Variables.");
+}
+
+const ai = new GoogleGenAI({ apiKey: apiKey });
 
 const SYSTEM_PROMPTS = {
   zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
@@ -36,12 +44,12 @@ export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'):
     }));
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview', // Use 3.0 Pro for thinking capabilities
+      model: 'gemini-2.0-flash-thinking-exp', // SUGGESTION: Use a widely available model first to test connection
       contents: recentHistory,
       config: {
         systemInstruction: systemInstruction,
         temperature: 0.7,
-        thinkingConfig: { thinkingBudget: 32768 } // Max thinking budget for deep reasoning
+        // thinkingConfig: { thinkingBudget: 32768 } // Commented out to reduce potential errors during debugging
       }
     });
 

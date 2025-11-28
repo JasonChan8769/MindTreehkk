@@ -16,7 +16,7 @@ interface AppContextType {
   chats: Record<string, Message[]>;
   volunteerProfile: VolunteerProfile;
   publicMemos: PublicMemo[];
-  // 【修正 1】將回傳型別從 Promise<void> 改為 Promise<string>
+  // 【修正 1】這裡的型別改成 Promise<string>，代表會回傳 ID 字串
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
   updateTicketStatus: (ticketId: string, status: TicketStatus) => void;
   addMessage: (ticketId: string, msg: Message) => void;
@@ -46,6 +46,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     } catch (e) { return { name: "Volunteer", role: "Peer Listener", isVerified: false }; }
   });
 
+  // 監聽案件
   useEffect(() => {
     const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -58,6 +59,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // 監聽訊息
   useEffect(() => {
     const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -65,20 +67,23 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       snapshot.docs.forEach(doc => {
         const data = doc.data();
         const ticketId = data.ticketId;
-        if (!newChats[ticketId]) newChats[ticketId] = [];
-        newChats[ticketId].push({
-          id: doc.id,
-          text: data.text,
-          sender: data.sender,
-          isUser: data.isUser,
-          timestamp: data.timestamp,
-        });
+        if (ticketId) {
+            if (!newChats[ticketId]) newChats[ticketId] = [];
+            newChats[ticketId].push({
+            id: doc.id,
+            text: data.text,
+            sender: data.sender,
+            isUser: data.isUser,
+            timestamp: data.timestamp,
+            });
+        }
       });
       setChats(newChats);
     });
     return () => unsubscribe();
   }, []);
 
+  // 監聽留言
   useEffect(() => {
     const generateInitial = () => Array.from({ length: 40 }).map((_, i) => {
       const text = INITIAL_MEMOS_TEXT[i % INITIAL_MEMOS_TEXT.length];
@@ -111,7 +116,7 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
   // --- Actions ---
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    // 【修正 2】將新增的 Document 存入變數 docRef
+    // 【修正 2】將新增的資料存入變數 docRef
     const docRef = await addDoc(collection(db, "tickets"), {
       name,
       issue,
@@ -122,16 +127,22 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       createdAt: Date.now()
     });
     
-    // 【修正 3】回傳 docRef.id (這是修復白畫面的關鍵！)
+    // 【修正 3】一定要回傳 docRef.id，這樣 App.tsx 才能拿到 ID 並跳轉
     return docRef.id;
   };
 
   const updateTicketStatus = async (ticketId: string, status: TicketStatus) => {
+    if (!ticketId) return;
     const ticketRef = doc(db, "tickets", ticketId);
     await updateDoc(ticketRef, { status });
   };
 
   const addMessage = async (ticketId: string, msg: Message) => {
+    if (!ticketId) {
+        console.error("Critical Error: ticketId is undefined. Cannot send message.");
+        return;
+    }
+
     await addDoc(collection(db, "messages"), {
       ticketId,
       text: msg.text,

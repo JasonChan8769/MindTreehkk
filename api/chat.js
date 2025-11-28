@@ -13,29 +13,35 @@ export default async function handler(req, res) {
     return;
   }
 
-  // 2. 取得 API Key (請確保你在 Vercel 環境變數中已經更新了這把新鑰匙)
+  // 2. 取得 API Key
   const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Server Error: API Key is missing. Please check Vercel Environment Variables.' });
+    return res.status(500).json({ error: 'Server Error: API Key is missing.' });
   }
 
   try {
     const { history, systemInstruction } = req.body;
 
-    // 定義模型列表：包含最新的 Flash 版本
-    // 系統會依序嘗試，直到成功為止
+    // 【關鍵更新】擴充模型列表，包含所有可能的版本號
+    // 程式會依序嘗試，直到找到你的 Key 能用的那個
     const modelsToTry = [
-      'gemini-1.5-flash',          // 最穩定/付費版通常是這個
-      'gemini-1.5-flash-latest',   // 強制使用最新版
-      'gemini-2.0-flash-exp',      // 最新的 2.0 實驗版
-      'gemini-1.5-pro',            // 備用：Pro 版本
-      'gemini-1.0-pro'             // 備用：舊版
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-001',
+      'gemini-1.5-flash-002',
+      'gemini-1.5-flash-latest',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-pro',
+      'gemini-1.5-pro-001',
+      'gemini-1.5-pro-002',
+      'gemini-1.0-pro',
+      'gemini-pro'
     ];
 
     let lastError = null;
+    let successModel = '';
 
-    // 3. 自動迴圈嘗試所有模型
+    // 3. 自動迴圈嘗試
     for (const model of modelsToTry) {
       try {
         console.log(`Trying model: ${model}...`);
@@ -55,22 +61,20 @@ export default async function handler(req, res) {
 
         const data = await response.json();
 
-        // 如果成功，直接回傳結果
         if (response.ok) {
+          console.log(`✅ Success with model: ${model}`);
           return res.status(200).json(data);
         }
 
         console.warn(`Model ${model} failed:`, data.error?.message);
-        lastError = data.error?.message || response.statusText;
+        lastError = data.error?.message;
 
       } catch (err) {
-        console.warn(`Model ${model} network error:`, err.message);
         lastError = err.message;
       }
     }
 
-    // 4. 如果全部都失敗了
-    throw new Error(`All models failed. Please check your API Key permissions. Last error: ${lastError}`);
+    throw new Error(`All models failed. Last error: ${lastError}`);
 
   } catch (error) {
     console.error('Proxy Final Error:', error);

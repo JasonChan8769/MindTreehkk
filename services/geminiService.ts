@@ -11,9 +11,11 @@
     <!-- 2. Apple / iOS Home Screen Icon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     
-    <!-- 3. Android Home Screen Icon -->
+    <!-- 3. Android Home Screen Icon & Manifest -->
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+    <!-- Added this line for Android App support -->
+    <link rel="manifest" href="/site.webmanifest" />
     <!-- END: Mobile App Icons -->
 
     <!-- Primary Meta Tags -->

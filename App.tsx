@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, Menu, X, Send, Bot, 
@@ -38,7 +40,7 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   }
 
   return (
-    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-4 animate-fade-in`}>
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
       <div className={`flex items-end gap-2 max-w-[85%] md:max-w-[70%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${isUser ? 'bg-indigo-600 text-white' : (isAI ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-300')}`}>
           {isUser ? <User size={16} /> : (isAI ? <Trees size={16} /> : <Heart size={16} />)}
@@ -103,8 +105,8 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
         <div className="mb-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-full shadow-2xl animate-fade-in ring-1 ring-slate-100 dark:ring-slate-800">
           {steps[step].icon}
         </div>
-        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 animate-fade-in" key={`title-${step}`}>{steps[step].title}</h2>
-        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap animate-fade-in max-w-lg mx-auto" key={`desc-${step}`}>{steps[step].desc}</p>
+        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 animate-in slide-in-from-bottom-5 fade-in duration-500 key={step}">{steps[step].title}</h2>
+        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap animate-in slide-in-from-bottom-5 fade-in duration-700 key={step} max-w-lg mx-auto">{steps[step].desc}</p>
         
         <div className="flex gap-3 mt-12">
           {steps.map((_, i) => (
@@ -176,7 +178,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   };
 
   return (
-    <div className="h-[100dvh] w-full bg-gradient-to-br from-indigo-50 via-slate-50 to-teal-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
 
       {/* --- Interactive Floating Background --- */}
@@ -194,7 +196,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                 }}
             >
                 <span 
-                    className="inline-block bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-indigo-100 dark:border-slate-700 rounded-2xl px-5 py-2.5 text-base md:text-lg font-medium text-slate-700 dark:text-slate-200 shadow-sm whitespace-nowrap transition-transform cursor-default"
+                    className="inline-block bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl px-5 py-2.5 text-base md:text-lg font-medium text-slate-700 dark:text-slate-200 shadow-sm whitespace-nowrap transition-transform cursor-default"
                     style={{ transform: `scale(${memo.style.scale})` }}
                 >
                     {memo.text}
@@ -220,7 +222,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       
       {/* --- Main Card --- */}
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden p-8 text-center border border-white/50 dark:border-slate-700 animate-fade-in mb-8 ring-1 ring-white/60 dark:ring-white/10">
+        {/* Gradient Backdrop for readability */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-white/90 via-white/50 to-transparent dark:from-slate-950/90 dark:via-slate-950/50 dark:to-transparent blur-2xl -z-10 rounded-full pointer-events-none" />
+
+        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden p-8 text-center border border-slate-200 dark:border-slate-800 animate-fade-in mb-8">
             <div className="w-20 h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
             <Trees size={40} />
             </div>
@@ -246,11 +251,11 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
             </div>
 
             {/* --- Memo Section --- */}
-            <div className="mt-8 pt-6 border-t border-slate-200/50 dark:border-slate-800">
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
             <p className="text-slate-500 dark:text-slate-400 text-xs mb-4 font-medium uppercase tracking-wider opacity-70">{t.memo.cheerUp}</p>
             <button 
                 onClick={() => setShowMemoInput(true)}
-                className="w-full bg-white/50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
+                className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
             >
                 <MessageSquarePlus size={18} className="group-hover:scale-110 transition-transform" /> {t.memo.label}
             </button>
@@ -638,7 +643,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
             <p className="text-slate-600 dark:text-slate-300 text-base text-center mb-6 font-medium bg-white dark:bg-slate-900 py-3 px-6 rounded-full w-fit mx-auto shadow-sm">{t.volunteer.guidelinesDesc}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-indigo-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-indigo-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-100 hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-indigo-900 dark:text-indigo-300 mb-3 flex items-center gap-2">
                         <MessageCircle size={20} className="text-indigo-500" /> 
                         {t.volunteer.rule1Title}
@@ -646,7 +651,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule1Desc}</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-amber-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-amber-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-200 hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-amber-900 dark:text-amber-300 mb-3 flex items-center gap-2">
                         <Coffee size={20} className="text-amber-500" /> 
                         {t.volunteer.rule2Title}
@@ -654,7 +659,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule2Desc}</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-red-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-red-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-300 hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-red-900 dark:text-red-300 mb-3 flex items-center gap-2">
                         <AlertTriangle size={20} className="text-red-500" /> 
                         {t.volunteer.rule3Title}
@@ -851,7 +856,7 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
             {isVolunteer && ticket.priority === 'critical' && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm mb-8 flex items-start gap-3 animate-fade-in shadow-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm mb-8 flex items-start gap-3 animate-in fade-in shadow-sm">
                 <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                 <div>
                     <span className="font-bold block mb-1">CRITICAL PRIORITY CASE</span>
@@ -887,7 +892,7 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
 };
 
 const MainLayout = () => {
-  const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('landing');
+  const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('intro');
   const [lang, setLang] = useState<Language>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [role, setRole] = useState<'citizen' | 'volunteer' | null>(null);

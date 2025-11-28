@@ -1,11 +1,8 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// Use Vite environment variable for production, fallback to process.env for local dev if needed
-const apiKey = import.meta.env.VITE_API_KEY || process.env.API_KEY || "";
-
-const ai = new GoogleGenAI({ apiKey: apiKey });
+// Fix: Use process.env.API_KEY as per Google GenAI SDK guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_PROMPTS = {
   zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。

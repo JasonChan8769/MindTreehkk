@@ -1,5 +1,4 @@
 
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, Menu, X, Send, Bot, 
@@ -40,7 +39,7 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   }
 
   return (
-    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-4 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-4 animate-fade-in`}>
       <div className={`flex items-end gap-2 max-w-[85%] md:max-w-[70%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${isUser ? 'bg-indigo-600 text-white' : (isAI ? 'bg-teal-600 text-white' : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-indigo-600 dark:text-indigo-300')}`}>
           {isUser ? <User size={16} /> : (isAI ? <Trees size={16} /> : <Heart size={16} />)}
@@ -94,28 +93,28 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
 
   return (
     <div className="h-[100dvh] w-full bg-white dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-300">
-      <div className="absolute top-6 right-6 z-20 flex gap-3">
+      <div className="w-full flex justify-end gap-3 p-4 z-20 shrink-0">
         <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
         <button onClick={toggleLang} className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full text-sm text-slate-900 dark:text-white font-bold border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:bg-slate-200 dark:hover:bg-slate-700">
           <Globe size={14} /> {lang === 'zh' ? 'EN' : '繁體'}
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-2xl mx-auto w-full text-center z-10">
-        <div className="mb-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-full shadow-2xl animate-fade-in ring-1 ring-slate-100 dark:ring-slate-800">
+      <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-2xl mx-auto w-full text-center z-10 overflow-y-auto">
+        <div className="mb-8 md:mb-12 p-10 bg-slate-50 dark:bg-slate-900 rounded-full shadow-2xl animate-fade-in ring-1 ring-slate-100 dark:ring-slate-800">
           {steps[step].icon}
         </div>
-        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 animate-in slide-in-from-bottom-5 fade-in duration-500 key={step}">{steps[step].title}</h2>
-        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap animate-in slide-in-from-bottom-5 fade-in duration-700 key={step} max-w-lg mx-auto">{steps[step].desc}</p>
+        <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 animate-fade-in" key={`title-${step}`}>{steps[step].title}</h2>
+        <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap animate-fade-in max-w-lg mx-auto" key={`desc-${step}`}>{steps[step].desc}</p>
         
-        <div className="flex gap-3 mt-12">
+        <div className="flex gap-3 mt-12 mb-8">
           {steps.map((_, i) => (
             <div key={i} className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${i === step ? 'w-10 bg-indigo-600 dark:bg-indigo-400' : 'w-2.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700'}`} onClick={() => setStep(i)} />
           ))}
         </div>
       </div>
 
-      <div className="p-8 pb-16 z-10 max-w-md mx-auto w-full">
+      <div className="p-8 pb-8 z-10 max-w-md mx-auto w-full shrink-0">
         <button 
           onClick={() => {
             if (step < steps.length - 1) setStep(s => s + 1);
@@ -128,8 +127,8 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
       </div>
 
       {/* Background Decor */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-indigo-500/10 rounded-full blur-3xl" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl animate-pulse pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[30rem] h-[30rem] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
     </div>
   );
 };
@@ -178,10 +177,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   };
 
   return (
-    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
+    <div className="h-[100dvh] w-full bg-gradient-to-br from-indigo-50 via-slate-50 to-teal-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 flex flex-col relative overflow-hidden transition-colors duration-300">
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
 
-      {/* --- Interactive Floating Background --- */}
+      {/* --- Interactive Floating Background (Absolute behind everything) --- */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {publicMemos.map((memo) => (
@@ -196,7 +195,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                 }}
             >
                 <span 
-                    className="inline-block bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200/50 dark:border-slate-700/50 rounded-2xl px-5 py-2.5 text-base md:text-lg font-medium text-slate-700 dark:text-slate-200 shadow-sm whitespace-nowrap transition-transform cursor-default"
+                    className="inline-block bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-indigo-100 dark:border-slate-700 rounded-2xl px-5 py-2.5 text-base md:text-lg font-medium text-slate-700 dark:text-slate-200 shadow-sm whitespace-nowrap transition-transform cursor-default"
                     style={{ transform: `scale(${memo.style.scale})` }}
                 >
                     {memo.text}
@@ -206,8 +205,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
       </div>
 
-      {/* --- Top Bar --- */}
-      <div className="absolute top-6 right-6 z-20 flex gap-3">
+      {/* --- Top Bar (Static Flex Item) --- */}
+      <div className="w-full flex justify-end gap-2 p-3 z-20 shrink-0">
         <button onClick={handleShare} className="p-2.5 rounded-full bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-slate-200 dark:border-slate-700" title="Share Platform">
           <Share2 size={20} />
         </button>
@@ -220,42 +219,39 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </button>
       </div>
       
-      {/* --- Main Card --- */}
-      <div className="relative z-10 w-full max-w-md">
-        {/* Gradient Backdrop for readability */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-radial from-white/90 via-white/50 to-transparent dark:from-slate-950/90 dark:via-slate-950/50 dark:to-transparent blur-2xl -z-10 rounded-full pointer-events-none" />
-
-        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden p-8 text-center border border-slate-200 dark:border-slate-800 animate-fade-in mb-8">
-            <div className="w-20 h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
-            <Trees size={40} />
+      {/* --- Main Content Area (Flex Grow & Center) --- */}
+      <div className="flex-1 w-full flex items-center justify-center p-4 z-10 overflow-y-auto">
+        <div className="w-full max-w-md bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden p-6 md:p-8 text-center border border-white/50 dark:border-slate-700 animate-fade-in ring-1 ring-white/60 dark:ring-white/10 my-auto">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
+            <Trees size={32} className="md:w-10 md:h-10" />
             </div>
-            <h1 className="text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{t.appTitle}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-10">{t.appSubtitle}</p>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{t.appTitle}</h1>
+            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-6 md:mb-10">{t.appSubtitle}</p>
             
             <div className="space-y-4">
-            <button onClick={() => onSelectRole('citizen-ai')} className="w-full bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900 p-5 rounded-2xl flex items-center gap-5 transition-all hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:shadow-lg group hover:-translate-y-1">
-                <div className="bg-teal-600 text-white p-3.5 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Bot size={24} /></div>
+            <button onClick={() => onSelectRole('citizen-ai')} className="w-full bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:shadow-lg group hover:-translate-y-1">
+                <div className="bg-teal-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Bot size={24} /></div>
                 <div className="text-left">
-                <div className="font-bold text-lg text-teal-900 dark:text-teal-300">{t.aiRole.title}</div>
+                <div className="font-bold text-base md:text-lg text-teal-900 dark:text-teal-300">{t.aiRole.title}</div>
                 <div className="text-xs text-teal-700 dark:text-teal-500">{t.aiRole.desc}</div>
                 </div>
             </button>
             
-            <button onClick={() => onSelectRole('citizen-human')} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl flex items-center gap-5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg group hover:-translate-y-1">
-                <div className="bg-indigo-600 text-white p-3.5 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Users size={24} /></div>
+            <button onClick={() => onSelectRole('citizen-human')} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg group hover:-translate-y-1">
+                <div className="bg-indigo-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Users size={24} /></div>
                 <div className="text-left">
-                <div className="font-bold text-lg text-slate-800 dark:text-slate-200">{t.humanRole.title}</div>
+                <div className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-200">{t.humanRole.title}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">{t.humanRole.desc}</div>
                 </div>
             </button>
             </div>
 
             {/* --- Memo Section --- */}
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-            <p className="text-slate-500 dark:text-slate-400 text-xs mb-4 font-medium uppercase tracking-wider opacity-70">{t.memo.cheerUp}</p>
+            <div className="mt-6 md:mt-8 pt-6 border-t border-slate-200/50 dark:border-slate-800">
+            <p className="text-slate-500 dark:text-slate-400 text-xs mb-3 font-medium uppercase tracking-wider opacity-70">{t.memo.cheerUp}</p>
             <button 
                 onClick={() => setShowMemoInput(true)}
-                className="w-full bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
+                className="w-full bg-white/50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-3 md:py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
             >
                 <MessageSquarePlus size={18} className="group-hover:scale-110 transition-transform" /> {t.memo.label}
             </button>
@@ -265,7 +261,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
             <div className="mt-6 space-y-3">
             <button 
                 onClick={() => onSelectRole('volunteer-login')} 
-                className="w-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-3.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wide"
+                className="w-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wide"
             >
                 <UserCheck size={16} /> {t.volunteer.login} <ArrowRight size={14} />
             </button>
@@ -280,8 +276,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
       </div>
       
-      {/* --- Footer Disclaimer --- */}
-      <div className="absolute bottom-2 left-0 right-0 p-4 text-center z-20 pointer-events-none">
+      {/* --- Footer Disclaimer (Static Flex Item) --- */}
+      <div className="w-full p-4 text-center z-20 shrink-0 pointer-events-none">
         <div className="max-w-2xl mx-auto bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-xl p-3 text-[10px] md:text-xs text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50 pointer-events-auto shadow-sm">
           <p className="font-bold mb-1">{t.landingNotice.disclaimer}</p>
           <p className="opacity-80">{t.landingNotice.rules}</p>
@@ -291,7 +287,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       {/* --- Memo Input Dialog --- */}
       {showMemoInput && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 transform transition-all scale-100">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl border border-slate-100 dark:border-slate-700 transform transition-all scale-100">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
               <Heart size={24} className="text-red-500 fill-red-500" /> {t.memo.title}
             </h3>
@@ -643,7 +639,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
             <p className="text-slate-600 dark:text-slate-300 text-base text-center mb-6 font-medium bg-white dark:bg-slate-900 py-3 px-6 rounded-full w-fit mx-auto shadow-sm">{t.volunteer.guidelinesDesc}</p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-indigo-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-100 hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-indigo-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-indigo-900 dark:text-indigo-300 mb-3 flex items-center gap-2">
                         <MessageCircle size={20} className="text-indigo-500" /> 
                         {t.volunteer.rule1Title}
@@ -651,7 +647,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule1Desc}</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-amber-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-200 hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-amber-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-amber-900 dark:text-amber-300 mb-3 flex items-center gap-2">
                         <Coffee size={20} className="text-amber-500" /> 
                         {t.volunteer.rule2Title}
@@ -659,7 +655,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule2Desc}</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-red-500 shadow-sm animate-in slide-in-from-bottom-4 duration-500 delay-300 hover:shadow-md transition-shadow">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-red-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
                     <h3 className="font-bold text-lg text-red-900 dark:text-red-300 mb-3 flex items-center gap-2">
                         <AlertTriangle size={20} className="text-red-500" /> 
                         {t.volunteer.rule3Title}
@@ -856,7 +852,7 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
             {isVolunteer && ticket.priority === 'critical' && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm mb-8 flex items-start gap-3 animate-in fade-in shadow-sm">
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm mb-8 flex items-start gap-3 animate-fade-in shadow-sm">
                 <AlertTriangle size={20} className="shrink-0 mt-0.5" />
                 <div>
                     <span className="font-bold block mb-1">CRITICAL PRIORITY CASE</span>
@@ -892,7 +888,7 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
 };
 
 const MainLayout = () => {
-  const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('intro');
+  const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('landing');
   const [lang, setLang] = useState<Language>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [role, setRole] = useState<'citizen' | 'volunteer' | null>(null);

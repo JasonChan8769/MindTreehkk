@@ -1,7 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// Fix: Use process.env.API_KEY as per Google GenAI SDK guidelines
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const SYSTEM_PROMPTS = {

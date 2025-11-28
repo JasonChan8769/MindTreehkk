@@ -205,8 +205,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
       </div>
 
-      {/* --- Top Bar (Static Flex Item) --- */}
-      <div className="w-full flex justify-end gap-2 p-3 z-20 shrink-0">
+      {/* --- Top Bar (Static Flex Item - Won't Overlap) --- */}
+      <div className="w-full flex justify-end gap-2 p-3 z-20 shrink-0 bg-transparent">
         <button onClick={handleShare} className="p-2.5 rounded-full bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors shadow-sm border border-slate-200 dark:border-slate-700" title="Share Platform">
           <Share2 size={20} />
         </button>
@@ -219,66 +219,68 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </button>
       </div>
       
-      {/* --- Main Content Area (Flex Grow & Center) --- */}
-      <div className="flex-1 w-full flex items-center justify-center p-4 z-10 overflow-y-auto">
-        <div className="w-full max-w-md bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden p-6 md:p-8 text-center border border-white/50 dark:border-slate-700 animate-fade-in ring-1 ring-white/60 dark:ring-white/10 my-auto">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
-            <Trees size={32} className="md:w-10 md:h-10" />
-            </div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{t.appTitle}</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-6 md:mb-10">{t.appSubtitle}</p>
-            
-            <div className="space-y-4">
-            <button onClick={() => onSelectRole('citizen-ai')} className="w-full bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:shadow-lg group hover:-translate-y-1">
-                <div className="bg-teal-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Bot size={24} /></div>
-                <div className="text-left">
-                <div className="font-bold text-base md:text-lg text-teal-900 dark:text-teal-300">{t.aiRole.title}</div>
-                <div className="text-xs text-teal-700 dark:text-teal-500">{t.aiRole.desc}</div>
+      {/* --- Main Content Area (Flex Grow - Scrolls independently) --- */}
+      <div className="flex-1 w-full overflow-y-auto z-10 no-scrollbar">
+        <div className="min-h-full flex flex-col justify-center p-4 py-6">
+            <div className="w-full max-w-md mx-auto bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] shadow-2xl overflow-hidden p-6 md:p-8 text-center border border-white/50 dark:border-slate-700 animate-fade-in ring-1 ring-white/60 dark:ring-white/10">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6 shadow-inner ring-1 ring-teal-100 dark:ring-teal-900">
+                <Trees size={32} className="md:w-10 md:h-10" />
                 </div>
-            </button>
-            
-            <button onClick={() => onSelectRole('citizen-human')} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg group hover:-translate-y-1">
-                <div className="bg-indigo-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Users size={24} /></div>
-                <div className="text-left">
-                <div className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-200">{t.humanRole.title}</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">{t.humanRole.desc}</div>
+                <h1 className="text-2xl md:text-3xl font-black text-slate-800 dark:text-white mb-2 tracking-tight">{t.appTitle}</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mb-6 md:mb-10">{t.appSubtitle}</p>
+                
+                <div className="space-y-4">
+                <button onClick={() => onSelectRole('citizen-ai')} className="w-full bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:shadow-lg group hover:-translate-y-1">
+                    <div className="bg-teal-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Bot size={24} /></div>
+                    <div className="text-left">
+                    <div className="font-bold text-base md:text-lg text-teal-900 dark:text-teal-300">{t.aiRole.title}</div>
+                    <div className="text-xs text-teal-700 dark:text-teal-500">{t.aiRole.desc}</div>
+                    </div>
+                </button>
+                
+                <button onClick={() => onSelectRole('citizen-human')} className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 md:p-5 rounded-2xl flex items-center gap-4 md:gap-5 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg group hover:-translate-y-1">
+                    <div className="bg-indigo-600 text-white p-3 rounded-xl shadow-sm group-hover:scale-110 transition-transform"><Users size={24} /></div>
+                    <div className="text-left">
+                    <div className="font-bold text-base md:text-lg text-slate-800 dark:text-slate-200">{t.humanRole.title}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{t.humanRole.desc}</div>
+                    </div>
+                </button>
                 </div>
-            </button>
-            </div>
 
-            {/* --- Memo Section --- */}
-            <div className="mt-6 md:mt-8 pt-6 border-t border-slate-200/50 dark:border-slate-800">
-            <p className="text-slate-500 dark:text-slate-400 text-xs mb-3 font-medium uppercase tracking-wider opacity-70">{t.memo.cheerUp}</p>
-            <button 
-                onClick={() => setShowMemoInput(true)}
-                className="w-full bg-white/50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-3 md:py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
-            >
-                <MessageSquarePlus size={18} className="group-hover:scale-110 transition-transform" /> {t.memo.label}
-            </button>
-            </div>
+                {/* --- Memo Section --- */}
+                <div className="mt-6 md:mt-8 pt-6 border-t border-slate-200/50 dark:border-slate-800">
+                <p className="text-slate-500 dark:text-slate-400 text-xs mb-3 font-medium uppercase tracking-wider opacity-70">{t.memo.cheerUp}</p>
+                <button 
+                    onClick={() => setShowMemoInput(true)}
+                    className="w-full bg-white/50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 px-6 py-3 md:py-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 group"
+                >
+                    <MessageSquarePlus size={18} className="group-hover:scale-110 transition-transform" /> {t.memo.label}
+                </button>
+                </div>
 
-            {/* --- Volunteer & Links Section --- */}
-            <div className="mt-6 space-y-3">
-            <button 
-                onClick={() => onSelectRole('volunteer-login')} 
-                className="w-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wide"
-            >
-                <UserCheck size={16} /> {t.volunteer.login} <ArrowRight size={14} />
-            </button>
+                {/* --- Volunteer & Links Section --- */}
+                <div className="mt-6 space-y-3">
+                <button 
+                    onClick={() => onSelectRole('volunteer-login')} 
+                    className="w-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs uppercase tracking-wide"
+                >
+                    <UserCheck size={16} /> {t.volunteer.login} <ArrowRight size={14} />
+                </button>
 
-            <button 
-                onClick={() => setShowResources(true)}
-                className="w-full text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-2 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs"
-            >
-                <Link size={14} /> {t.links.btn}
-            </button>
+                <button 
+                    onClick={() => setShowResources(true)}
+                    className="w-full text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold py-2 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-xs"
+                >
+                    <Link size={14} /> {t.links.btn}
+                </button>
+                </div>
             </div>
         </div>
       </div>
       
-      {/* --- Footer Disclaimer (Static Flex Item) --- */}
-      <div className="w-full p-4 text-center z-20 shrink-0 pointer-events-none">
-        <div className="max-w-2xl mx-auto bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-xl p-3 text-[10px] md:text-xs text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50 pointer-events-auto shadow-sm">
+      {/* --- Footer Disclaimer (Static Flex Item - Won't Overlap) --- */}
+      <div className="w-full p-4 text-center z-20 shrink-0">
+        <div className="max-w-2xl mx-auto bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-xl p-3 text-[10px] md:text-xs text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-800/50 shadow-sm">
           <p className="font-bold mb-1">{t.landingNotice.disclaimer}</p>
           <p className="opacity-80">{t.landingNotice.rules}</p>
         </div>

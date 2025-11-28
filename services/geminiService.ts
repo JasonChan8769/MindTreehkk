@@ -1,62 +1,74 @@
 import { GoogleGenAI } from "@google/genai";
-import { Message } from '../types';
-
-// FIX 1: Use 'import.meta.env' for Vite
-// FIX 2: Use the variable name 'VITE_GEMINI_API_KEY'
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-// Safety check: Log a warning if key is missing (helps debugging)
-if (!apiKey) {
-  console.error("CRITICAL ERROR: API Key is missing! Check Vercel Environment Variables.");
-}
-
-const ai = new GoogleGenAI({ apiKey: apiKey });
-
-const SYSTEM_PROMPTS = {
-  zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
-  你的語氣：溫暖、同理心、冷靜、具支持性。
-  你的任務：
-  1. 聆聽受災居民的情緒（恐懼、焦慮、悲傷）。
-  2. 即使對方表達憤怒，也要保持接納。
-  3. 如果對方提及自殺或自殘，請溫柔地建議他們尋求專業協助或致電 999。
-  4. 使用廣東話口語與用戶溝通。
-  5. 不要提供醫療建議。
-  6. 簡短回應，鼓勵對方多說。`,
-  en: `You are "AI Tree Hole", an AI listener specifically for residents affected by the Tai Po Wang Fuk Court fire.
-  Tone: Warm, empathetic, calm, supportive.
-  Tasks:
-  1. Listen to the emotions of affected residents (fear, anxiety, sadness).
-  2. Remain accepting even if they express anger.
-  3. If self-harm is mentioned, gently suggest professional help or calling 999.
-  4. Do not provide medical advice.
-  5. Keep responses concise to encourage sharing.`
-};
-
-export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
-  try {
-    const systemInstruction = SYSTEM_PROMPTS[lang];
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
-    // Convert app history to Gemini format
-    // Only take last 10 messages for context window efficiency
-    const recentHistory = history.slice(-10).map(msg => ({
-      role: msg.isUser ? "user" : "model",
-      parts: [{ text: msg.text }]
-    }));
+    <!-- START: Mobile App Icons -->
+    <!-- 1. Browser Tab Icon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    
+    <!-- 2. Apple / iOS Home Screen Icon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    
+    <!-- 3. Android Home Screen Icon -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png" />
+    <!-- END: Mobile App Icons -->
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-thinking-exp', // SUGGESTION: Use a widely available model first to test connection
-      contents: recentHistory,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
-        // thinkingConfig: { thinkingBudget: 32768 } // Commented out to reduce potential errors during debugging
+    <!-- Primary Meta Tags -->
+    <title>MindTree | Tai Po Fire Support Platform</title>
+    <meta name="title" content="MindTree | Tai Po Fire Support Platform">
+    <meta name="description" content="A mental health support platform connecting Tai Po residents with AI listening and community volunteer counselors. You are not alone.">
+    <meta name="theme-color" content="#4f46e5">
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mindtree-taipo.app/">
+    <meta property="og:title" content="MindTree | Heart of Tai Po">
+    <meta property="og:description" content="A safe space for Tai Po residents. 24/7 AI listening, volunteer matching, and community blessings.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=1200&auto=format&fit=crop">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="MindTree | Heart of Tai Po">
+    <meta property="twitter:description" content="A safe space for Tai Po residents. 24/7 AI listening, volunteer matching, and community blessings.">
+    
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+HK:wght@400;500;700&display=swap');
+      
+      body {
+        font-family: 'Inter', 'Noto Sans HK', sans-serif;
+        background-color: #f8fafc;
+        overscroll-behavior-y: none;
+        height: 100dvh; /* Dynamic Viewport Height for Mobile */
+        width: 100%;
+        overflow: hidden;
       }
-    });
-
-    return response.text || (lang === 'zh' ? "抱歉，我暫時連線唔到，請你稍後再試。" : "I'm having trouble connecting. Please try again.");
-
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return lang === 'zh' ? "抱歉，AI 暫時繁忙，請稍後再試。" : "Sorry, AI is busy. Please try again later.";
-  }
-};
+      
+      /* Hide scrollbar */
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+        "vite": "https://aistudiocdn.com/vite@^7.2.4",
+        "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

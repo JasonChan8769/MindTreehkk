@@ -1,4 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
 <!DOCTYPE html>
 <html lang="en">
   <head>

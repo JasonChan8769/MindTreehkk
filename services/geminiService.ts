@@ -1,74 +1,60 @@
-import { GoogleGenAI } from "@google/genai";
-import { Message } from '../types';
+// 這是一個在 Vercel 伺服器上運行的 "中轉站"
+// 它可以繞過香港的地區限制
+export default async function handler(req, res) {
+  // 1. 允許跨域請求 (CORS)
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+  );
 
-// 1. 從環境變數讀取 API Key
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
-// 2. 初始化 AI
-const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
+  // 2. 取得 API Key (這裡讀取的是伺服器端的環境變數)
+  // 注意：在 Vercel 設定中，你可能需要確保有一個變數叫做 "GEMINI_API_KEY" (沒有 VITE_ 前綴也可以)
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
-const SYSTEM_PROMPTS = {
-  zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
-  你的語氣：溫暖、同理心、冷靜、具支持性。
-  你的任務：
-  1. 聆聽受災居民的情緒（恐懼、焦慮、悲傷）。
-  2. 即使對方表達憤怒，也要保持接納。
-  3. 如果對方提及自殺或自殘，請溫柔地建議他們尋求專業協助或致電 999。
-  4. 使用廣東話口語與用戶溝通。
-  5. 不要提供醫療建議。
-  6. 簡短回應，鼓勵對方多說。`,
-  en: `You are "AI Tree Hole", an AI listener specifically for residents affected by the Tai Po Wang Fuk Court fire.
-  Tone: Warm, empathetic, calm, supportive.
-  Tasks:
-  1. Listen to the emotions of affected residents (fear, anxiety, sadness).
-  2. Remain accepting even if they express anger.
-  3. If self-harm is mentioned, gently suggest professional help or calling 999.
-  4. Do not provide medical advice.
-  5. Keep responses concise to encourage sharing.`
-};
-
-export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   if (!apiKey) {
-    return lang === 'zh' 
-      ? "[系統錯誤] 找不到 API Key。請檢查 Vercel 設定。" 
-      : "System Error: API Key missing.";
+    return res.status(500).json({ error: 'Server Config Error: API Key missing' });
   }
 
   try {
-    const systemInstruction = SYSTEM_PROMPTS[lang];
-    
-    const recentHistory = history.slice(-10).map(msg => ({
-      role: msg.isUser ? "user" : "model",
-      parts: [{ text: msg.text }]
-    }));
+    const { history, systemInstruction } = req.body;
 
-    // 【重要修改】使用 gemini-1.5-pro (目前最強穩定版)
-    // 如果未來 Gemini 3 上線，你只需要將下方的 'gemini-1.5-pro' 改成 'gemini-3.0-pro' 即可
-    const response = await ai.models.generateContent({
-      model: 'gemini-1.5-pro', 
-      contents: recentHistory,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
+    // 3. 由 Vercel (美國 IP) 向 Google 發送請求
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: history,
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            temperature: 0.7,
+          }
+        }),
       }
-    });
+    );
 
-    return response.text || "Empty response from AI";
+    const data = await response.json();
 
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    
-    // --- 除錯模式 ---
-    const errorMessage = error.message || JSON.stringify(error);
-    
-    if (errorMessage.includes("404") || errorMessage.includes("not found")) {
-      return `[除錯模式] 找不到模型 (404)。你嘗試使用的模型名稱可能不存在或無權限。目前已設定為 gemini-1.5-pro。`;
-    }
-    
-    if (errorMessage.includes("403") || errorMessage.includes("permission")) {
-      return `[除錯模式] 權限不足 (403)。請確認 API Key 是否有 IP/Referrer 限制，或該服務在目前地區(如香港)不可用。`;
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Google API Error');
     }
 
-    return `[除錯模式] 連線錯誤: ${errorMessage}`;
+    // 4. 將結果回傳給前端
+    return res.status(200).json(data);
+
+  } catch (error) {
+    console.error('Proxy Error:', error);
+    return res.status(500).json({ error: error.message });
   }
-};
+}

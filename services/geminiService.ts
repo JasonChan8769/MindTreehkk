@@ -1,60 +1,61 @@
-// 這是一個在 Vercel 伺服器上運行的 "中轉站"
-// 它可以繞過香港的地區限制
-export default async function handler(req, res) {
-  // 1. 允許跨域請求 (CORS)
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+import { Message } from '../types';
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+// 前端服務：負責將訊息發送給我們自己的後端 API (/api/chat)
+// 這樣可以避免直接連線 Google 導致的地區限制 (404/403)
 
-  // 2. 取得 API Key (這裡讀取的是伺服器端的環境變數)
-  // 注意：在 Vercel 設定中，你可能需要確保有一個變數叫做 "GEMINI_API_KEY" (沒有 VITE_ 前綴也可以)
-  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+const SYSTEM_PROMPTS = {
+  zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
+  你的語氣：溫暖、同理心、冷靜、具支持性。
+  你的任務：
+  1. 聆聽受災居民的情緒（恐懼、焦慮、悲傷）。
+  2. 即使對方表達憤怒，也要保持接納。
+  3. 如果對方提及自殺或自殘，請溫柔地建議他們尋求專業協助或致電 999。
+  4. 使用廣東話口語與用戶溝通。
+  5. 不要提供醫療建議。
+  6. 簡短回應，鼓勵對方多說。`,
+  en: `You are "AI Tree Hole", an AI listener specifically for residents affected by the Tai Po Wang Fuk Court fire.
+  Tone: Warm, empathetic, calm, supportive.
+  Tasks:
+  1. Listen to the emotions of affected residents (fear, anxiety, sadness).
+  2. Remain accepting even if they express anger.
+  3. If self-harm is mentioned, gently suggest professional help or calling 999.
+  4. Do not provide medical advice.
+  5. Keep responses concise to encourage sharing.`
+};
 
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Server Config Error: API Key missing' });
-  }
-
+export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   try {
-    const { history, systemInstruction } = req.body;
+    const systemInstruction = SYSTEM_PROMPTS[lang];
+    
+    // 轉換歷史訊息格式
+    const recentHistory = history.slice(-10).map(msg => ({
+      role: msg.isUser ? "user" : "model",
+      parts: [{ text: msg.text }]
+    }));
 
-    // 3. 由 Vercel (美國 IP) 向 Google 發送請求
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: history,
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          generationConfig: {
-            temperature: 0.7,
-          }
-        }),
-      }
-    );
+    // 呼叫後端 API (/api/chat)
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        history: recentHistory,
+        systemInstruction: systemInstruction
+      })
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error?.message || 'Google API Error');
+      throw new Error(data.error || `Server Error: ${response.status}`);
     }
 
-    // 4. 將結果回傳給前端
-    return res.status(200).json(data);
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text || (lang === 'zh' ? "抱歉，我暫時連線唔到，請稍後再試。" : "Connection error.");
 
-  } catch (error) {
-    console.error('Proxy Error:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (error: any) {
+    console.error("Proxy API Error:", error);
+    return `[系統訊息] 連線錯誤: ${error.message}`;
   }
-}
+};

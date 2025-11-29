@@ -5,7 +5,7 @@ import {
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, Info, UserCheck, XCircle, LogOut,
   Moon, Sun, HelpCircle, ChevronRight, MessageSquarePlus, Link, ExternalLink, Share2,
   Wind, Home, Play, Pause, Volume2, VolumeX, Sparkles, MessageSquare, HandHeart, Smartphone,
-  Mail, ThumbsUp, Music, Leaf, Cloud
+  Mail, ThumbsUp, Music, Leaf, Cloud, SunDim, Feather
 } from 'lucide-react';
 
 // --- 1. TYPES & INTERFACES ---
@@ -36,6 +36,17 @@ export interface VolunteerProfile {
   name: string;
   role: string;
   isVerified: boolean;
+}
+
+export interface Memo {
+  id: number | string;
+  text: string;
+  style: {
+    left: string;
+    animationDuration: string;
+    animationDelay: string;
+    scale: number;
+  };
 }
 
 // --- 2. CONSTANTS & CONTENT ---
@@ -118,7 +129,8 @@ const CONTENT = {
       headerPeer: "同行者義工",
       report: "舉報",
       caseResolved: "對話已結束。希望你有好過一點。",
-      placeholder: "輸入訊息..."
+      placeholder: "輸入訊息...",
+      chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -203,6 +215,9 @@ const CONTENT = {
       musicOff: "靜音",
       playErr: "點擊播放音樂"
     },
+    footer: {
+      legal: "免責聲明：本平台由志願者運營，僅提供同儕情緒支援，並非專業醫療機構或緊急救援服務。本平台不對任何因使用本服務而產生的後果負責。如遇生命危險或緊急情況，請立即致電 999 報警或前往最近急症室。使用者需自行承擔使用本服務之風險。"
+    },
     actions: {
       back: "返回",
       cancel: "取消",
@@ -255,7 +270,8 @@ const CONTENT = {
       headerPeer: "Peer Volunteer",
       report: "Report",
       caseResolved: "Session ended. Take care.",
-      placeholder: "Type message..."
+      placeholder: "Type message...",
+      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     },
     memo: {
       cheerUp: "Community Board",
@@ -338,7 +354,10 @@ const CONTENT = {
       relax: "Relax Your Mind",
       musicOn: "Music On",
       musicOff: "Muted",
-      playErr: "Tap to Play Music"
+      playErr: "Tap to Play"
+    },
+    footer: {
+      legal: "Disclaimer: This platform is volunteer-run and provides peer emotional support only. It is NOT a substitute for professional medical advice or emergency services. We are not liable for any consequences arising from the use of this service. In case of emergency, dial 999 immediately. Use at your own risk."
     },
     actions: {
       back: "Back",
@@ -355,7 +374,6 @@ const CONTENT = {
 
 // --- 3. SERVICES (Internal Implementation) ---
 
-// Synchronous Safety Check
 const checkContentSafety = (text: string) => {
   const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit"];
   const lower = text.toLowerCase();
@@ -366,7 +384,6 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-// Async AI Scanner for Memo (Simulated)
 const scanContentWithAI = async (text: string): Promise<boolean> => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -398,7 +415,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
       parts: [{ text: msg.text }]
     }));
 
-    // Using Backend API
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -435,7 +451,7 @@ interface AppContextType {
   getMessages: (ticketId: string) => Message[];
   volunteerProfile: VolunteerProfile;
   setVolunteerProfile: (profile: VolunteerProfile) => void;
-  publicMemos: { id: number, text: string, style: any }[];
+  publicMemos: Memo[];
   addPublicMemo: (text: string) => void;
 }
 
@@ -445,7 +461,8 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
-  const [publicMemos, setPublicMemos] = useState<{ id: number, text: string, style: any }[]>([]);
+  // Initialize with empty array, will be populated by landing screen init logic or user input
+  const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
 
   const createTicket = (name: string, issue: string, priority: Priority, tags: string[]) => {
     const newTicket: Ticket = {
@@ -474,8 +491,19 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const getMessages = (ticketId: string) => messages[ticketId] || [];
 
+  // [UPDATED] Truly add memo to state so it appears on home screen
   const addPublicMemo = (text: string) => {
-    console.log("Public Memo Added to DB:", text);
+    const newMemo: Memo = {
+      id: Date.now(),
+      text: text,
+      style: {
+        left: `${Math.random() * 80 + 10}%`, // Keep reasonably central
+        animationDuration: `${25 + Math.random() * 15}s`,
+        animationDelay: '0s',
+        scale: 0.9 + Math.random() * 0.3
+      }
+    };
+    setPublicMemos(prev => [newMemo, ...prev]);
   };
 
   return (
@@ -513,7 +541,7 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
 
 const TypingIndicator = () => (
   <div className="flex items-start gap-2 mb-4 animate-fade-in">
-    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white/50 dark:bg-white/10 text-teal-600 dark:text-teal-400">
+    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white/50 dark:bg-white/10 text-teal-600 dark:text-teal-400 border border-white/20">
       <Bot size={16} />
     </div>
     <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white/60 dark:bg-white/5 shadow-sm flex items-center gap-1 backdrop-blur-sm">
@@ -586,10 +614,17 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   useEffect(() => {
     let timeLeft = totalDuration;
     
-    // Attempt play on mount
+    // Attempt play on mount - with error handling for browser policies
     if(audioRef.current) {
-        audioRef.current.volume = 0.5;
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        audioRef.current.volume = 0.4;
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => setIsPlaying(true))
+            .catch(error => {
+                console.log("Autoplay blocked, user interaction needed");
+                setIsPlaying(false);
+            });
+        }
     }
 
     const cycle = async () => {
@@ -629,16 +664,16 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound */}
+      {/* Relaxing Nature Sound - Rain and Birds */}
       <audio ref={audioRef} loop>
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-forest-stream-with-birds-1249.mp3" type="audio/mpeg" />
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1253.mp3" type="audio/mpeg" />
       </audio>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
         <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"><X size={24} /></button>
         
         <div className="absolute top-8 left-8 flex gap-4">
-           <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse' : 'bg-white/5 text-white/70'}`}>
+           <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse ring-1 ring-emerald-500/50' : 'bg-white/5 text-white/70'}`}>
               {isPlaying ? <Volume2 size={16} /> : <Music size={16} />}
               <span>{isPlaying ? t.musicOn : t.playErr}</span>
            </button>
@@ -774,28 +809,42 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
 
 const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onShowIntro }: { onSelectRole: (role: string) => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void, onShowIntro: () => void }) => {
   const t = CONTENT[lang];
-  const { addPublicMemo } = useAppContext();
+  const { addPublicMemo, publicMemos } = useAppContext();
   const [showMemoInput, setShowMemoInput] = useState(false);
   const [showResources, setShowResources] = useState(false);
   const [showBreath, setShowBreath] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [memoText, setMemoText] = useState("");
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
-  const [floatingBubbles, setFloatingBubbles] = useState<{id: number, text: string, style: any}[]>([]);
+  const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
 
+  // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
-    const selectedQuotes = shuffledQuotes.slice(0, 15);
-    const bubbles = selectedQuotes.map((quote, index) => {
+    const selectedQuotes = shuffledQuotes.slice(0, 12);
+    const initialBubbles = selectedQuotes.map((quote, index) => {
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
         return {
-            id: index, text: textWithSymbol,
-            style: { left: `${Math.random() * 90}%`, animationDuration: `${30 + Math.random() * 20}s`, animationDelay: `${Math.random() * 10}s`, scale: 0.8 + Math.random() * 0.3 }
+            id: `init-${index}`, 
+            text: textWithSymbol,
+            style: { 
+                left: `${Math.random() * 80 + 10}%`, 
+                animationDuration: `${25 + Math.random() * 20}s`, 
+                animationDelay: `${Math.random() * 10}s`, 
+                scale: 0.8 + Math.random() * 0.3 
+            }
         };
     });
-    setFloatingBubbles(bubbles);
+    setFloatingBubbles(initialBubbles);
   }, []);
+
+  // Update when new memo is added
+  useEffect(() => {
+    if (publicMemos.length > 0) {
+        setFloatingBubbles(prev => [...publicMemos, ...prev]);
+    }
+  }, [publicMemos]);
 
   const handlePostMemo = async () => {
     if (!memoText.trim()) return;
@@ -825,12 +874,17 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
       
-      {/* Floating Elements */}
+      {/* Decorative Background Elements (Forest Theme) */}
+      <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
+      <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
+      <div className="absolute top-[20%] right-[10%] text-yellow-100/40 dark:text-yellow-900/10 pointer-events-none opacity-60"><SunDim size={150} /></div>
+
+      {/* Floating Elements (Memos) */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {floatingBubbles.map((memo) => (
-            <div key={memo.id} className="absolute text-center animate-float select-none will-change-transform opacity-60" style={{ left: memo.style.left, animationDuration: memo.style.animationDuration, animationDelay: memo.style.animationDelay, bottom: -50 }}>
-                <span className="inline-block bg-white/40 dark:bg-white/5 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 shadow-sm" style={{ transform: `scale(${memo.style.scale})` }}>{memo.text}</span>
+            <div key={memo.id} className="absolute text-center animate-float select-none will-change-transform opacity-70" style={{ left: memo.style.left, animationDuration: memo.style.animationDuration, animationDelay: memo.style.animationDelay, bottom: -80 }}>
+                <span className="inline-block bg-white/60 dark:bg-white/10 backdrop-blur-sm rounded-full px-5 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm border border-white/20" style={{ transform: `scale(${memo.style.scale})` }}>{memo.text}</span>
             </div>
             ))}
         </div>
@@ -909,6 +963,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                <button onClick={() => setShowResources(true)} className="flex-1 py-4 rounded-3xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-emerald-600 dark:text-emerald-400 font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
                   <Link size={20} /> {t.links.btn}
                </button>
+            </div>
+
+            <div className="mt-12 mb-6 p-4 rounded-2xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm border border-white/20 dark:border-white/5 text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+               {t.footer.legal}
             </div>
         </div>
       </div>
@@ -1317,6 +1375,10 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
             <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors">{isVolunteer ? t.actions.leaveChat : t.actions.endChat}</button>
         </div>
       </header>
+      <div className="mb-6 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl text-xs text-amber-800 dark:text-amber-200 flex gap-3 items-start animate-fade-in mt-4">
+         <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+         <span>{t.humanRole.chatReminder}</span>
+      </div>
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
             {isVolunteer && ticket.priority === 'critical' && (<div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/50 text-rose-600 p-4 rounded-2xl text-sm mb-8 flex items-start gap-3"><AlertTriangle size={20} className="shrink-0 mt-0.5" /><div><span className="font-bold block mb-1">CRITICAL CASE</span>High distress level reported. Please handle with care.</div></div>)}

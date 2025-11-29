@@ -66,22 +66,20 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
-// Expanded Useful Links (Real HK Resources)
+// Expanded Useful Links (Tai Po Specific)
 const USEFUL_LINKS = [
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "support" },
-  { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "support" },
-  { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "support" },
-  { id: 5, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "app" },
-  { id: 8, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "support" },
-  { id: 9, title: { zh: "那打素醫院慈善基金 (大埔醫療捐款)", en: "Nethersole Charity Foundation (Donation)" }, url: "https://www.nethersole.org.hk/r/donate/index", category: "donation" },
-  { id: 10, title: { zh: "救世軍大埔長者社區服務 (義工)", en: "Salvation Army Tai Po (Volunteer)" }, url: "https://www.salvationarmy.org.hk/en/services/elderly_services", category: "volunteer" },
-  { id: 11, title: { zh: "大埔區地區康健站 (地區支援)", en: "Tai Po DHC Express (Support)" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "support" },
+  { id: 2, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "support" },
+  { id: 3, title: { zh: "雅麗氏何妙齡那打素慈善基金 (捐款)", en: "Nethersole Charity Foundation (Donation)" }, url: "https://www.nethersole.org.hk/r/donate/index", category: "donation" },
+  { id: 4, title: { zh: "救世軍大埔長者社區服務 (義工)", en: "Salvation Army Tai Po (Volunteer)" }, url: "https://www.salvationarmy.org.hk/en/services/elderly_services", category: "volunteer" },
+  { id: 5, title: { zh: "香港紅十字會 (心理支援)", en: "HK Red Cross (Support)" }, url: "https://www.redcross.org.hk/en/services/psychological_support_service.html", category: "support" },
+  { id: 6, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "app" },
 ];
 
 const CONTENT = {
   zh: {
     appTitle: "MindTree 心聆樹洞",
-    appSubtitle: "全港市民心理支援 • 你的心靈避風港",
+    appSubtitle: "你的心靈避風港 • 全港支援",
     nav: { home: "首頁", chat: "AI 樹洞", human: "真人支援", resources: "資源" },
     intro: {
       welcome: "歡迎來到 MindTree",
@@ -99,7 +97,7 @@ const CONTENT = {
       startBreath: "開始練習",
       aiCard: { title: "AI 樹洞", desc: "24/7 智能聆聽 • 即時回應" },
       humanCard: { title: "真人輔導", desc: "義工與社工 • 溫暖同行" },
-      volunteerCard: { title: "加入義工團隊", desc: "與我們一起守護大眾心靈" },
+      volunteerCard: { title: "加入義工團隊", desc: "成為大埔社區的守護者" },
       feedback: "提供意見"
     },
     landingNotice: {
@@ -126,12 +124,12 @@ const CONTENT = {
       cheerUp: "社區心聲",
       label: "留低一句",
       title: "留低一句說話",
-      desc: "你的訊息將會即時顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。",
+      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。",
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
       scanning: "AI 正在審查內容...",
-      unsafe: "未能發佈：內容可能包含不當用語。"
+      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。"
     },
     volunteer: {
       login: "義工登入",
@@ -184,7 +182,7 @@ const CONTENT = {
     links: {
       btn: "資源",
       title: "社區資源",
-      desc: "專業機構聯絡方式、大埔區醫院捐款及地區義工招募。",
+      desc: "專業機構聯絡方式、醫院捐款及義工招募。",
       close: "關閉"
     },
     feedback: {
@@ -233,7 +231,7 @@ const CONTENT = {
       startBreath: "Start",
       aiCard: { title: "AI Listener", desc: "Smart & Private • 24/7" },
       humanCard: { title: "Human Support", desc: "Volunteers • Empathy" },
-      volunteerCard: { title: "Join Our Team", desc: "Become a Mental Guardian" },
+      volunteerCard: { title: "Join Volunteer Team", desc: "Support the Tai Po Community" },
       feedback: "Feedback"
     },
     landingNotice: {
@@ -260,7 +258,7 @@ const CONTENT = {
       cheerUp: "Community Board",
       label: "Post a Note",
       title: "Leave a Note",
-      desc: "Your message will float on the home page immediately. Please share positivity.",
+      desc: "Your message will float on the home page IMMEDIATELY. Please share positivity.",
       placeholder: "Share your positivity...",
       btn: "Post",
       success: "Posted! Floating now.",
@@ -318,7 +316,7 @@ const CONTENT = {
     links: {
       btn: "Resources",
       title: "Resources",
-      desc: "Professional Help, Tai Po Hospital Donations & Volunteering",
+      desc: "Help, Donation & Volunteering",
       close: "Close"
     },
     feedback: {
@@ -356,7 +354,7 @@ const scanContentWithAI = async (text: string): Promise<boolean> => {
   return new Promise((resolve) => {
     setTimeout(() => {
       // Basic blacklist filter for demo. Real implementation would call Gemini API.
-      const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fucking", "shit"];
+      const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fucking", "shit", "fuck", "bitch"];
       const hasBadWord = badWords.some(word => text.toLowerCase().includes(word));
       resolve(!hasBadWord); // Returns true if safe
     }, 1500); // Simulate API delay
@@ -483,7 +481,11 @@ const useAppContext = () => {
 
 // --- 5. COMPONENTS ---
 
-const stripAITag = (text: string) => text.replace(/\s*\(AI\)/g, '');
+// Safe utility to remove AI tag, handles non-string inputs gracefully
+const stripAITag = (text: string | undefined) => {
+  if (typeof text !== 'string') return "";
+  return text.replace(/\s*\(AI\)/g, '');
+};
 
 const Notification = ({ message, type, onClose }: { message: string, type: 'error' | 'info' | 'loading', onClose: () => void }) => {
   if (!message) return null;
@@ -512,7 +514,7 @@ const TypingIndicator = () => (
 );
 
 const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) => {
-  const isAI = sender.includes('(AI)') || sender.includes('AI') || sender.includes('Tree') || sender.includes('樹');
+  const isAI = sender?.includes('(AI)') || sender?.includes('AI') || sender?.includes('Tree') || sender?.includes('樹') || false;
   const isSystem = sender === 'System';
   const timeString = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -941,6 +943,388 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
 
 // (AIChat, IntakeForm, VolunteerAuth, VolunteerGuidelines, VolunteerDashboard, HumanChat, MainLayout, AppProvider, App)
 // ... [These components are identical to previous version, just re-listing to ensure complete file] ...
+
+const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const [messages, setMessages] = useState<Message[]>([{ id: 1, text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
+  
+  const handleSend = async (text = inputText) => {
+    if (!text.trim()) return;
+    const check = checkContentSafety(text);
+    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
+    
+    const userMsg: Message = { id: Date.now(), text: text, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText("");
+    setIsTyping(true);
+    
+    try {
+      const aiText = await generateAIResponse([...messages, userMsg], lang);
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { id: Date.now() + 1, text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
+    } finally { setIsTyping(false); }
+  };
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
+            <div className="flex flex-col">
+                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
+                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
+            </div>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto w-full pb-4">
+            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+        </div>
+      </div>
+      
+      {/* Suggested Prompts */}
+      {messages.length < 3 && !isTyping && (
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
+          {SUGGESTED_PROMPTS[lang].map(prompt => (
+            <button key={prompt} onClick={() => handleSend(prompt)} className="whitespace-nowrap px-4 py-2 rounded-full bg-white dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 transition-colors shadow-sm">
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-slate-900 p-4 border-t border-slate-200 dark:border-slate-800 sticky bottom-0 z-20 pb-8">
+        <div className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border border-transparent focus-within:border-indigo-500 focus-within:bg-white dark:focus-within:bg-slate-900 transition-all shadow-inner">
+          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={t.aiRole.placeholder} autoFocus />
+          <button onClick={() => handleSend()} disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (name: string, issue: string, priority: Priority, tags: string[], safetySafe: boolean) => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const [userName, setUserName] = useState("");
+  const [ageRange, setAgeRange] = useState("");
+  const [gender, setGender] = useState("");
+  const [distress, setDistress] = useState(3);
+  const [category, setCategory] = useState("");
+  const [remarks, setRemarks] = useState("");
+
+  const handleSubmit = () => {
+    let priority: Priority = 'low';
+    if (category === t.intake.q4_opt4) priority = 'critical';
+    else if (distress >= 5) priority = 'high';
+    else if (distress >= 3) priority = 'medium';
+
+    const tags = [];
+    if (distress >= 4) tags.push("High Distress");
+    if (category) tags.push(category);
+
+    const issueSummary = `${category} (Lv:${distress}) ${remarks ? `- ${remarks}` : ''}`;
+    const displayName = `${userName || "Anonymous"} (${gender === "Male" || gender === "男" ? "M" : "F"}, ${ageRange})`;
+
+    onComplete(displayName, issueSummary, priority, tags, true);
+  };
+
+  return (
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-300">
+      <header className="bg-white dark:bg-slate-900 p-6 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20">
+        <div className="max-w-2xl mx-auto w-full flex items-center gap-4">
+            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
+            <div><h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.intake.title}</h2><p className="text-xs text-slate-500">{t.intake.desc}</p></div>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+        <div className="max-w-xl mx-auto space-y-8 pb-12">
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 ml-1">{t.intake.q1}</label>
+                <input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder={t.intake.q1_placeholder} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 focus:outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-white" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 ml-1">{t.intake.q_age}</label>
+                    <div className="relative"><select value={ageRange} onChange={(e) => setAgeRange(e.target.value)} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 appearance-none focus:border-indigo-500 outline-none"><option value="" disabled>-</option>{t.intake.q_age_opts.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select><ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} /></div>
+                </div>
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 ml-1">{t.intake.q_gender}</label>
+                    <div className="relative"><select value={gender} onChange={(e) => setGender(e.target.value)} className="w-full bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl px-5 py-4 appearance-none focus:border-indigo-500 outline-none"><option value="" disabled>-</option>{t.intake.q_gender_opts.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select><ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} /></div>
+                </div>
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-4 ml-1">{t.intake.q3}</label>
+                <input type="range" min="1" max="5" step="1" value={distress} onChange={(e) => setDistress(parseInt(e.target.value))} className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest"><span>Calm</span><span>Crisis</span></div>
+            </div>
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 ml-1">{t.intake.q4}</label>
+                <div className="grid grid-cols-1 gap-3">
+                    {[t.intake.q4_opt1, t.intake.q4_opt2, t.intake.q4_opt3, t.intake.q4_opt4].map(opt => (
+                    <button key={opt} onClick={() => setCategory(opt)} className={`py-4 px-6 rounded-2xl text-left text-sm font-bold border-2 transition-all ${category === opt ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-400'}`}>{opt}</button>
+                    ))}
+                </div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">{t.intake.q5}</label>
+                <textarea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder={t.intake.q5_placeholder} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-sm focus:outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-white dark:placeholder-slate-600 resize-none" />
+            </div>
+            <button onClick={handleSubmit} disabled={!category || !userName.trim() || !ageRange || !gender} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-800 disabled:cursor-not-allowed text-white font-bold py-5 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-2 transform active:scale-[0.98] text-lg tracking-wide">
+                {t.intake.submit} <ArrowRight size={20} />
+            </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, onLoginSuccess: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const [nameInput, setNameInput] = useState("");
+  const [code, setCode] = useState("");
+  const [showPro, setShowPro] = useState(false);
+  const { setVolunteerProfile } = useAppContext();
+
+  const handleQuickJoin = () => {
+    if (!nameInput.trim()) return;
+    setVolunteerProfile({ name: nameInput, role: "Peer Listener", isVerified: false });
+    onLoginSuccess();
+  };
+
+  const handleProLogin = () => {
+    if (code === "HELP2025" || code === "ADMIN") {
+      setVolunteerProfile({ name: nameInput || "Staff", role: "Social Worker", isVerified: true });
+      onLoginSuccess();
+    } else {
+      alert(t.volunteer.errorMsg);
+    }
+  };
+
+  return (
+    <div className="h-[100dvh] w-full bg-indigo-900 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden transition-colors duration-300">
+      <div className="absolute top-0 right-0 w-[50rem] h-[50rem] bg-indigo-800 rounded-full blur-3xl opacity-50 translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-0 left-0 w-[50rem] h-[50rem] bg-teal-800 rounded-full blur-3xl opacity-50 -translate-x-1/2 translate-y-1/2"></div>
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-10 shadow-2xl flex flex-col relative z-10 animate-fade-in border border-white/10">
+        <button onClick={onBack} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"><X size={24}/></button>
+        <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 mx-auto"><Lock size={32} /></div>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">{t.volunteer.authTitle}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 leading-relaxed">{t.volunteer.disclaimer}</p>
+        <div className="text-left mb-6">
+          <label className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 block uppercase tracking-wide ml-1">{t.volunteer.nameLabel}</label>
+          <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={t.volunteer.namePlaceholder} className="w-full border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3.5 text-base focus:border-indigo-500 focus:outline-none transition-colors bg-white text-slate-900 placeholder:text-slate-400 dark:bg-slate-800 dark:text-white" />
+        </div>
+        <button onClick={handleQuickJoin} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl text-sm shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 mb-8 flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 active:scale-[0.98]">
+          <UserCheck size={20} /> {t.volunteer.joinBtn}
+        </button>
+        <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
+          <button onClick={() => setShowPro(!showPro)} className="text-xs text-slate-400 dark:text-slate-500 font-bold flex items-center justify-center gap-1 w-full hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase tracking-widest">{t.volunteer.proJoinTitle} {showPro ? '▲' : '▼'}</button>
+          {showPro && (
+            <div className="mt-4 bg-slate-50 dark:bg-slate-800 p-5 rounded-xl animate-fade-in border border-slate-100 dark:border-slate-700">
+              <input type="text" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder={t.volunteer.codePlaceholder} className="w-full border border-slate-200 dark:border-slate-600 dark:bg-slate-700 rounded-lg px-3 py-2.5 text-sm mb-3 text-center uppercase tracking-widest text-slate-900 dark:text-white" />
+              <button onClick={handleProLogin} className="w-full bg-slate-800 dark:bg-slate-900 text-white font-bold py-2.5 rounded-lg text-sm hover:bg-slate-900 dark:hover:bg-black transition-colors">{t.volunteer.verifyBtn}</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  return (
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-300">
+      <header className="bg-indigo-900 dark:bg-slate-900 text-white p-8 shadow-lg relative">
+        <div className="max-w-4xl mx-auto flex items-center justify-center relative">
+            <button onClick={onBack} className="absolute left-0 top-1/2 -translate-y-1/2 text-white/70 hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors"><ArrowLeft size={24} /></button>
+            <div className="flex flex-col items-center">
+                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10"><BookOpen size={32} /></div>
+                <h2 className="text-2xl font-bold text-center">{t.volunteer.guidelinesTitle}</h2>
+            </div>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="max-w-3xl mx-auto w-full space-y-6">
+            <p className="text-slate-600 dark:text-slate-300 text-base text-center mb-6 font-medium bg-white dark:bg-slate-900 py-3 px-6 rounded-full w-fit mx-auto shadow-sm">{t.volunteer.guidelinesDesc}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-indigo-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-lg text-indigo-900 dark:text-indigo-300 mb-3 flex items-center gap-2"><MessageCircle size={20} className="text-indigo-500" /> {t.volunteer.rule1Title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule1Desc}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-amber-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-lg text-amber-900 dark:text-amber-300 mb-3 flex items-center gap-2"><Coffee size={20} className="text-amber-500" /> {t.volunteer.rule2Title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule2Desc}</p>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border-t-4 border-red-500 shadow-sm animate-fade-in hover:shadow-md transition-shadow">
+                    <h3 className="font-bold text-lg text-red-900 dark:text-red-300 mb-3 flex items-center gap-2"><AlertTriangle size={20} className="text-red-500" /> {t.volunteer.rule3Title}</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{t.volunteer.rule3Desc}</p>
+                </div>
+            </div>
+        </div>
+      </div>
+      <div className="p-8 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 sticky bottom-0 z-20">
+        <div className="max-w-md mx-auto">
+          <button onClick={onConfirm} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-[0.98] flex items-center justify-center gap-2 text-lg">{t.volunteer.acknowledgeBtn} <ArrowRight size={20} /></button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (ticket: Ticket) => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const { tickets, volunteerProfile } = useAppContext();
+  const priorityOrder = { 'critical': 0, 'high': 1, 'medium': 2, 'low': 3 };
+  const activeTickets = tickets.filter(t => t.status !== 'resolved');
+  const sortedTickets = [...activeTickets].sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+  
+  const getPriorityColor = (p: Priority) => {
+    switch(p) {
+      case 'critical': return 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800 animate-pulse';
+      case 'high': return 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800';
+      case 'medium': return 'bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800';
+      default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700';
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+      <header className="bg-indigo-900 dark:bg-slate-900 text-white p-6 shadow-md z-10 sticky top-0">
+        <div className="flex justify-between items-center max-w-6xl mx-auto w-full">
+          <div>
+            <h1 className="text-2xl font-bold">{t.volunteer.portalTitle}</h1>
+            <p className="text-sm text-indigo-200 flex items-center gap-2 mt-1">{t.volunteer.welcome}, <span className="font-semibold text-white">{volunteerProfile.name}</span>{volunteerProfile.isVerified ? <BadgeCheck size={16} className="text-green-400"/> : <UserCheck size={16} className="text-blue-300"/>}</p>
+          </div>
+          <button onClick={onBack} className="text-xs bg-indigo-800 border border-indigo-700 px-4 py-2.5 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-bold uppercase tracking-wide"><LogOut size={14} /> {t.volunteer.exit}</button>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 md:p-10">
+        <div className="max-w-6xl mx-auto">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900">
+                <h3 className="font-bold text-slate-700 dark:text-slate-200 text-base flex gap-2 items-center"><Users size={20} className="text-indigo-500" /> {t.volunteer.activeRequests}</h3>
+                <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full text-xs font-bold border border-indigo-200 dark:border-indigo-800">{tickets.filter(t => t.status === 'waiting').length} Cases Waiting</span>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {sortedTickets.length === 0 ? (
+                <div className="p-20 text-center text-slate-400 dark:text-slate-600 flex flex-col items-center"><CheckCircle size={64} className="mb-6 opacity-20 text-indigo-500" /><p className="text-lg font-medium">{t.volunteer.noRequests}</p></div>
+                ) : (
+                sortedTickets.map(ticket => (
+                <div key={ticket.id} className="p-6 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 transition-colors group">
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-3">
+                        <div className="flex items-center gap-3">
+                            <span className={`px-3 py-1 rounded text-xs font-black border uppercase tracking-wider ${getPriorityColor(ticket.priority)}`}>{t.volunteer.priority[ticket.priority] || ticket.priority}</span>
+                            <div className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5 font-medium"><Clock size={14} /> {ticket.time}</div>
+                        </div>
+                        {ticket.status === 'waiting' ? (
+                            <button onClick={() => onJoinChat(ticket)} className="bg-indigo-600 text-white px-6 py-2 rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition-all transform hover:-translate-y-0.5 w-full md:w-auto">{t.volunteer.accept}</button>
+                        ) : (
+                            <span className="text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-green-100 dark:border-green-800 w-fit"><CheckCircle size={14} /> Active Session</span>
+                        )}
+                    </div>
+                    <div className="mb-3"><div className="font-bold text-slate-800 dark:text-slate-200 text-lg mb-1">{ticket.name}</div></div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 mb-4 group-hover:bg-white dark:group-hover:bg-slate-800/50 transition-colors">
+                        <span className="font-semibold text-slate-500 dark:text-slate-500 text-xs block mb-1 uppercase tracking-wide">{t.volunteer.topic}</span>
+                        {ticket.issue}
+                    </div>
+                    <div className="flex flex-wrap gap-2">{ticket.tags && ticket.tags.map((tag, i) => (<span key={i} className="text-xs bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">#{tag}</span>))}</div>
+                </div>
+                ))
+                )}
+            </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
+  const t = CONTENT[lang];
+  const { addMessage, getMessages, updateTicketStatus, volunteerProfile, tickets } = useAppContext();
+  const [inputText, setInputText] = useState("");
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messages = getMessages(ticketId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ticket = tickets.find(t => t.id === ticketId);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      const initMsg = isVolunteer ? t.humanRole.systemJoin : t.humanRole.waitingMessage;
+      addMessage(ticketId, { id: 'sys-init', text: initMsg, isUser: false, sender: "System", timestamp: Date.now() });
+    }
+  }, []);
+
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+
+  const handleSend = () => {
+    if (!inputText.trim()) return;
+    const check = checkContentSafety(inputText);
+    if (!check.safe) {
+      setNotification({ message: check.reason || "Safety Alert", type: 'error' });
+      return; 
+    }
+    addMessage(ticketId, { id: Date.now(), text: inputText, isUser: !isVolunteer, sender: isVolunteer ? volunteerProfile.name : "Me", isVerified: isVolunteer && volunteerProfile.isVerified, timestamp: Date.now() });
+    setInputText("");
+  };
+
+  const handleEndChat = () => {
+    if (window.confirm(isVolunteer ? t.dialogs.volLeaveMsg : t.dialogs.citEndMsg)) {
+        if(isVolunteer) {
+            addMessage(ticketId, { id: Date.now(), text: `${volunteerProfile.name} left.`, isUser: false, sender: "System", timestamp: Date.now() });
+            updateTicketStatus(ticketId, 'waiting');
+        } else {
+            addMessage(ticketId, { id: Date.now(), text: t.humanRole.caseResolved, isUser: false, sender: "System", timestamp: Date.now() });
+            updateTicketStatus(ticketId, 'resolved');
+        }
+        onLeave();
+    }
+  };
+
+  if (!ticket) return null;
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      <header className={`p-4 md:px-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between shadow-sm z-20 sticky top-0 ${isVolunteer ? 'bg-indigo-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-white'}`}>
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-full ${isVolunteer ? 'bg-indigo-800' : 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300'}`}>{isVolunteer ? <User size={24} /> : <Heart size={24} />}</div>
+          <div>
+            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">{isVolunteer ? ticket.name : (volunteerProfile.isVerified ? t.humanRole.headerVerified : t.humanRole.headerPeer)}{!isVolunteer && volunteerProfile.isVerified && (<BadgeCheck size={18} className="text-green-500 fill-green-100" />)}</h2>
+            <p className={`text-xs ${isVolunteer ? 'text-indigo-300' : 'text-slate-500 dark:text-slate-400'}`}>{isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}${ticket.issue.length > 40 ? '...' : ''}` : t.humanRole.systemJoin}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+            {isVolunteer && (<button onClick={() => alert("Report submitted. Admins will review.")} className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs md:text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1"><Flag size={14} /> <span className="hidden md:inline">{t.humanRole.report}</span></button>)}
+            <button onClick={handleEndChat} className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg text-xs md:text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">{isVolunteer ? t.actions.leaveChat : t.actions.endChat}</button>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div className="max-w-3xl mx-auto w-full">
+            {isVolunteer && ticket.priority === 'critical' && (<div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 p-4 rounded-xl text-sm mb-8 flex items-start gap-3 animate-fade-in shadow-sm"><AlertTriangle size={20} className="shrink-0 mt-0.5" /><div><span className="font-bold block mb-1">CRITICAL PRIORITY CASE</span>User reported unsafe conditions or high distress. Please prioritize safety check.</div></div>)}
+            {messages.map(msg => (<ChatBubble key={msg.id} {...msg} />))}
+            <div ref={messagesEndRef} />
+        </div>
+      </div>
+      <div className="p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky bottom-0 z-20">
+        <div className="max-w-3xl mx-auto flex gap-3">
+          <input className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-2xl px-5 py-4 text-base text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:placeholder-slate-500" placeholder={t.humanRole.placeholder} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} autoFocus />
+          <button onClick={handleSend} className="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-indigo-700 transition-colors shadow-sm active:scale-95"><Send size={20} /></button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // --- MAIN LAYOUT ---
 

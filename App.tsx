@@ -272,7 +272,8 @@ const CONTENT = {
       headerPeer: "Peer Volunteer",
       report: "Report",
       caseResolved: "Session ended. Take care.",
-      placeholder: "Type message..."
+      placeholder: "Type message...",
+      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     },
     memo: {
       cheerUp: "Community Board",
@@ -378,8 +379,9 @@ const CONTENT = {
 
 // --- 3. SERVICES (Internal Implementation) ---
 
+// [NEW] Local fallback check (basic)
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
   if (hasBadWord) {
@@ -388,15 +390,58 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-const scanContentWithAI = async (text: string): Promise<boolean> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const check = checkContentSafety(text);
-      resolve(check.safe);
-    }, 1500); 
-  });
+// [UPDATED] Real AI Scanner using backend
+const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
+  try {
+    // Strict Moderator Persona for Memo Scanner
+    const moderationSystemPrompt = `
+    You are a strict Content Moderator for a mental health support site 'MindTree'.
+    Task: Analyze the user's message for public display.
+    
+    Criteria for APPROVAL (SAFE):
+    - Must be positive, supportive, encouraging, warm, or empathetic.
+    - Must be relevant to healing, community support, or well-being.
+    - Must be meaningful.
+
+    Criteria for REJECTION (UNSAFE):
+    - Offensive, hateful, sexual, violent, or illegal content.
+    - Random gibberish, spam, testing (e.g. '123', 'test', 'asdf').
+    - Negative, cynical, complaining, or unrelated topics (e.g. asking about weather, selling stuff).
+
+    Output Format:
+    - If APPROVED: Return exactly "PASS".
+    - If REJECTED: Return a warm, gentle, polite reminder in Traditional Chinese (繁體中文) explaining why. Do not use technical terms. 
+      Example: "溫馨提示：為了維護這裡的溫暖氣氛，我們只接受支持或鼓勵的留言。請嘗試分享一些正能量吧！"
+    `;
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: moderationSystemPrompt
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error("API Error");
+
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (result === "PASS") {
+      return { safe: true, reason: null };
+    } else {
+      return { safe: false, reason: result || "Content did not meet community guidelines." };
+    }
+
+  } catch (e) {
+    // Fallback to local check if AI fails
+    console.error("AI Scanner Error:", e);
+    return { safe: checkContentSafety(text).safe, reason: "System error. Please try again." };
+  }
 };
 
+// Chat Bot Persona
 const SYSTEM_PROMPTS = {
   zh: `你係「MindTree 樹洞」，一個有溫度、有思想嘅數碼同伴。
 1. **講野似真人**：用自然嘅廣東話口語（例如：真係好難過、唔好咁諗、係咪...）。
@@ -419,7 +464,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
       parts: [{ text: msg.text }]
     }));
 
-    // Using Backend API
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -466,7 +510,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
-  // Initialize with empty array, will be populated by landing screen init logic or user input
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
 
   const createTicket = (name: string, issue: string, priority: Priority, tags: string[]) => {
@@ -496,13 +539,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const getMessages = (ticketId: string) => messages[ticketId] || [];
 
-  // [UPDATED] Truly add memo to state so it appears on home screen
   const addPublicMemo = (text: string) => {
     const newMemo: Memo = {
       id: Date.now(),
       text: text,
       style: {
-        left: `${Math.random() * 80 + 10}%`, // Keep reasonably central
+        left: `${Math.random() * 80 + 10}%`, 
         animationDuration: `${25 + Math.random() * 15}s`,
         animationDelay: '0s',
         scale: 0.9 + Math.random() * 0.3
@@ -671,9 +713,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound - Rain Forest */}
+      {/* Relaxing Nature Sound - Rain and Birds */}
       <audio ref={audioRef} loop onError={() => console.log("Audio load error")}>
-        <source src="https://cdn.pixabay.com/download/audio/2022/02/07/audio_1804fbf183.mp3?filename=forest-lullaby-110624.mp3" type="audio/mpeg" />
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-forest-stream-with-birds-1249.mp3" type="audio/mpeg" />
       </audio>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
@@ -874,10 +916,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     
     // AI Safety Scanner Simulation
     setNotification({ message: t.memo.scanning, type: 'loading' });
-    const isSafe = await scanContentWithAI(memoText);
+    const result = await scanContentWithAI(memoText);
     
-    if (!isSafe) {
-      setNotification({ message: t.memo.unsafe, type: 'error' });
+    if (!result.safe) {
+      setNotification({ message: result.reason || t.memo.unsafe, type: 'error' });
       return;
     }
 

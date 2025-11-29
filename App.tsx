@@ -10,9 +10,9 @@ import {
 
 // Firebase Imports
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, where, orderBy 
+  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query
 } from 'firebase/firestore';
 
 // --- FIREBASE CONFIGURATION ---
@@ -21,6 +21,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
 
 // --- 1. TYPES & INTERFACES ---
 
@@ -59,6 +60,7 @@ export interface VolunteerProfile {
 export interface Memo {
   id: string;
   text: string;
+  timestamp: number;
   style: {
     left: string;
     animationDuration: string;
@@ -179,20 +181,20 @@ const CONTENT = {
       disclaimer: "感謝你的無私奉獻。請遵守義工守則。",
       nameLabel: "稱呼",
       namePlaceholder: "例如：陳大文",
-      joinBtn: "開始義工服務",
+      joinBtn: "進入控制台",
       proJoinTitle: "專業人員通道",
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "心理支援指南",
-      guidelinesDesc: "簡單三步，成為更好的聆聽者",
-      rule1Title: "第一步：專注聆聽",
-      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
-      rule2Title: "第二步：同理回應",
-      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」或「這段時間真的很不容易」。避免說「你看開點」或「別想太多」。",
-      rule3Title: "第三步：安全評估",
-      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，並建議對方尋求專業協助 (999)。",
-      acknowledgeBtn: "我明白並同意",
+      guidelinesTitle: "服務守則",
+      guidelinesDesc: "專業 • 同理 • 保密",
+      rule1Title: "專注聆聽",
+      rule1Desc: "不急於批判或建議，給予空間。",
+      rule2Title: "自我覺察",
+      rule2Desc: "留意自身情緒，適時休息。",
+      rule3Title: "危機處理",
+      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
+      acknowledgeBtn: "我同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -260,6 +262,9 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "確定離開？個案將重回隊列。",
       citEndMsg: "確定結束對話？"
+    },
+    chatWarning: {
+      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
     }
   },
   en: {
@@ -327,19 +332,19 @@ const CONTENT = {
       disclaimer: "Thank you for your service.",
       nameLabel: "Name",
       namePlaceholder: "e.g., Alex",
-      joinBtn: "Start Volunteering",
+      joinBtn: "Enter Dashboard",
       proJoinTitle: "Professional Login",
       codePlaceholder: "Access Code",
       verifyBtn: "Verify",
       errorMsg: "Invalid Code",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Steps to be a good listener",
-      rule1Title: "Step 1: Active Listening",
-      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
-      rule2Title: "Step 2: Empathetic Response",
-      rule2Desc: "Validate feelings. Say 'It sounds like you are hurting' instead of 'Don't think too much'.",
-      rule3Title: "Step 3: Safety Assessment",
-      rule3Desc: "Stay alert. If self-harm is mentioned, stay calm and urge them to seek professional help (999).",
+      guidelinesTitle: "Guidelines",
+      guidelinesDesc: "Professional • Empathetic • Safe",
+      rule1Title: "Active Listening",
+      rule1Desc: "Listen more, advise less.",
+      rule2Title: "Self Awareness",
+      rule2Desc: "Monitor your own well-being.",
+      rule3Title: "Emergency",
+      rule3Desc: "Report self-harm risks immediately.",
       acknowledgeBtn: "I Agree",
       portalTitle: "Console",
       welcome: "Welcome",
@@ -384,7 +389,7 @@ const CONTENT = {
       title: "Feedback",
       desc: "Your feedback is important to us.",
       placeholder: "How can we improve?",
-      submit: "Send via Email",
+      submit: "Send",
       thanks: "Thank you! Sent to database."
     },
     breath: {
@@ -408,13 +413,16 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "Return case to queue?",
       citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     }
   }
 };
 
-// --- 3. SERVICES ---
+// --- 3. SERVICES (Internal Implementation) ---
 
-// [AI SCANNER]
+// [NEW] Local fallback check (basic)
 const checkContentSafety = (text: string) => {
   const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch"];
   const lower = text.toLowerCase();
@@ -425,15 +433,28 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
+// [UPDATED] Real AI Scanner using backend
 const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    const contentReviewSystemPrompt = `
-    You are a Content Safety Moderator for 'MindTree'.
-    Analyze the input text.
-    RULES:
-    1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, asking for money, sharing phone numbers/IDs, random gibberish (e.g. "asdf").
-    2. ALLOW (Safe): Expressions of sadness, depression, anxiety, "I want to die" (distress), general conversation.
-    OUTPUT: Return only "PASS" if safe. Return a short reason in Traditional Chinese if unsafe.
+    // Strict Moderator Persona for Memo Scanner
+    const moderationSystemPrompt = `
+    You are a strict Content Moderator for a mental health support site 'MindTree'.
+    Task: Analyze the user's message for public display.
+    
+    Criteria for APPROVAL (SAFE):
+    - Must be positive, supportive, encouraging, warm, or empathetic.
+    - Must be relevant to healing, community support, or well-being.
+    - Must be meaningful.
+
+    Criteria for REJECTION (UNSAFE):
+    - Offensive, hateful, sexual, violent, or illegal content.
+    - Random gibberish, spam, testing (e.g. '123', 'test', 'asdf').
+    - Negative, cynical, complaining, or unrelated topics (e.g. asking about weather, selling stuff).
+
+    Output Format:
+    - If APPROVED: Return exactly "PASS".
+    - If REJECTED: Return a warm, gentle, polite reminder in Traditional Chinese (繁體中文) explaining why. Do not use technical terms. 
+      Example: "溫馨提示：為了維護這裡的溫暖氣氛，我們只接受支持或鼓勵的留言。請嘗試分享一些正能量吧！"
     `;
 
     const response = await fetch('/api/chat', {
@@ -441,7 +462,7 @@ const scanContentWithAI = async (text: string, strictMode: boolean = true): Prom
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         history: [{ role: "user", parts: [{ text: text }] }],
-        systemInstruction: contentReviewSystemPrompt
+        systemInstruction: moderationSystemPrompt
       })
     });
 
@@ -519,42 +540,50 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 1. Auth & Data Sync
   useEffect(() => {
     const initAuth = async () => {
-        await signInAnonymously(auth);
+        if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
+            await signInWithCustomToken(auth, initialAuthToken);
+        } else {
+            await signInAnonymously(auth);
+        }
     };
     initAuth();
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => setUser(u));
     return () => unsubscribeAuth();
   }, []);
 
-  // 2. Sync Tickets
+  // 2. Sync Tickets (Sorted in JS, not query, to comply with env rules)
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), orderBy('createdAt', 'desc'));
+    // Rule: No complex queries (orderBy)
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
+        loadedTickets.sort((a, b) => b.createdAt - a.createdAt); // Sort client-side
         setTickets(loadedTickets);
     });
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Sync Messages (simplified for demo: get all messages)
+  // 3. Sync Messages (Sorted in JS)
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), orderBy('timestamp', 'asc'));
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+        loadedMessages.sort((a, b) => a.timestamp - b.timestamp); // Sort client-side
         setMessages(loadedMessages);
     });
     return () => unsubscribe();
   }, [user]);
 
-  // 4. Sync Memos
+  // 4. Sync Memos (Sorted in JS)
   useEffect(() => {
     if (!user) return;
-    const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), orderBy('timestamp', 'desc'));
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
-        // Only keep recent 15 to avoid clutter
+        // Sort and limit client-side
+        loadedMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         setPublicMemos(loadedMemos.slice(0, 15)); 
     });
     return () => unsubscribe();
@@ -695,6 +724,8 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
+// --- PRO BREATHING EXERCISE ---
+
 const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].breath;
   const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
@@ -707,9 +738,12 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   
   useEffect(() => {
     let timeLeft = totalDuration;
+    
+    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.8;
+        audioRef.current.volume = 0.8; // Increased volume
     }
+
     const cycle = async () => {
       if (timeLeft <= 0) return;
       setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
@@ -736,7 +770,10 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e));
+         // Explicitly triggered by user interaction - browsers like this
+         audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Play failed:", e));
       }
     }
   };
@@ -750,6 +787,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -757,12 +795,14 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
         <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"><X size={24} /></button>
+        
         <div className="absolute top-8 left-8 flex gap-4">
            <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse ring-1 ring-emerald-500/50' : 'bg-white/5 text-white/70'}`}>
               {isPlaying ? <Volume2 size={16} /> : <Music size={16} />}
               <span>{isPlaying ? t.musicOn : t.playErr}</span>
            </button>
         </div>
+
         <div className="relative flex items-center justify-center">
            <svg className="absolute w-[340px] h-[340px] rotate-[-90deg] pointer-events-none">
               <circle cx="170" cy="170" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.1" />

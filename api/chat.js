@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // 1. 設定 CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -12,6 +13,7 @@ export default async function handler(req, res) {
     return;
   }
 
+  // 2. 取得 API Key
   const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -21,20 +23,22 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【關鍵修正】這裡加入了所有可能的 Flash 模型名稱
-    // 你的 Key 應該能用其中一個
+    // 【關鍵修正】把所有可能的模型都加進去，並把 2.5 放在最前面
     const modelsToTry = [
-      'gemini-1.5-flash',          // 目前最穩定
-      'gemini-1.5-flash-latest',   
-      'gemini-2.0-flash-exp',      // 實驗版
-      'gemini-1.5-pro',            
+      'gemini-2.5-flash',          // 優先嘗試 (針對你的新 Key)
+      'gemini-2.0-flash-exp',      // 備用
+      'gemini-1.5-flash',          // 備用 (最常用)
+      'gemini-1.5-flash-latest',   // 備用
+      'gemini-1.5-pro',            // 備用
     ];
 
     let lastError = null;
 
+    // 3. 自動迴圈嘗試
     for (const model of modelsToTry) {
       try {
         console.log(`Trying model: ${model}...`);
+        
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
@@ -51,9 +55,14 @@ export default async function handler(req, res) {
         const data = await response.json();
 
         if (response.ok) {
+          console.log(`✅ Success using: ${model}`);
           return res.status(200).json(data);
         }
+
+        // 記錄錯誤並繼續嘗試下一個
+        console.warn(`Model ${model} failed:`, data.error?.message);
         lastError = data.error?.message;
+
       } catch (err) {
         lastError = err.message;
       }
@@ -62,6 +71,7 @@ export default async function handler(req, res) {
     throw new Error(`All models failed. Last error: ${lastError}`);
 
   } catch (error) {
+    console.error('Proxy Final Error:', error);
     return res.status(500).json({ error: error.message });
   }
 }

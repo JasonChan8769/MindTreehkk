@@ -1,7 +1,11 @@
+import { GoogleGenAI } from "@google/genai";
 import { Message } from '../types';
 
-// 前端服務：負責將訊息發送給我們自己的後端 API (/api/chat)
-// 這樣可以避免直接連線 Google 導致的地區限制 (404/403)
+// 1. 從環境變數讀取 API Key
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// 2. 初始化 AI
+const ai = new GoogleGenAI({ apiKey: apiKey || "MISSING_KEY" });
 
 const SYSTEM_PROMPTS = {
   zh: `你是「AI 樹洞」，一個專為香港大埔宏福苑火災受影響居民服務的 AI 聆聽者。
@@ -24,38 +28,47 @@ const SYSTEM_PROMPTS = {
 };
 
 export const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
+  if (!apiKey) {
+    return lang === 'zh' 
+      ? "[系統錯誤] 找不到 API Key。請檢查 Vercel 設定。" 
+      : "System Error: API Key missing.";
+  }
+
   try {
     const systemInstruction = SYSTEM_PROMPTS[lang];
     
-    // 轉換歷史訊息格式
     const recentHistory = history.slice(-10).map(msg => ({
       role: msg.isUser ? "user" : "model",
       parts: [{ text: msg.text }]
     }));
 
-    // 呼叫後端 API (/api/chat)
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        history: recentHistory,
-        systemInstruction: systemInstruction
-      })
+    // 【重要修改】使用 gemini-1.5-pro (目前最強穩定版)
+    // 如果未來 Gemini 3 上線，你只需要將下方的 'gemini-1.5-pro' 改成 'gemini-3.0-pro' 即可
+    const response = await ai.models.generateContent({
+      model: 'gemini-1.5-pro', 
+      contents: recentHistory,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.7,
+      }
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || `Server Error: ${response.status}`);
-    }
-
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    return text || (lang === 'zh' ? "抱歉，我暫時連線唔到，請稍後再試。" : "Connection error.");
+    return response.text || "Empty response from AI";
 
   } catch (error: any) {
-    console.error("Proxy API Error:", error);
-    return `[系統訊息] 連線錯誤: ${error.message}`;
+    console.error("Gemini API Error:", error);
+    
+    // --- 除錯模式 ---
+    const errorMessage = error.message || JSON.stringify(error);
+    
+    if (errorMessage.includes("404") || errorMessage.includes("not found")) {
+      return `[除錯模式] 找不到模型 (404)。你嘗試使用的模型名稱可能不存在或無權限。目前已設定為 gemini-1.5-pro。`;
+    }
+    
+    if (errorMessage.includes("403") || errorMessage.includes("permission")) {
+      return `[除錯模式] 權限不足 (403)。請確認 API Key 是否有 IP/Referrer 限制，或該服務在目前地區(如香港)不可用。`;
+    }
+
+    return `[除錯模式] 連線錯誤: ${errorMessage}`;
   }
 };

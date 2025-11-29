@@ -1,23 +1,12 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Ticket, Message, VolunteerProfile, Priority, TicketStatus, PublicMemo } from '../types';
-import { db } from '../firebaseConfig'; 
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  onSnapshot, 
-  query, 
-  orderBy 
-} from 'firebase/firestore';
 
 interface AppContextType {
   tickets: Ticket[];
   chats: Record<string, Message[]>;
   volunteerProfile: VolunteerProfile;
   publicMemos: PublicMemo[];
-  // 【修正 1】這裡的型別改成 Promise<string>，代表會回傳 ID 字串
-  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
+  createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Ticket;
   updateTicketStatus: (ticketId: string, status: TicketStatus) => void;
   addMessage: (ticketId: string, msg: Message) => void;
   getMessages: (ticketId: string) => Message[];
@@ -25,19 +14,43 @@ interface AppContextType {
   addPublicMemo: (text: string) => void;
 }
 
+const INITIAL_TICKETS: Ticket[] = [
+  { id: 't1', name: "Ms. Chan (F, 26-40)", issue: "Anxious about returning home after fire", time: "2m ago", status: 'waiting', priority: 'medium', tags: ['Anxiety', 'Housing'] },
+  { id: 't2', name: "Mr. Wong (M, 41-60)", issue: "Flashbacks of fire, insomnia", time: "5m ago", status: 'waiting', priority: 'high', tags: ['Trauma', 'Sleep'] },
+];
+
 const INITIAL_MEMOS_TEXT: string[] = [
-  "大埔人加油！💪", "Stay strong everyone ❤️", "平安就好 🙏",
-  "We are with you", "小心身體，多飲水", "有事慢慢講，大家都會幫手",
-  "Love from Tai Po ❤️", "富亨邨加油！", "撐住呀！",
-  "You are not alone", "大埔一家人", "雨後總有彩虹 🌈"
+  "大埔人加油！💪",
+  "Stay strong everyone ❤️",
+  "平安就好 🙏",
+  "We are with you",
+  "小心身體，多飲水",
+  "有事慢慢講，大家都會幫手",
+  "Love from Tai Po ❤️",
+  "富亨邨加油！",
+  "撐住呀！",
+  "You are not alone",
+  "大埔一家人",
+  "雨後總有彩虹 🌈"
 ];
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export const AppProvider = ({ children }: { children?: ReactNode }) => {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [chats, setChats] = useState<Record<string, Message[]>>({});
-  const [publicMemos, setPublicMemos] = useState<PublicMemo[]>([]);
+  // Load initial state from LocalStorage if available
+  const [tickets, setTickets] = useState<Ticket[]>(() => {
+    try {
+      const saved = localStorage.getItem('mindtree_tickets');
+      return saved ? JSON.parse(saved) : INITIAL_TICKETS;
+    } catch (e) { return INITIAL_TICKETS; }
+  });
+
+  const [chats, setChats] = useState<Record<string, Message[]>>(() => {
+    try {
+      const saved = localStorage.getItem('mindtree_chats');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) { return {}; }
+  });
 
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>(() => {
     try {
@@ -46,45 +59,24 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
     } catch (e) { return { name: "Volunteer", role: "Peer Listener", isVerified: false }; }
   });
 
-  // 監聽案件
-  useEffect(() => {
-    const q = query(collection(db, "tickets"), orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const cloudTickets = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Ticket[];
-      setTickets(cloudTickets);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [publicMemos, setPublicMemos] = useState<PublicMemo[]>([]);
 
-  // 監聽訊息
+  // Persist to LocalStorage whenever state changes
   useEffect(() => {
-    const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const newChats: Record<string, Message[]> = {};
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        const ticketId = data.ticketId;
-        if (ticketId) {
-            if (!newChats[ticketId]) newChats[ticketId] = [];
-            newChats[ticketId].push({
-            id: doc.id,
-            text: data.text,
-            sender: data.sender,
-            isUser: data.isUser,
-            timestamp: data.timestamp,
-            });
-        }
-      });
-      setChats(newChats);
-    });
-    return () => unsubscribe();
-  }, []);
+    localStorage.setItem('mindtree_tickets', JSON.stringify(tickets));
+  }, [tickets]);
 
-  // 監聽留言
   useEffect(() => {
+    localStorage.setItem('mindtree_chats', JSON.stringify(chats));
+  }, [chats]);
+
+  useEffect(() => {
+    localStorage.setItem('mindtree_volunteer', JSON.stringify(volunteerProfile));
+  }, [volunteerProfile]);
+
+  // Initialize memos (Client-side only to ensure animation randomness)
+  useEffect(() => {
+    // Generate bubbles
     const generateInitial = () => Array.from({ length: 40 }).map((_, i) => {
       const text = INITIAL_MEMOS_TEXT[i % INITIAL_MEMOS_TEXT.length];
       return {
@@ -99,79 +91,73 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
       };
     });
 
-    const unsubscribe = onSnapshot(collection(db, "memos"), (snapshot) => {
-      const cloudMemos = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as PublicMemo[];
-      setPublicMemos([...generateInitial(), ...cloudMemos]);
-    });
-    return () => unsubscribe();
+    // Try to load user added memos from LS
+    const savedUserMemos = localStorage.getItem('mindtree_user_memos');
+    const userMemos = savedUserMemos ? JSON.parse(savedUserMemos) : [];
+    
+    setPublicMemos([...generateInitial(), ...userMemos]);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('mindtree_volunteer', JSON.stringify(volunteerProfile));
-  }, [volunteerProfile]);
-
-  // --- Actions ---
-
-  const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    // 【修正 2】將新增的資料存入變數 docRef
-    const docRef = await addDoc(collection(db, "tickets"), {
-      name,
-      issue,
-      priority,
-      tags,
-      status: 'waiting',
-      time: "Just now",
-      createdAt: Date.now()
-    });
-    
-    // 【修正 3】一定要回傳 docRef.id，這樣 App.tsx 才能拿到 ID 並跳轉
-    return docRef.id;
+  const createTicket = (name: string, issue: string, priority: Priority, tags: string[]) => {
+    const newTicket: Ticket = { 
+      id: `t${Date.now()}`, 
+      name, 
+      issue, 
+      time: "Just now", 
+      status: 'waiting', 
+      priority, 
+      tags
+    };
+    setTickets(prev => [newTicket, ...prev]);
+    return newTicket;
   };
 
-  const updateTicketStatus = async (ticketId: string, status: TicketStatus) => {
-    if (!ticketId) return;
-    const ticketRef = doc(db, "tickets", ticketId);
-    await updateDoc(ticketRef, { status });
+  const updateTicketStatus = (ticketId: string, status: TicketStatus) => {
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status } : t));
   };
 
-  const addMessage = async (ticketId: string, msg: Message) => {
-    if (!ticketId) {
-        console.error("Critical Error: ticketId is undefined. Cannot send message.");
-        return;
-    }
-
-    await addDoc(collection(db, "messages"), {
-      ticketId,
-      text: msg.text,
-      sender: msg.sender,
-      isUser: msg.isUser,
-      timestamp: Date.now()
-    });
+  const addMessage = (ticketId: string, msg: Message) => {
+    setChats(prev => ({ 
+      ...prev, 
+      [ticketId]: [...(prev[ticketId] || []), { ...msg, timestamp: Date.now() }] 
+    }));
   };
 
-  const addPublicMemo = async (text: string) => {
-    await addDoc(collection(db, "memos"), {
+  const addPublicMemo = (text: string) => {
+    const newMemo: PublicMemo = {
+      id: `memo-${Date.now()}`,
       text,
       style: {
         left: `${Math.random() * 90}%`,
-        animationDuration: `${Math.random() * 20 + 40}s`,
-        animationDelay: '0s',
-        scale: Math.random() * 0.5 + 1.0
-      },
-      createdAt: Date.now()
-    });
+        animationDuration: `${Math.random() * 20 + 40}s`, 
+        animationDelay: '0s', 
+        scale: Math.random() * 0.5 + 1.0 
+      }
+    };
+    
+    setPublicMemos(prev => {
+        const updated = [...prev.slice(-59), newMemo];
+        // Identify which are user-created (non-init) to save to LS
+        const userCreated = updated.filter(m => m.id.startsWith('memo-'));
+        localStorage.setItem('mindtree_user_memos', JSON.stringify(userCreated));
+        return updated;
+    }); 
   };
 
   const getMessages = (ticketId: string) => chats[ticketId] || [];
 
   return (
     <AppContext.Provider value={{ 
-      tickets, chats, createTicket, updateTicketStatus, 
-      addMessage, getMessages, volunteerProfile, 
-      setVolunteerProfile, publicMemos, addPublicMemo
+      tickets, 
+      chats,
+      createTicket, 
+      updateTicketStatus, 
+      addMessage, 
+      getMessages, 
+      volunteerProfile, 
+      setVolunteerProfile,
+      publicMemos,
+      addPublicMemo
     }}>
       {children}
     </AppContext.Provider>

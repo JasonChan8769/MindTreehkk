@@ -123,13 +123,16 @@ const CONTENT = {
     },
     humanRole: {
       title: "真人輔導員",
-      waitingMessage: "正在為你配對最合適的義工，請稍候...",
+      waitingTitle: "正在為你配對義工...",
+      waitingMessage: "我們正在聯絡在線義工，請稍候片刻...",
+      joinedTitle: "輔導員已加入",
       systemJoin: "系統訊息：輔導員已加入",
-      headerVerified: "認證輔導員",
+      headerVerified: "認證社工",
       headerPeer: "同行者義工",
       report: "舉報",
       caseResolved: "對話已結束。希望你有好過一點。",
-      placeholder: "輸入訊息..."
+      placeholder: "輸入訊息...",
+      chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -226,9 +229,6 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "確定離開？個案將重回隊列。",
       citEndMsg: "確定結束對話？"
-    },
-    chatWarning: {
-      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
     }
   },
   en: {
@@ -266,7 +266,9 @@ const CONTENT = {
     },
     humanRole: {
       title: "Counselor",
-      waitingMessage: "Connecting you with a counselor...",
+      waitingTitle: "Matching Volunteer...",
+      waitingMessage: "We are connecting you to a volunteer...",
+      joinedTitle: "Counselor Joined",
       systemJoin: "System: Counselor joined",
       headerVerified: "Verified Counselor",
       headerPeer: "Peer Volunteer",
@@ -370,9 +372,6 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "Return case to queue?",
       citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     }
   }
 };
@@ -661,17 +660,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   useEffect(() => {
     let timeLeft = totalDuration;
     
-    // Attempt play on mount - with error handling for browser policies
+    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.6;
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => setIsPlaying(true))
-            .catch(error => {
-                console.log("Autoplay blocked, user interaction needed");
-                setIsPlaying(false);
-            });
-        }
+        audioRef.current.volume = 0.8; // Increased volume
     }
 
     const cycle = async () => {
@@ -696,11 +687,15 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
 
   const toggleAudio = () => {
     if (audioRef.current) {
-      if (isPlaying) audioRef.current.pause();
-      else {
-         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+         // Explicitly triggered by user interaction - browsers like this
+         audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Play failed:", e));
       }
-      setIsPlaying(!isPlaying);
     }
   };
 
@@ -713,9 +708,10 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound - Rain and Birds */}
-      <audio ref={audioRef} loop onError={() => console.log("Audio load error")}>
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-forest-stream-with-birds-1249.mp3" type="audio/mpeg" />
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
+      <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
+        <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
       </audio>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
@@ -1432,8 +1428,19 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
         <div className="flex items-center gap-4">
           <div className={`p-2.5 rounded-full ${isVolunteer ? 'bg-indigo-100 text-indigo-600' : 'bg-pink-100 text-pink-600'}`}>{isVolunteer ? <User size={24} /> : <Heart size={24} />}</div>
           <div>
-            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">{isVolunteer ? ticket.name : (volunteerProfile.isVerified ? t.humanRole.headerVerified : t.humanRole.headerPeer)}{!isVolunteer && volunteerProfile.isVerified && (<BadgeCheck size={18} className="text-emerald-500" />)}</h2>
-            <p className={`text-xs ${isVolunteer ? 'text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>{isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}` : t.humanRole.systemJoin}</p>
+            {/* Corrected Header Logic */}
+            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">
+              {isVolunteer 
+                ? ticket.name 
+                : (ticket.status === 'active' 
+                    ? t.humanRole.joinedTitle 
+                    : t.humanRole.waitingTitle)
+              }
+              {!isVolunteer && ticket.status === 'active' && (<BadgeCheck size={18} className="text-emerald-500" />)}
+            </h2>
+            <p className={`text-xs ${isVolunteer ? 'text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+               {isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}` : (ticket.status === 'active' ? t.humanRole.systemJoin : t.humanRole.waitingMessage)}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">

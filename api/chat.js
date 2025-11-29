@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // 1. 設定 CORS
+  // 1. 設定 CORS (允許網頁呼叫)
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -23,12 +23,12 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【關鍵修正】把所有可能的模型都加進去，並把 2.5 放在最前面
-    // 這是為了解決 "404 Not Found" 問題
+    // 【關鍵修正】加入你擁有的所有模型，並優先嘗試 2.5
+    // 程式會自動一個接一個試，直到成功為止
     const modelsToTry = [
-      'gemini-2.5-flash',          // 優先嘗試 (針對你的新 Key)
+      'gemini-2.5-flash',          // 優先嘗試
       'gemini-2.0-flash-exp',      // 備用
-      'gemini-1.5-flash',          // 備用 (最常用)
+      'gemini-1.5-flash',          // 備用
       'gemini-1.5-flash-latest',   // 備用
       'gemini-1.5-pro',            // 備用
     ];
@@ -60,7 +60,6 @@ export default async function handler(req, res) {
           return res.status(200).json(data);
         }
 
-        // 記錄錯誤並繼續嘗試下一個
         console.warn(`Model ${model} failed:`, data.error?.message);
         lastError = data.error?.message;
 

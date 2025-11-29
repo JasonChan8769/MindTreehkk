@@ -71,11 +71,11 @@ const USEFUL_LINKS = [
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "support" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "support" },
   { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "support" },
-  { id: 4, title: { zh: "Headwind 迎風 (港大)", en: "Headwind (HKU)" }, url: "https://www.headwind.hku.hk/", category: "app" },
   { id: 5, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "app" },
-  { id: 6, title: { zh: "HandsOn Hong Kong (義工)", en: "HandsOn Hong Kong" }, url: "https://www.handsonhongkong.org/", category: "volunteer" },
-  { id: 7, title: { zh: "公益金 (捐款)", en: "Community Chest (Donate)" }, url: "https://www.commchest.org/", category: "donation" },
   { id: 8, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "support" },
+  { id: 9, title: { zh: "那打素醫院慈善基金 (大埔醫療捐款)", en: "Nethersole Charity Foundation (Donation)" }, url: "https://www.nethersole.org.hk/r/donate/index", category: "donation" },
+  { id: 10, title: { zh: "救世軍大埔長者社區服務 (義工)", en: "Salvation Army Tai Po (Volunteer)" }, url: "https://www.salvationarmy.org.hk/en/services/elderly_services", category: "volunteer" },
+  { id: 11, title: { zh: "大埔區地區康健站 (地區支援)", en: "Tai Po DHC Express (Support)" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "support" },
 ];
 
 const CONTENT = {
@@ -184,7 +184,7 @@ const CONTENT = {
     links: {
       btn: "資源",
       title: "社區資源",
-      desc: "專業機構聯絡方式、捐款及義工招募。",
+      desc: "專業機構聯絡方式、大埔區醫院捐款及地區義工招募。",
       close: "關閉"
     },
     feedback: {
@@ -318,7 +318,7 @@ const CONTENT = {
     links: {
       btn: "Resources",
       title: "Resources",
-      desc: "Professional Help, Donations & Volunteering",
+      desc: "Professional Help, Tai Po Hospital Donations & Volunteering",
       close: "Close"
     },
     feedback: {
@@ -914,6 +914,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                  <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Link size={20} className="text-teal-500" /> {t.links.title}</h3>
                  <button onClick={() => setShowResources(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><X size={16}/></button>
               </div>
+              <p className="text-xs text-slate-500 mb-4 px-1">{t.links.desc}</p>
               <div className="space-y-3">
                 {USEFUL_LINKS.map(link => (
                   <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl group transition-colors hover:bg-teal-50 dark:hover:bg-teal-900/20 border border-transparent hover:border-teal-100 dark:hover:border-teal-900">

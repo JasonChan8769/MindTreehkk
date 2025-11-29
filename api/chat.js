@@ -24,6 +24,7 @@ export default async function handler(req, res) {
     const { history, systemInstruction } = req.body;
 
     // 【關鍵修正】把所有可能的模型都加進去，並把 2.5 放在最前面
+    // 這是為了解決 "404 Not Found" 問題
     const modelsToTry = [
       'gemini-2.5-flash',          // 優先嘗試 (針對你的新 Key)
       'gemini-2.0-flash-exp',      // 備用
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
 
     let lastError = null;
 
-    // 3. 自動迴圈嘗試
+    // 3. 自動迴圈嘗試所有模型
     for (const model of modelsToTry) {
       try {
         console.log(`Trying model: ${model}...`);

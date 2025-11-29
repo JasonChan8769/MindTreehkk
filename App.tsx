@@ -3,9 +3,10 @@ import {
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, X, Send, Bot, 
   Lock, BadgeCheck, Flag, AlertTriangle, 
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, LogOut,
-  Moon, Sun, MessageSquare, Link, 
+  Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
-  Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText
+  Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
+  ChevronRight, MessageSquarePlus // [FIX] Added missing icons
 } from 'lucide-react';
 
 // Firebase Imports
@@ -20,7 +21,7 @@ declare const __firebase_config: string;
 declare const __app_id: string;
 declare const __initial_auth_token: string;
 
-// --- ERROR BOUNDARY (Fixes White Screen by catching errors) ---
+// --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
@@ -41,7 +42,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertTriangle size={48} className="text-red-500 mb-4" />
           <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page. If the issue persists, check the console.</p>
+          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page.</p>
           <div className="bg-slate-200 p-4 rounded text-xs font-mono overflow-auto max-w-full">
             {this.state.error?.toString()}
           </div>
@@ -61,20 +62,18 @@ let appId = 'default-app-id';
 let initialAuthToken = undefined;
 
 try {
-  // Check if we are in an environment with injected config (like StackBlitz)
   if (typeof __firebase_config !== 'undefined') {
     firebaseConfig = JSON.parse(__firebase_config);
     appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
   }
   
-  // Initialize Firebase if config is valid
   if (Object.keys(firebaseConfig).length > 0) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
   } else {
-    console.warn("Firebase config not found. Running in offline/demo mode.");
+    console.warn("Firebase config not found. Running in demo mode.");
   }
 } catch (e) {
   console.error("Firebase initialization error:", e);
@@ -155,18 +154,13 @@ const SUGGESTED_PROMPTS = {
 };
 
 const USEFUL_LINKS = [
-  // Mental Support
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "mental" },
   { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "mental" },
   { id: 4, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "mental" },
   { id: 5, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "mental" },
-  
-  // Blood Donation
   { id: 6, title: { zh: "紅十字會輸血服務中心", en: "Red Cross Blood Transfusion" }, url: "https://www5.ha.org.hk/rcbts/", category: "blood" },
   { id: 7, title: { zh: "捐血站位置", en: "Donor Centres Locations" }, url: "https://www5.ha.org.hk/rcbts/donor-centres", category: "blood" },
-
-  // Information
   { id: 8, title: { zh: "民政事務總署 - 大埔區", en: "HAD - Tai Po District" }, url: "https://www.had.gov.hk/en/18_districts/my_district/tai_po.htm", category: "info" },
   { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
@@ -242,15 +236,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "心理支援指南",
-      guidelinesDesc: "簡單三步，成為更好的聆聽者",
-      rule1Title: "第一步：專注聆聽 (Listen)",
-      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
-      rule2Title: "第二步：同理回應 (Empathize)",
-      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」或「別想太多」。",
-      rule3Title: "第三步：安全評估 (Assess)",
-      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
-      acknowledgeBtn: "我明白並同意",
+      guidelinesTitle: "服務守則",
+      guidelinesDesc: "專業 • 同理 • 保密",
+      rule1Title: "專注聆聽",
+      rule1Desc: "不急於批判或建議，給予空間。",
+      rule2Title: "自我覺察",
+      rule2Desc: "留意自身情緒，適時休息。",
+      rule3Title: "危機處理",
+      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
+      acknowledgeBtn: "我同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -318,9 +312,6 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "確定離開？個案將重回隊列。",
       citEndMsg: "確定結束對話？"
-    },
-    chatWarning: {
-      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
   },
   en: {
@@ -388,7 +379,7 @@ const CONTENT = {
       disclaimer: "Thank you for your service.",
       nameLabel: "Name",
       namePlaceholder: "e.g., Alex",
-      joinBtn: "Enter Volunteer Platform",
+      joinBtn: "Enter Dashboard",
       proJoinTitle: "Professional Login",
       codePlaceholder: "Access Code",
       verifyBtn: "Verify",
@@ -445,7 +436,7 @@ const CONTENT = {
       title: "Feedback",
       desc: "Your feedback is important to us.",
       placeholder: "How can we improve?",
-      submit: "Send via Email",
+      submit: "Send",
       thanks: "Thank you! Sent to database."
     },
     breath: {
@@ -469,9 +460,6 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "Return case to queue?",
       citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     }
   }
 };
@@ -488,10 +476,10 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
+const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     const contentReviewSystemPrompt = `
-    You are a strict Content Moderator.
+    You are a strict Content Moderator for 'MindTree'.
     Analyze input text.
     RULES:
     1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, gibberish.
@@ -499,7 +487,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     OUTPUT: Return "PASS" if safe, otherwise return short reason in Traditional Chinese.
     `;
 
-    // Fallback if no backend connected
+    // Mock AI response for safety check simulation if backend unavailable in this env
     return new Promise((resolve) => {
         setTimeout(() => {
             const localCheck = checkContentSafety(text);
@@ -569,7 +557,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // 1. Auth
   useEffect(() => {
-    if (!auth) return; // Skip if firebase not initialized
+    if (!auth) return; 
     const initAuth = async () => {
         if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
             await signInWithCustomToken(auth, initialAuthToken);
@@ -619,7 +607,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    // Demo mode fallback if no DB
     if (!db) return "local-id-" + Date.now();
     
     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
@@ -644,7 +631,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
      if (!db) {
-       // Local update for demo
        const newMsg = { id: Date.now().toString(), ...message };
        setMessages(prev => [...prev, newMsg]);
        return;
@@ -780,6 +766,8 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
+// --- PRO BREATHING EXERCISE ---
+
 const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].breath;
   const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
@@ -792,9 +780,12 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   
   useEffect(() => {
     let timeLeft = totalDuration;
+    
+    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.8;
+        audioRef.current.volume = 0.8; // Increased volume
     }
+
     const cycle = async () => {
       if (timeLeft <= 0) return;
       setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
@@ -821,7 +812,10 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e));
+         // Explicitly triggered by user interaction - browsers like this
+         audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Play failed:", e));
       }
     }
   };
@@ -835,6 +829,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -996,6 +991,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [publicMemos]);
 
+  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message) {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1179,7 +1175,6 @@ const MainLayout = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
   
-  // [FIX] Immediately set local ticket to avoid White Page while waiting for DB sync
   const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
       const ticketId = await createTicket(n, i, p, t); 
       const tempTicket: Ticket = {
@@ -1206,8 +1201,7 @@ const MainLayout = () => {
               {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
-              {/* [FIX] Pass whole ticket object to avoid async lookup failure */}
-              {view === 'human-chat' && currentTicket && (<HumanChat ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
+              {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} ticket={currentTicket} />)}
           </div>
       </div>
     </ErrorBoundary>

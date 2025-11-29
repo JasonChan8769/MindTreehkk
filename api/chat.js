@@ -23,14 +23,12 @@ export default async function handler(req, res) {
   try {
     const { history, systemInstruction } = req.body;
 
-    // 【關鍵修正】加入你擁有的所有模型，並優先嘗試 2.5
-    // 程式會自動一個接一個試，直到成功為止
+    // 【模型列表】優先使用更聰明的 2.5 或 2.0 Flash
     const modelsToTry = [
-      'gemini-2.5-flash',          // 優先嘗試
-      'gemini-2.0-flash-exp',      // 備用
-      'gemini-1.5-flash',          // 備用
-      'gemini-1.5-flash-latest',   // 備用
-      'gemini-1.5-pro',            // 備用
+      'gemini-2.5-flash',       // 最優先：通常反應最快且聰明
+      'gemini-2.0-flash-exp',   
+      'gemini-1.5-pro',         // Pro 模型通常更有創意，適合聊天
+      'gemini-1.5-flash',       
     ];
 
     let lastError = null;
@@ -48,7 +46,12 @@ export default async function handler(req, res) {
             body: JSON.stringify({
               contents: history,
               systemInstruction: { parts: [{ text: systemInstruction }] },
-              generationConfig: { temperature: 0.7 }
+              generationConfig: { 
+                temperature: 1.0,  // 提高溫度：讓 AI 更感性、更有創意 (0.0 是機器人, 1.0 是詩人)
+                topK: 40,          // 增加選詞的豐富度
+                topP: 0.95,        // 讓回應不那麼死板
+                maxOutputTokens: 1000,
+              }
             }),
           }
         );

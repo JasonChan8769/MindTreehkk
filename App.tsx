@@ -5,7 +5,7 @@ import {
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, Info, UserCheck, XCircle, LogOut,
   Moon, Sun, HelpCircle, ChevronRight, MessageSquarePlus, Link, ExternalLink, Share2,
   Wind, Home, Play, Pause, Volume2, VolumeX, Sparkles, MessageSquare, HandHeart, Smartphone,
-  Mail, ThumbsUp, Music, Leaf, Cloud, SunDim, Feather
+  Mail, ThumbsUp, Music, Leaf, Cloud, SunDim, Feather, Sprout
 } from 'lucide-react';
 
 // --- 1. TYPES & INTERFACES ---
@@ -77,12 +77,12 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
-// Useful Links
+// Useful Links (Tai Po Specific)
 const USEFUL_LINKS = [
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "support" },
-  { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "support" },
-  { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "support" },
-  { id: 4, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "app" },
+  { id: 2, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "support" },
+  { id: 3, title: { zh: "雅麗氏何妙齡那打素慈善基金 (捐款)", en: "Nethersole Charity Foundation (Donation)" }, url: "https://www.nethersole.org.hk/r/donate/index", category: "donation" },
+  { id: 4, title: { zh: "救世軍大埔長者社區服務 (義工)", en: "Salvation Army Tai Po (Volunteer)" }, url: "https://www.salvationarmy.org.hk/en/services/elderly_services", category: "volunteer" },
   { id: 5, title: { zh: "香港紅十字會 (心理支援)", en: "HK Red Cross (Support)" }, url: "https://www.redcross.org.hk/en/services/psychological_support_service.html", category: "support" },
   { id: 6, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "app" },
 ];
@@ -129,8 +129,7 @@ const CONTENT = {
       headerPeer: "同行者義工",
       report: "舉報",
       caseResolved: "對話已結束。希望你有好過一點。",
-      placeholder: "輸入訊息...",
-      chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
+      placeholder: "輸入訊息..."
     },
     memo: {
       cheerUp: "社區心聲",
@@ -227,6 +226,9 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "確定離開？個案將重回隊列。",
       citEndMsg: "確定結束對話？"
+    },
+    chatWarning: {
+      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
     }
   },
   en: {
@@ -270,8 +272,7 @@ const CONTENT = {
       headerPeer: "Peer Volunteer",
       report: "Report",
       caseResolved: "Session ended. Take care.",
-      placeholder: "Type message...",
-      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
+      placeholder: "Type message..."
     },
     memo: {
       cheerUp: "Community Board",
@@ -368,6 +369,9 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "Return case to queue?",
       citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     }
   }
 };
@@ -415,6 +419,7 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
       parts: [{ text: msg.text }]
     }));
 
+    // Using Backend API
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -616,7 +621,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
     
     // Attempt play on mount - with error handling for browser policies
     if(audioRef.current) {
-        audioRef.current.volume = 0.4;
+        audioRef.current.volume = 0.6;
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
             playPromise.then(() => setIsPlaying(true))
@@ -650,7 +655,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) audioRef.current.pause();
-      else audioRef.current.play();
+      else {
+         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error(e));
+      }
       setIsPlaying(!isPlaying);
     }
   };
@@ -664,9 +671,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound - Rain and Birds */}
-      <audio ref={audioRef} loop>
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1253.mp3" type="audio/mpeg" />
+      {/* Relaxing Nature Sound - Rain Forest */}
+      <audio ref={audioRef} loop onError={() => console.log("Audio load error")}>
+        <source src="https://cdn.pixabay.com/download/audio/2022/02/07/audio_1804fbf183.mp3?filename=forest-lullaby-110624.mp3" type="audio/mpeg" />
       </audio>
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
@@ -818,6 +825,22 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
 
+  // Update Theme Color for iOS Status Bar
+  useEffect(() => {
+    // Attempt to set theme color to match the nature background
+    // (Teal-50 or Slate-900)
+    const metaThemeColor = document.querySelector("meta[name=theme-color]");
+    const color = theme === 'light' ? '#ecfdf5' : '#0f172a'; // Tailwind emerald-50 or slate-900
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute("content", color);
+    } else {
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = color;
+        document.getElementsByTagName('head')[0].appendChild(meta);
+    }
+  }, [theme]);
+
   // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
@@ -893,8 +916,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       {/* Header */}
       <div className="w-full flex justify-between items-center p-6 z-20 shrink-0">
         <div className="flex flex-col">
-           <h1 className="text-2xl font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><Leaf className="text-emerald-500" fill="currentColor" size={24}/> {t.appTitle}</h1>
-           <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-8">{t.appSubtitle}</span>
+           <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><div className="bg-emerald-500 text-white p-2 rounded-xl"><Sprout size={24} fill="currentColor"/></div> {t.appTitle}</h1>
+           <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-12">{t.appSubtitle}</span>
         </div>
         <div className="flex gap-3">
            <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.feedback}><MessageSquare size={18} /></button>
@@ -1317,6 +1340,7 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
   const t = CONTENT[lang];
   const { addMessage, getMessages, updateTicketStatus, volunteerProfile, tickets } = useAppContext();
   const [inputText, setInputText] = useState("");
+  const [showReminder, setShowReminder] = useState(true);
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
   const messages = getMessages(ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -1375,10 +1399,16 @@ const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string,
             <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors">{isVolunteer ? t.actions.leaveChat : t.actions.endChat}</button>
         </div>
       </header>
-      <div className="mb-6 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl text-xs text-amber-800 dark:text-amber-200 flex gap-3 items-start animate-fade-in mt-4">
-         <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-         <span>{t.humanRole.chatReminder}</span>
-      </div>
+      
+      {/* Safety Reminder with Close Button */}
+      {showReminder && (
+        <div className="mb-4 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl text-xs text-amber-800 dark:text-amber-200 flex gap-3 items-start animate-fade-in mt-4 relative">
+            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <span className="flex-1 leading-relaxed pr-6">{t.humanRole.chatReminder}</span>
+            <button onClick={() => setShowReminder(false)} className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 dark:hover:text-amber-100 transition-colors"><X size={16}/></button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
         <div className="max-w-3xl mx-auto w-full">
             {isVolunteer && ticket.priority === 'critical' && (<div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/50 text-rose-600 p-4 rounded-2xl text-sm mb-8 flex items-start gap-3"><AlertTriangle size={20} className="shrink-0 mt-0.5" /><div><span className="font-bold block mb-1">CRITICAL CASE</span>High distress level reported. Please handle with care.</div></div>)}

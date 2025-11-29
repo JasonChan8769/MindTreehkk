@@ -4,7 +4,7 @@ import {
   Users, AlertCircle, Globe, Wifi, Lock, BadgeCheck, Flag, AlertTriangle, 
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, Info, UserCheck, XCircle, LogOut,
   Moon, Sun, HelpCircle, ChevronRight, MessageSquarePlus, Link, ExternalLink, Share2,
-  Smile, Frown, Meh, CloudRain, SunMedium, Wind, Activity, Home
+  Wind, Home, Play, Pause, Volume2, VolumeX, Sparkles
 } from 'lucide-react';
 
 // --- 1. TYPES & INTERFACES ---
@@ -89,11 +89,10 @@ const CONTENT = {
       greeting: "早晨，",
       greetingAfternoon: "午安，",
       greetingEvening: "晚安，",
-      moodCheck: "你今日心情點呀？",
-      breathTitle: "深呼吸練習",
-      breathDesc: "用 1 分鐘平靜身心",
-      startBreath: "開始練習",
       servicesTitle: "選擇服務",
+      breathTitle: "靜心呼吸練習",
+      breathDesc: "專業引導 • 60秒放鬆",
+      startBreath: "開始練習",
       aiCard: { title: "AI 樹洞", desc: "24/7 智能聆聽 • 即時回應" },
       humanCard: { title: "真人輔導", desc: "義工與社工 • 溫暖同行" },
       volunteerCard: { title: "加入義工", desc: "成為樹洞守護者" }
@@ -208,11 +207,10 @@ const CONTENT = {
       greeting: "Good Morning,",
       greetingAfternoon: "Good Afternoon,",
       greetingEvening: "Good Evening,",
-      moodCheck: "How are you feeling?",
-      breathTitle: "Breathe",
-      breathDesc: "1 min calmness",
-      startBreath: "Start",
       servicesTitle: "Services",
+      breathTitle: "Mindful Breathing",
+      breathDesc: "Professional • 60s Calm",
+      startBreath: "Start",
       aiCard: { title: "AI Listener", desc: "Smart & Private • 24/7" },
       humanCard: { title: "Human Support", desc: "Volunteers • Empathy" },
       volunteerCard: { title: "Volunteer", desc: "Join the Force" }
@@ -380,8 +378,6 @@ interface AppContextType {
   setVolunteerProfile: (profile: VolunteerProfile) => void;
   publicMemos: { id: number, text: string, style: any }[];
   addPublicMemo: (text: string) => void;
-  mood: string | null;
-  setMood: (mood: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -391,7 +387,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
   const [publicMemos, setPublicMemos] = useState<{ id: number, text: string, style: any }[]>([]);
-  const [mood, setMood] = useState<string | null>(null);
 
   const createTicket = (name: string, issue: string, priority: Priority, tags: string[]) => {
     const newTicket: Ticket = {
@@ -425,7 +420,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, mood, setMood }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo }}>
       {children}
     </AppContext.Provider>
   );
@@ -477,7 +472,6 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
     return <div className="text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-widest text-center my-4 font-medium flex items-center justify-center gap-2 before:content-[''] before:h-px before:w-8 before:bg-slate-300 dark:before:bg-slate-700 after:content-[''] after:h-px after:w-8 after:bg-slate-300 dark:after:bg-slate-700">{text}</div>;
   }
 
-  // Refined Chat Bubble Styles (iMessage/WhatsApp Premium Feel)
   const userBubbleStyle = "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-sm shadow-md border-transparent";
   const aiBubbleStyle = "bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border border-slate-100 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm";
   const peerBubbleStyle = "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm";
@@ -516,63 +510,117 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
-// --- NEW COMPONENTS FOR PRO FEEL ---
+// --- PRO BREATHING EXERCISE ---
 
 const BreathingExercise = ({ onClose }: { onClose: () => void }) => {
   const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
+  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true); // Auto-play music if possible
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // Total duration 60 seconds
+  const totalDuration = 60;
   
   useEffect(() => {
+    let timeLeft = totalDuration;
+    
+    // Cycle Timer
     const cycle = async () => {
+      if (timeLeft <= 0) return;
       setStage('Inhale'); await new Promise(r => setTimeout(r, 4000));
       setStage('Hold'); await new Promise(r => setTimeout(r, 4000));
       setStage('Exhale'); await new Promise(r => setTimeout(r, 4000));
       cycle();
     };
     cycle();
+
+    // Progress Timer
+    const timer = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) {
+          clearInterval(timer);
+          return 100;
+        }
+        return p + (100 / totalDuration / 10); // Update every 100ms
+      });
+      timeLeft -= 0.1;
+    }, 100);
+
+    return () => clearInterval(timer);
   }, []);
 
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) audioRef.current.pause();
+      else audioRef.current.play();
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  // Circular Progress Logic
+  const radius = 140;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center animate-fade-in">
-      <div className="text-center relative">
-        <button onClick={onClose} className="absolute -top-20 right-0 left-0 mx-auto w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"><X size={20} /></button>
-        <div className={`w-64 h-64 rounded-full border-4 border-white/20 flex items-center justify-center transition-all duration-[4000ms] ease-in-out relative ${stage === 'Inhale' ? 'scale-110 border-teal-400/50 shadow-[0_0_100px_rgba(45,212,191,0.3)]' : stage === 'Exhale' ? 'scale-75 border-indigo-400/50' : 'scale-100 border-white/50'}`}>
-           <div className={`w-full h-full rounded-full bg-gradient-to-br from-teal-400/20 to-indigo-500/20 transition-all duration-[4000ms] ${stage === 'Inhale' ? 'opacity-100' : 'opacity-30'}`} />
-           <span className="absolute text-2xl font-light text-white tracking-[0.2em] uppercase">{stage}</span>
+    <div className="fixed inset-0 z-[60] bg-slate-950 flex items-center justify-center animate-fade-in overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-950 via-slate-900 to-black opacity-90" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-teal-900/20 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
+
+      {/* Audio Element (Placeholder Source) */}
+      <audio ref={audioRef} loop autoPlay>
+        {/* Using a placeholder nature sound data URI or online source */}
+        <source src="https://cdn.pixabay.com/download/audio/2022/02/07/audio_1804fbf183.mp3?filename=forest-lullaby-110624.mp3" type="audio/mpeg" />
+      </audio>
+
+      <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
+        <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5"><X size={24} /></button>
+        
+        {/* Controls */}
+        <div className="absolute top-8 left-8 flex gap-4">
+           <button onClick={toggleAudio} className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-all backdrop-blur-md border border-white/5 text-xs font-bold uppercase tracking-widest">
+              {isPlaying ? <Volume2 size={16} /> : <VolumeX size={16} />}
+              <span>{isPlaying ? 'Music On' : 'Muted'}</span>
+           </button>
         </div>
-        <p className="mt-12 text-slate-400 text-sm font-light tracking-wide">Focus on your breath</p>
-      </div>
-    </div>
-  );
-};
 
-const MoodTracker = ({ lang }: { lang: Language }) => {
-  const { mood, setMood } = useAppContext();
-  const t = CONTENT[lang].landing;
-  const moods = [
-    { icon: <Frown size={24} />, label: "Bad", color: "bg-rose-500" },
-    { icon: <CloudRain size={24} />, label: "Low", color: "bg-orange-400" },
-    { icon: <Meh size={24} />, label: "Okay", color: "bg-yellow-400" },
-    { icon: <SunMedium size={24} />, label: "Good", color: "bg-teal-400" },
-    { icon: <Smile size={24} />, label: "Great", color: "bg-emerald-500" },
-  ];
+        {/* Main Circle Visual */}
+        <div className="relative flex items-center justify-center">
+           {/* Progress Ring SVG */}
+           <svg className="absolute w-[340px] h-[340px] rotate-[-90deg] pointer-events-none">
+              <circle cx="170" cy="170" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.1" />
+              <circle 
+                cx="170" cy="170" r={radius} 
+                stroke="url(#gradient)" 
+                strokeWidth="4" 
+                fill="transparent" 
+                strokeDasharray={circumference} 
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                className="transition-all duration-100 linear"
+              />
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#2dd4bf" />
+                  <stop offset="100%" stopColor="#818cf8" />
+                </linearGradient>
+              </defs>
+           </svg>
 
-  return (
-    <div className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-md border border-white/40 dark:border-white/5 rounded-3xl p-6 mb-8 shadow-xl shadow-indigo-500/5">
-      <h3 className="text-slate-800 dark:text-white font-bold mb-4 flex items-center gap-2 text-lg">
-        <Activity size={18} className="text-indigo-500" /> {t.moodCheck}
-      </h3>
-      <div className="flex justify-between gap-2">
-        {moods.map((m) => (
-          <button 
-            key={m.label} 
-            onClick={() => setMood(m.label)}
-            className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 w-full ${mood === m.label ? 'bg-white dark:bg-slate-700 shadow-lg scale-110 ring-2 ring-indigo-500/20' : 'hover:bg-white/50 dark:hover:bg-slate-700/50 hover:scale-105'}`}
-          >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-md ${mood === m.label ? m.color : 'bg-slate-200 dark:bg-slate-700 text-slate-400'}`}>
-              {m.icon}
-            </div>
-          </button>
-        ))}
+           {/* Breathing Animation Circle */}
+           <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-[4000ms] ease-in-out relative ${stage === 'Inhale' ? 'scale-125 shadow-[0_0_100px_rgba(45,212,191,0.4)] bg-teal-500/20' : stage === 'Exhale' ? 'scale-75 bg-indigo-500/10' : 'scale-100 bg-white/10'}`}>
+              <div className={`absolute inset-0 rounded-full border border-white/30 transition-all duration-[4000ms] ${stage === 'Inhale' ? 'scale-110 opacity-50' : 'scale-90 opacity-20'}`} />
+              <div className={`absolute inset-0 rounded-full border border-white/10 transition-all duration-[4000ms] delay-75 ${stage === 'Inhale' ? 'scale-125 opacity-30' : 'scale-75 opacity-10'}`} />
+              
+              <div className="flex flex-col items-center text-center z-10">
+                 <span className="text-3xl font-light text-white tracking-[0.2em] uppercase drop-shadow-lg">{stage}</span>
+                 <span className="text-white/50 text-xs mt-2 font-mono tracking-widest">{Math.round(progress)}%</span>
+              </div>
+           </div>
+        </div>
+
+        <p className="mt-16 text-white/40 text-sm font-light tracking-[0.2em] uppercase animate-pulse">Relax your mind</p>
       </div>
     </div>
   );
@@ -700,51 +748,54 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <div className="flex-1 w-full overflow-y-auto z-10 px-6 pb-24 no-scrollbar">
         <div className="max-w-md mx-auto">
             
-            <MoodTracker lang={lang} />
-
-            <div className="grid grid-cols-2 gap-4 mb-8">
-               <button onClick={() => setShowBreath(true)} className="col-span-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-white p-5 rounded-[2rem] shadow-lg shadow-teal-500/20 flex items-center justify-between group hover:scale-[1.02] transition-transform">
-                  <div className="text-left">
-                     <div className="font-bold text-lg mb-1 flex items-center gap-2"><Wind size={18}/> {t.landing.breathTitle}</div>
-                     <div className="text-teal-100 text-xs">{t.landing.breathDesc}</div>
-                  </div>
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform"><ArrowRight size={18} /></div>
-               </button>
-            </div>
-
+            {/* Main Services Moved to Top */}
             <h2 className="text-slate-800 dark:text-white font-bold text-lg mb-4 flex items-center gap-2"><Trees size={18} className="text-indigo-500"/> {t.landing.servicesTitle}</h2>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-4 mb-8">
                {/* AI Card */}
-               <button onClick={() => onSelectRole('citizen-ai')} className="bg-white dark:bg-slate-800 p-5 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5 hover:shadow-md transition-all group text-left">
-                  <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform"><Bot size={28} /></div>
-                  <div>
-                     <div className="font-bold text-lg text-slate-800 dark:text-white mb-1">{t.landing.aiCard.title}</div>
-                     <div className="text-slate-500 text-xs">{t.landing.aiCard.desc}</div>
+               <button onClick={() => onSelectRole('citizen-ai')} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-lg shadow-indigo-500/5 border border-slate-100 dark:border-slate-700 flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-900/10 rounded-bl-[100%] z-0" />
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-indigo-500/30 z-10"><Bot size={32} /></div>
+                  <div className="z-10">
+                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.aiCard.title}</div>
+                     <div className="text-slate-500 text-xs font-medium">{t.landing.aiCard.desc}</div>
                   </div>
-                  <div className="ml-auto text-slate-300"><ChevronRight size={20}/></div>
+                  <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
 
                {/* Human Card */}
-               <button onClick={() => onSelectRole('citizen-human')} className="bg-white dark:bg-slate-800 p-5 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-5 hover:shadow-md transition-all group text-left">
-                  <div className="w-14 h-14 rounded-2xl bg-pink-50 dark:bg-pink-900/30 text-pink-500 flex items-center justify-center group-hover:scale-110 transition-transform"><Heart size={28} /></div>
-                  <div>
-                     <div className="font-bold text-lg text-slate-800 dark:text-white mb-1">{t.landing.humanCard.title}</div>
-                     <div className="text-slate-500 text-xs">{t.landing.humanCard.desc}</div>
+               <button onClick={() => onSelectRole('citizen-human')} className="bg-white dark:bg-slate-800 p-6 rounded-[2rem] shadow-lg shadow-pink-500/5 border border-slate-100 dark:border-slate-700 flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-50 dark:bg-pink-900/10 rounded-bl-[100%] z-0" />
+                  <div className="w-16 h-16 rounded-2xl bg-pink-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-pink-500/30 z-10"><Heart size={32} /></div>
+                  <div className="z-10">
+                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.humanCard.title}</div>
+                     <div className="text-slate-500 text-xs font-medium">{t.landing.humanCard.desc}</div>
                   </div>
-                  <div className="ml-auto text-slate-300"><ChevronRight size={20}/></div>
-               </button>
-
-               {/* Volunteer Card */}
-               <button onClick={() => onSelectRole('volunteer-login')} className="bg-slate-100 dark:bg-slate-900 p-5 rounded-[2rem] border border-transparent dark:border-slate-800 flex items-center gap-5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all group text-left mt-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center"><UserCheck size={18} /></div>
-                  <div>
-                     <div className="font-bold text-sm text-slate-700 dark:text-slate-300">{t.landing.volunteerCard.title}</div>
-                  </div>
-                  <div className="ml-auto text-slate-400"><ArrowRight size={16}/></div>
+                  <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
             </div>
 
-            <div className="flex gap-4 mt-8">
+            {/* Breathing Exercise Card */}
+            <div className="mb-8">
+               <button onClick={() => setShowBreath(true)} className="w-full bg-gradient-to-r from-teal-500 to-emerald-600 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/30 flex items-center justify-between group hover:scale-[1.02] transition-transform relative overflow-hidden">
+                  <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+                  <div className="text-left relative z-10">
+                     <div className="font-black text-xl mb-1 flex items-center gap-2"><Sparkles size={20}/> {t.landing.breathTitle}</div>
+                     <div className="text-teal-100 text-xs font-medium bg-white/20 px-3 py-1 rounded-full w-fit backdrop-blur-sm">{t.landing.breathDesc}</div>
+                  </div>
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform backdrop-blur-sm border border-white/20 relative z-10"><Play size={20} fill="white" /></div>
+               </button>
+            </div>
+
+            {/* Volunteer Card */}
+            <button onClick={() => onSelectRole('volunteer-login')} className="w-full bg-slate-100 dark:bg-slate-900 p-5 rounded-[2rem] border border-transparent dark:border-slate-800 flex items-center gap-5 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all group text-left mb-8">
+               <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center"><UserCheck size={18} /></div>
+               <div>
+                  <div className="font-bold text-sm text-slate-700 dark:text-slate-300">{t.landing.volunteerCard.title}</div>
+               </div>
+               <div className="ml-auto text-slate-400"><ArrowRight size={16}/></div>
+            </button>
+
+            <div className="flex gap-4">
                <button onClick={() => setShowMemoInput(true)} className="flex-1 py-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors">
                   <MessageSquarePlus size={20} /> {t.memo.label}
                </button>

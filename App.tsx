@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, createContext, useContext } from 'react';
+import React, { useState, useRef, useEffect, createContext, useContext, Component, ErrorInfo } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, X, Send, Bot, 
   Lock, BadgeCheck, Flag, AlertTriangle, 
@@ -20,19 +20,65 @@ declare const __firebase_config: string;
 declare const __app_id: string;
 declare const __initial_auth_token: string;
 
-// --- FIREBASE CONFIGURATION ---
-let firebaseConfig = {};
-try {
-  firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-} catch (e) {
-  console.error("Firebase config parse error", e);
+// --- ERROR BOUNDARY (Fixes White Screen by catching errors) ---
+class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
+          <AlertTriangle size={48} className="text-red-500 mb-4" />
+          <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
+          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page. If the issue persists, check the console.</p>
+          <div className="bg-slate-200 p-4 rounded text-xs font-mono overflow-auto max-w-full">
+            {this.state.error?.toString()}
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
-const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
-const auth = app ? getAuth(app) : null;
-const db = app ? getFirestore(app) : null;
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+// --- FIREBASE CONFIGURATION ---
+let firebaseConfig = {};
+let app = null;
+let auth = null;
+let db = null;
+let appId = 'default-app-id';
+let initialAuthToken = undefined;
+
+try {
+  // Check if we are in an environment with injected config (like StackBlitz)
+  if (typeof __firebase_config !== 'undefined') {
+    firebaseConfig = JSON.parse(__firebase_config);
+    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+  }
+  
+  // Initialize Firebase if config is valid
+  if (Object.keys(firebaseConfig).length > 0) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } else {
+    console.warn("Firebase config not found. Running in offline/demo mode.");
+  }
+} catch (e) {
+  console.error("Firebase initialization error:", e);
+}
 
 // --- 1. TYPES & INTERFACES ---
 
@@ -196,15 +242,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "服務守則",
-      guidelinesDesc: "專業 • 同理 • 保密",
-      rule1Title: "專注聆聽",
-      rule1Desc: "不急於批判或建議，給予空間。",
-      rule2Title: "自我覺察",
-      rule2Desc: "留意自身情緒，適時休息。",
-      rule3Title: "危機處理",
-      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
-      acknowledgeBtn: "我同意",
+      guidelinesTitle: "心理支援指南",
+      guidelinesDesc: "簡單三步，成為更好的聆聽者",
+      rule1Title: "第一步：專注聆聽 (Listen)",
+      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
+      rule2Title: "第二步：同理回應 (Empathize)",
+      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」或「別想太多」。",
+      rule3Title: "第三步：安全評估 (Assess)",
+      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
+      acknowledgeBtn: "我明白並同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -272,6 +318,9 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "確定離開？個案將重回隊列。",
       citEndMsg: "確定結束對話？"
+    },
+    chatWarning: {
+      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
   },
   en: {
@@ -387,13 +436,16 @@ const CONTENT = {
       btn: "Resources",
       title: "Resources",
       desc: "Help, Donation & Volunteering",
-      close: "Close"
+      close: "Close",
+      catMental: "Mental Support",
+      catBlood: "Blood Donation",
+      catInfo: "Information"
     },
     feedback: {
       title: "Feedback",
       desc: "Your feedback is important to us.",
       placeholder: "How can we improve?",
-      submit: "Send",
+      submit: "Send via Email",
       thanks: "Thank you! Sent to database."
     },
     breath: {
@@ -439,7 +491,7 @@ const checkContentSafety = (text: string) => {
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     const contentReviewSystemPrompt = `
-    You are a strict Content Moderator for 'MindTree'.
+    You are a strict Content Moderator.
     Analyze input text.
     RULES:
     1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, gibberish.
@@ -447,7 +499,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     OUTPUT: Return "PASS" if safe, otherwise return short reason in Traditional Chinese.
     `;
 
-    // Mock AI response for safety check simulation if backend unavailable in this env
+    // Fallback if no backend connected
     return new Promise((resolve) => {
         setTimeout(() => {
             const localCheck = checkContentSafety(text);
@@ -517,17 +569,16 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // 1. Auth
   useEffect(() => {
+    if (!auth) return; // Skip if firebase not initialized
     const initAuth = async () => {
         if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
-            if (auth) await signInWithCustomToken(auth, initialAuthToken);
+            await signInWithCustomToken(auth, initialAuthToken);
         } else {
-            if (auth) await signInAnonymously(auth);
+            await signInAnonymously(auth);
         }
     };
     initAuth();
-    if (auth) {
-        return onAuthStateChanged(auth, (u) => setUser(u));
-    }
+    return onAuthStateChanged(auth, (u) => setUser(u));
   }, []);
 
   // 2. Sync Tickets
@@ -538,7 +589,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
         loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
         setTickets(loadedTickets);
-    });
+    }, (err) => console.log("Ticket sync error:", err));
     return () => unsubscribe();
   }, [user]);
 
@@ -550,7 +601,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
         loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
         setMessages(loadedMessages);
-    });
+    }, (err) => console.log("Message sync error:", err));
     return () => unsubscribe();
   }, [user]);
 
@@ -562,13 +613,15 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
         loadedMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         setPublicMemos(loadedMemos.slice(0, 15)); 
-    });
+    }, (err) => console.log("Memo sync error:", err));
     return () => unsubscribe();
   }, [user]);
 
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    if (!db) return "local-id";
+    // Demo mode fallback if no DB
+    if (!db) return "local-id-" + Date.now();
+    
     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
         name, issue, priority, tags, 
         status: 'waiting', 
@@ -579,7 +632,10 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string) => {
-     if (!db) return;
+     if (!db) {
+       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+       return;
+     }
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
          ...(volId && { volunteerId: volId }) 
@@ -587,7 +643,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
-     if (!db) return;
+     if (!db) {
+       // Local update for demo
+       const newMsg = { id: Date.now().toString(), ...message };
+       setMessages(prev => [...prev, newMsg]);
+       return;
+     }
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
          ...message,
          ticketId
@@ -599,7 +660,21 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addPublicMemo = async (text: string) => {
-     if (!db) return;
+     if (!db) {
+       const newMemo: Memo = {
+        id: Date.now(),
+        text: text,
+        timestamp: Date.now(),
+        style: {
+            left: `${Math.random() * 80 + 10}%`,
+            animationDuration: `${25 + Math.random() * 15}s`,
+            animationDelay: '0s',
+            scale: 0.9 + Math.random() * 0.3
+        }
+       };
+       setPublicMemos(prev => [newMemo, ...prev]);
+       return;
+     }
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), {
         text,
         timestamp: Date.now(),
@@ -705,8 +780,6 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
-// --- PRO BREATHING EXERCISE ---
-
 const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].breath;
   const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
@@ -719,12 +792,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   
   useEffect(() => {
     let timeLeft = totalDuration;
-    
-    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.8; // Increased volume
+        audioRef.current.volume = 0.8;
     }
-
     const cycle = async () => {
       if (timeLeft <= 0) return;
       setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
@@ -751,10 +821,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-         // Explicitly triggered by user interaction - browsers like this
-         audioRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(e => console.error("Play failed:", e));
+         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e));
       }
     }
   };
@@ -768,7 +835,6 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -844,8 +910,6 @@ const FeedbackModal = ({ onClose, lang }: { onClose: () => void, lang: Language 
   );
 };
 
-// --- SCREENS ---
-// Make sure these screens are defined correctly
 const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStart: () => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void }) => {
   const t = CONTENT[lang].intro;
   const [step, setStep] = useState(0);
@@ -926,14 +990,12 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     setFloatingBubbles(initialBubbles);
   }, []);
 
-  // Update when new memo is added
   useEffect(() => {
     if (publicMemos.length > 0) {
         setFloatingBubbles(prev => [...publicMemos, ...prev]);
     }
   }, [publicMemos]);
 
-  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message) {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1104,76 +1166,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   );
 };
 
-const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
-  const t = CONTENT[lang];
-  const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
-  const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
-  
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!inputText.trim()) return;
-    const check = checkContentSafety(inputText);
-    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
-    
-    const userMsg: Message = { id: Date.now().toString(), text: inputText, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setInputText("");
-    setIsTyping(true);
-    
-    try {
-      const aiText = await generateAIResponse([...messages, userMsg], lang);
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
-    } finally { setIsTyping(false); }
-  };
-
-  return (
-    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
-      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
-        <div className="flex items-center gap-4">
-            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
-            <div className="flex flex-col">
-                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
-                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
-            </div>
-        </div>
-      </header>
-      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
-        <div className="max-w-3xl mx-auto w-full pb-4">
-            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
-            {isTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-        </div>
-      </div>
-      
-      {/* Suggested Prompts */}
-      {messages.length < 3 && !isTyping && (
-        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
-          {SUGGESTED_PROMPTS[lang].map(prompt => (
-            <button key={prompt} onClick={() => { setInputText(prompt); handleSend(); }} className="whitespace-nowrap px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-white transition-colors shadow-sm backdrop-blur-sm">
-              {prompt}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
-        <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
-          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
-          <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 // --- MAIN LAYOUT ---
 
 const MainLayout = () => {
@@ -1182,7 +1174,7 @@ const MainLayout = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [role, setRole] = useState<'citizen' | 'volunteer' | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
-  const { createTicket, updateTicketStatus, addMessage, volunteerProfile } = useAppContext();
+  const { createTicket, updateTicketStatus, volunteerProfile } = useAppContext();
 
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
@@ -1204,18 +1196,21 @@ const MainLayout = () => {
   };
 
   return (
-    <div className={`w-full h-full min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
-        <div className="w-full h-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white relative overflow-hidden font-sans">
-            {view === 'intro' && <IntroScreen onStart={() => setView('landing')} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} />}
-            {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
-            {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} lang={lang} />}
-            {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} lang={lang} />}
-            {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
-            {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
-            {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
-            {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} ticket={currentTicket} />)}
-        </div>
-    </div>
+    <ErrorBoundary>
+      <div className={`w-full h-full min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
+          <div className="w-full h-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white relative overflow-hidden font-sans">
+              {view === 'intro' && <IntroScreen onStart={() => setView('landing')} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} />}
+              {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
+              {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} lang={lang} />}
+              {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
+              {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
+              {/* [FIX] Pass whole ticket object to avoid async lookup failure */}
+              {view === 'human-chat' && currentTicket && (<HumanChat ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
+          </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 

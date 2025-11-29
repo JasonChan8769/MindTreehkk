@@ -48,8 +48,18 @@ const AI_QUOTES = [
   "I'm listening.", "我喺度聽緊。",
   "You are stronger than you know.", "你比想像中堅強。",
   "Let it all out.", "唔好屈埋喺心。",
-  "Safe space.", "樹洞隨時歡迎你。"
+  "Safe space.", "樹洞隨時歡迎你。",
+  "Heal at your own pace.", "按照自己嘅節奏黎。",
+  "Focus on today.", "專注當下。",
+  "You matter.", "你很重要。",
+  "Sending you strength.", "俾啲力量你。",
+  "Just breathe.", "靜心呼吸。",
+  "We walk together.", "我哋一齊行。",
+  "There is hope.", "總會有希望。",
+  "Be kind to yourself.", "對自己好啲。"
 ];
+
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫"];
 
 const USEFUL_LINKS = [
   { id: 1, title: { zh: "社會福利署熱線", en: "SWD Hotline" }, url: "https://www.swd.gov.hk" },
@@ -548,16 +558,27 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [floatingBubbles, setFloatingBubbles] = useState<{id: number, text: string, style: any}[]>([]);
 
   useEffect(() => {
-    const bubbles = AI_QUOTES.map((quote, index) => ({
-      id: index,
-      text: quote,
-      style: {
-        left: `${Math.random() * 90}%`,
-        animationDuration: `${20 + Math.random() * 20}s`,
-        animationDelay: `${Math.random() * 10}s`,
-        scale: 0.8 + Math.random() * 0.4
-      }
-    }));
+    // Randomly select 12-15 items from the large pool
+    const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
+    const selectedQuotes = shuffledQuotes.slice(0, 15);
+    
+    const bubbles = selectedQuotes.map((quote, index) => {
+        // Randomly attach a symbol
+        const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
+        // 50% chance to put symbol at start or end
+        const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
+
+        return {
+            id: index,
+            text: textWithSymbol,
+            style: {
+                left: `${Math.random() * 90}%`,
+                animationDuration: `${20 + Math.random() * 20}s`,
+                animationDelay: `${Math.random() * 10}s`,
+                scale: 0.7 + Math.random() * 0.5
+            }
+        };
+    });
     setFloatingBubbles(bubbles);
   }, []);
 

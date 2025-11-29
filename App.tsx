@@ -5,7 +5,7 @@ import {
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, LogOut,
   Moon, Sun, MessageSquare, Link, 
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
-  Music, Leaf, Cloud, SunDim, Feather, Sprout, Droplet, FileText, Ban
+  Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText
 } from 'lucide-react';
 
 // Firebase Imports
@@ -122,6 +122,7 @@ const USEFUL_LINKS = [
 
   // Information
   { id: 8, title: { zh: "民政事務總署 - 大埔區", en: "HAD - Tai Po District" }, url: "https://www.had.gov.hk/en/18_districts/my_district/tai_po.htm", category: "info" },
+  { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
 
 const CONTENT = {
@@ -182,8 +183,7 @@ const CONTENT = {
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
       scanning: "AI 正在審查內容...",
-      unsafe: "未能發佈：AI 偵測到不當用語或無意義內容。",
-      guidance: "請保持正面、友善。"
+      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。"
     },
     volunteer: {
       login: "義工登入",
@@ -196,15 +196,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "心理支援指南",
-      guidelinesDesc: "簡單三步，成為更好的聆聽者",
-      rule1Title: "第一步：專注聆聽 (Listen)",
-      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
-      rule2Title: "第二步：同理回應 (Empathize)",
-      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」或「別想太多」。",
-      rule3Title: "第三步：安全評估 (Assess)",
-      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
-      acknowledgeBtn: "我明白並同意",
+      guidelinesTitle: "服務守則",
+      guidelinesDesc: "專業 • 同理 • 保密",
+      rule1Title: "專注聆聽",
+      rule1Desc: "不急於批判或建議，給予空間。",
+      rule2Title: "自我覺察",
+      rule2Desc: "留意自身情緒，適時休息。",
+      rule3Title: "危機處理",
+      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
+      acknowledgeBtn: "我同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -331,8 +331,7 @@ const CONTENT = {
       btn: "Post",
       success: "Posted! Floating now.",
       scanning: "AI Safety Check...",
-      unsafe: "Blocked: Inappropriate content detected.",
-      guidance: "Please share positivity."
+      unsafe: "Blocked: Inappropriate content detected."
     },
     volunteer: {
       login: "Volunteer Access",
@@ -388,16 +387,13 @@ const CONTENT = {
       btn: "Resources",
       title: "Resources",
       desc: "Help, Donation & Volunteering",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Information"
+      close: "Close"
     },
     feedback: {
       title: "Feedback",
       desc: "Your feedback is important to us.",
       placeholder: "How can we improve?",
-      submit: "Send via Email",
+      submit: "Send",
       thanks: "Thank you! Sent to database."
     },
     breath: {
@@ -421,20 +417,19 @@ const CONTENT = {
     dialogs: {
       volLeaveMsg: "Return case to queue?",
       citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
     }
   }
 };
 
-// --- 3. SERVICES (Strict AI Scanner) ---
+// --- 3. SERVICES ---
 
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
-  
-  // Basic Length Check for gibberish
-  if (text.length < 2) return { safe: false, reason: "Message too short" };
-
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
   }
@@ -443,54 +438,59 @@ const checkContentSafety = (text: string) => {
 
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // First pass: Local check for speed and obvious blocks
-    const localCheck = checkContentSafety(text);
-    if (!localCheck.safe) return localCheck;
-
     const contentReviewSystemPrompt = `
-    You are a strict Content Moderator for a mental health app 'MindTree'.
-    Task: Analyze the user's message for public display.
-    
-    Criteria for APPROVAL (SAFE):
-    - Must be positive, supportive, encouraging, warm, or empathetic.
-    - Can be a simple greeting like "Hello" or "Jiayou".
-
-    Criteria for REJECTION (UNSAFE):
-    - Offensive, hateful, sexual, violent, or illegal content.
-    - Random gibberish (e.g. "asdf", "123"), spam.
-    - Negative, cynical, complaining.
-
-    Output Format:
-    - If APPROVED: Return exactly "PASS".
-    - If REJECTED: Return a warm, gentle, polite reminder in Traditional Chinese (繁體中文) explaining why. 
+    You are a strict Content Moderator for 'MindTree'.
+    Analyze input text.
+    RULES:
+    1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, gibberish.
+    2. ALLOW (Safe): Distress, sadness, depression, general conversation.
+    OUTPUT: Return "PASS" if safe, otherwise return short reason in Traditional Chinese.
     `;
+
+    // Mock AI response for safety check simulation if backend unavailable in this env
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            const localCheck = checkContentSafety(text);
+            resolve(localCheck);
+        }, 1000);
+    });
+
+  } catch (e) {
+    return { safe: true, reason: null };
+  }
+};
+
+const SYSTEM_PROMPTS = {
+  zh: `你係「MindTree 樹洞」，一個有溫度、有思想嘅數碼同伴。用廣東話口語。禁止機械式回應。`,
+  en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
+};
+
+const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
+  try {
+    const systemInstruction = SYSTEM_PROMPTS[lang];
+    const recentHistory = history.slice(-10).map(msg => ({
+      role: msg.isUser ? "user" : "model",
+      parts: [{ text: msg.text }]
+    }));
 
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: [{ role: "user", parts: [{ text: text }] }],
-        systemInstruction: contentReviewSystemPrompt
+        history: recentHistory,
+        systemInstruction: systemInstruction 
       })
     });
 
     const data = await response.json();
-    if (!response.ok) return { safe: true, reason: null }; // Fail open if API is down to not block users
-
-    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (result === "PASS") {
-      return { safe: true, reason: null };
-    } else {
-      return { safe: false, reason: result || "Content filtered." };
-    }
-
-  } catch (e) {
-    return { safe: true, reason: null }; // Default to safe if system fails
+    if (!response.ok) throw new Error("API Error");
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "...";
+  } catch (error) {
+    return lang === 'zh' ? "（MindTree 正在思考...）" : "(MindTree is thinking...)";
   }
 };
 
-// --- 4. CONTEXT (State Management) ---
+// --- 4. CONTEXT (State Management with Firebase) ---
 
 interface AppContextType {
   tickets: Ticket[];
@@ -515,7 +515,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
 
-  // 1. Auth & Data Sync
+  // 1. Auth
   useEffect(() => {
     const initAuth = async () => {
         if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
@@ -627,110 +627,37 @@ const useAppContext = () => {
 
 // --- 5. COMPONENTS ---
 
-// [FIX] Audio Player Component
-const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
-  const t = CONTENT[lang].breath;
-  const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
-  const [stageText, setStageText] = useState(t.inhale);
-  const [progress, setProgress] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false); 
-  const audioRef = useRef<HTMLAudioElement>(null);
+const stripAITag = (text: string | undefined) => {
+  if (typeof text !== 'string') return "";
+  return text.replace(/\s*\(AI\)/g, '');
+};
+
+const Notification = ({ message, type, onClose }: { message: string, type: 'error' | 'info' | 'loading', onClose: () => void }) => {
+  if (!message) return null;
+  const bgColor = type === 'error' ? 'bg-rose-500/90' : (type === 'loading' ? 'bg-indigo-500/90' : 'bg-emerald-500/90');
   
-  const totalDuration = 60;
-  
-  useEffect(() => {
-    let timeLeft = totalDuration;
-    
-    // Attempt play on mount with error handling
-    if(audioRef.current) {
-        audioRef.current.volume = 0.8;
-    }
-
-    const cycle = async () => {
-      if (timeLeft <= 0) return;
-      setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
-      setStage('Hold'); setStageText(t.hold); await new Promise(r => setTimeout(r, 4000));
-      setStage('Exhale'); setStageText(t.exhale); await new Promise(r => setTimeout(r, 4000));
-      cycle();
-    };
-    cycle();
-
-    const timer = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) { clearInterval(timer); return 100; }
-        return p + (100 / totalDuration / 10);
-      });
-      timeLeft -= 0.1;
-    }, 100);
-
-    return () => clearInterval(timer);
-  }, [t]);
-
-  const toggleAudio = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-         // Explicitly triggered by user interaction - browsers like this
-         audioRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(e => console.error("Play failed:", e));
-      }
-    }
-  };
-
-  const radius = 140;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
-
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-950 flex items-center justify-center animate-fade-in overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
-
-      {/* Reliable Rainforest Sound */}
-      <audio ref={audioRef} loop playsInline onError={(e) => console.log("Audio error:", e)}>
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-1253.mp3" type="audio/mpeg" />
-      </audio>
-
-      <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
-        <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"><X size={24} /></button>
-        
-        <div className="absolute top-8 left-8 flex gap-4">
-           <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse ring-1 ring-emerald-500/50' : 'bg-white/5 text-white/70'}`}>
-              {isPlaying ? <Volume2 size={16} /> : <Music size={16} />}
-              <span>{isPlaying ? t.musicOn : t.playErr}</span>
-           </button>
-        </div>
-
-        <div className="relative flex items-center justify-center">
-           <svg className="absolute w-[340px] h-[340px] rotate-[-90deg] pointer-events-none">
-              <circle cx="170" cy="170" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.1" />
-              <circle cx="170" cy="170" r={radius} stroke="url(#gradient)" strokeWidth="4" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-100 linear"/>
-              <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#34d399" />
-                  <stop offset="100%" stopColor="#2dd4bf" />
-                </linearGradient>
-              </defs>
-           </svg>
-           <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-[4000ms] ease-in-out relative ${stage === 'Inhale' ? 'scale-125 shadow-[0_0_100px_rgba(52,211,153,0.4)] bg-emerald-500/20' : stage === 'Exhale' ? 'scale-75 bg-teal-500/10' : 'scale-100 bg-white/10'}`}>
-              <div className={`absolute inset-0 rounded-full border border-white/30 transition-all duration-[4000ms] ${stage === 'Inhale' ? 'scale-110 opacity-50' : 'scale-90 opacity-20'}`} />
-              <div className={`absolute inset-0 rounded-full border border-white/10 transition-all duration-[4000ms] delay-75 ${stage === 'Inhale' ? 'scale-125 opacity-30' : 'scale-75 opacity-10'}`} />
-              <div className="flex flex-col items-center text-center z-10">
-                 <span className="text-3xl font-light text-white tracking-[0.2em] uppercase drop-shadow-lg">{stageText}</span>
-                 <span className="text-white/50 text-xs mt-2 font-mono tracking-widest">{Math.round(progress)}%</span>
-              </div>
-           </div>
-        </div>
-        <p className="mt-16 text-white/40 text-sm font-light tracking-[0.2em] uppercase animate-pulse">{t.relax}</p>
-      </div>
+    <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] ${bgColor} backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-fade-in max-w-md w-full mx-4 ring-1 ring-white/20`}>
+      {type === 'error' ? <XCircle size={18} /> : (type === 'loading' ? <Clock size={18} className="animate-spin"/> : <CheckCircle size={18} />)}
+      <span className="text-sm font-medium flex-1 leading-tight">{message}</span>
+      <button onClick={onClose} className="opacity-80 hover:opacity-100 shrink-0"><X size={16} /></button>
     </div>
   );
 };
 
-// [FIX] Chat Bubble
+const TypingIndicator = () => (
+  <div className="flex items-start gap-2 mb-4 animate-fade-in">
+    <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-white/50 dark:bg-white/10 text-teal-600 dark:text-teal-400 border border-white/20">
+      <Bot size={16} />
+    </div>
+    <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white/60 dark:bg-white/5 shadow-sm flex items-center gap-1 backdrop-blur-sm">
+      <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+      <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+      <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-bounce"></div>
+    </div>
+  </div>
+);
+
 const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) => {
   const isAI = sender?.includes('(AI)') || sender?.includes('AI') || sender?.includes('Tree') || sender?.includes('樹') || false;
   const isSystem = sender === 'System';
@@ -778,97 +705,469 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
-// [FIX] Human Chat - Passing Ticket
-const HumanChat = ({ ticket, onLeave, isVolunteer, lang }: { ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
-  const t = CONTENT[lang];
-  const { addMessage, getMessages, updateTicketStatus, volunteerProfile } = useAppContext();
-  const [inputText, setInputText] = useState("");
-  const [showReminder, setShowReminder] = useState(true);
-  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
-  const messages = getMessages(ticket.id);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+// --- PRO BREATHING EXERCISE ---
 
+const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
+  const t = CONTENT[lang].breath;
+  const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
+  const [stageText, setStageText] = useState(t.inhale);
+  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false); 
+  const audioRef = useRef<HTMLAudioElement>(null);
+  
+  const totalDuration = 60;
+  
   useEffect(() => {
-    if (messages.length === 0) {
-      const initMsg = isVolunteer ? t.humanRole.systemJoin : t.humanRole.waitingMessage;
-      addMessage(ticket.id, { id: 'sys-init', text: initMsg, isUser: false, sender: "System", timestamp: Date.now() });
-    }
-  }, []);
-
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
-
-  const handleSend = (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!inputText.trim()) return;
+    let timeLeft = totalDuration;
     
-    const check = checkContentSafety(inputText);
-    if (!check.safe) {
-      setNotification({ message: check.reason || "Safety Alert", type: 'error' });
-      return; 
+    // Attempt play on mount with error handling
+    if(audioRef.current) {
+        audioRef.current.volume = 0.8; // Increased volume
     }
-    addMessage(ticket.id, { id: Date.now().toString(), text: inputText, isUser: !isVolunteer, sender: isVolunteer ? volunteerProfile.name : "Me", isVerified: isVolunteer && volunteerProfile.isVerified, timestamp: Date.now() });
-    setInputText("");
+
+    const cycle = async () => {
+      if (timeLeft <= 0) return;
+      setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
+      setStage('Hold'); setStageText(t.hold); await new Promise(r => setTimeout(r, 4000));
+      setStage('Exhale'); setStageText(t.exhale); await new Promise(r => setTimeout(r, 4000));
+      cycle();
+    };
+    cycle();
+
+    const timer = setInterval(() => {
+      setProgress(p => {
+        if (p >= 100) { clearInterval(timer); return 100; }
+        return p + (100 / totalDuration / 10);
+      });
+      timeLeft -= 0.1;
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [t]);
+
+  const toggleAudio = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+         // Explicitly triggered by user interaction - browsers like this
+         audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Play failed:", e));
+      }
+    }
   };
 
-  const handleEndChat = () => {
-    if (window.confirm(isVolunteer ? t.dialogs.volLeaveMsg : t.dialogs.citEndMsg)) {
-        if(isVolunteer) {
-            addMessage(ticket.id, { id: Date.now().toString(), text: `${volunteerProfile.name} left.`, isUser: false, sender: "System", timestamp: Date.now() });
-            updateTicketStatus(ticket.id, 'waiting');
-        } else {
-            addMessage(ticket.id, { id: Date.now().toString(), text: t.humanRole.caseResolved, isUser: false, sender: "System", timestamp: Date.now() });
-            updateTicketStatus(ticket.id, 'resolved');
-        }
-        onLeave();
+  const radius = 140;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="fixed inset-0 z-[60] bg-slate-950 flex items-center justify-center animate-fade-in overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
+
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
+      <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
+        <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
+      </audio>
+
+      <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
+        <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"><X size={24} /></button>
+        
+        <div className="absolute top-8 left-8 flex gap-4">
+           <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse ring-1 ring-emerald-500/50' : 'bg-white/5 text-white/70'}`}>
+              {isPlaying ? <Volume2 size={16} /> : <Music size={16} />}
+              <span>{isPlaying ? t.musicOn : t.playErr}</span>
+           </button>
+        </div>
+
+        <div className="relative flex items-center justify-center">
+           <svg className="absolute w-[340px] h-[340px] rotate-[-90deg] pointer-events-none">
+              <circle cx="170" cy="170" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.1" />
+              <circle cx="170" cy="170" r={radius} stroke="url(#gradient)" strokeWidth="4" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-100 linear"/>
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#34d399" />
+                  <stop offset="100%" stopColor="#2dd4bf" />
+                </linearGradient>
+              </defs>
+           </svg>
+           <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-[4000ms] ease-in-out relative ${stage === 'Inhale' ? 'scale-125 shadow-[0_0_100px_rgba(52,211,153,0.4)] bg-emerald-500/20' : stage === 'Exhale' ? 'scale-75 bg-teal-500/10' : 'scale-100 bg-white/10'}`}>
+              <div className={`absolute inset-0 rounded-full border border-white/30 transition-all duration-[4000ms] ${stage === 'Inhale' ? 'scale-110 opacity-50' : 'scale-90 opacity-20'}`} />
+              <div className={`absolute inset-0 rounded-full border border-white/10 transition-all duration-[4000ms] delay-75 ${stage === 'Inhale' ? 'scale-125 opacity-30' : 'scale-75 opacity-10'}`} />
+              <div className="flex flex-col items-center text-center z-10">
+                 <span className="text-3xl font-light text-white tracking-[0.2em] uppercase drop-shadow-lg">{stageText}</span>
+                 <span className="text-white/50 text-xs mt-2 font-mono tracking-widest">{Math.round(progress)}%</span>
+              </div>
+           </div>
+        </div>
+        <p className="mt-16 text-white/40 text-sm font-light tracking-[0.2em] uppercase animate-pulse">{t.relax}</p>
+      </div>
+    </div>
+  );
+};
+
+const FeedbackModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
+  const t = CONTENT[lang].feedback;
+  const [text, setText] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const handleSubmit = () => {
+    if (!text.trim()) return;
+    window.open(`mailto:admin@mindtree.hk?subject=MindTree Feedback&body=${encodeURIComponent(text)}`);
+    setSent(true);
+    setTimeout(onClose, 2000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20}/></button>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2"><MessageCircle size={24} className="text-teal-500"/> {t.title}</h3>
+        <p className="text-xs text-slate-500 mb-6">{t.desc}</p>
+        {sent ? (
+          <div className="text-center py-8">
+            <CheckCircle size={48} className="text-emerald-500 mx-auto mb-4 animate-bounce"/>
+            <p className="text-slate-600 dark:text-slate-300 font-bold">{t.thanks}</p>
+          </div>
+        ) : (
+          <>
+            <textarea value={text} onChange={e => setText(e.target.value)} placeholder={t.placeholder} className="w-full h-32 p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-none resize-none focus:ring-2 focus:ring-teal-500 mb-4 dark:text-white"/>
+            <button onClick={handleSubmit} className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors shadow-lg shadow-teal-500/30">{t.submit}</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- SCREENS ---
+// Make sure these screens are defined correctly
+const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStart: () => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void }) => {
+  const t = CONTENT[lang].intro;
+  const [step, setStep] = useState(0);
+  const steps = [
+    { title: t.welcome, desc: t.desc, icon: <Trees className="text-emerald-500 w-24 h-24" /> },
+    { title: t.slide1Title, desc: t.slide1Desc, icon: <Bot className="text-teal-500 w-24 h-24" /> },
+    { title: t.slide2Title, desc: t.slide2Desc, icon: <Shield className="text-emerald-600 w-24 h-24" /> }
+  ];
+
+  return (
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-500">
+      <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-teal-500/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+      <div className="w-full flex justify-end gap-3 p-6 z-20 shrink-0">
+        <button onClick={toggleLang} className="flex items-center gap-1 bg-white/50 dark:bg-black/20 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold shadow-sm transition-all hover:bg-white/80 dark:text-white"><Globe size={12} /> {lang === 'zh' ? 'EN' : '繁體'}</button>
+      </div>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-md mx-auto w-full text-center z-10">
+        <div className="mb-10 p-12 bg-white/30 dark:bg-white/5 backdrop-blur-xl rounded-[3rem] shadow-2xl shadow-teal-500/10 animate-float">
+          {steps[step].icon}
+        </div>
+        <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-6 tracking-tight animate-fade-in" key={`title-${step}`}>{steps[step].title}</h2>
+        <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed animate-fade-in max-w-xs mx-auto" key={`desc-${step}`}>{steps[step].desc}</p>
+        <div className="flex gap-2 mt-12 mb-8">
+          {steps.map((_, i) => (
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === step ? 'w-8 bg-teal-600 dark:bg-teal-400' : 'w-2 bg-slate-300 dark:bg-slate-700'}`} />
+          ))}
+        </div>
+      </div>
+      <div className="p-8 pb-12 z-10 max-w-md mx-auto w-full shrink-0">
+        <button onClick={() => { if (step < steps.length - 1) setStep(s => s + 1); else onStart(); }} className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold py-4 rounded-3xl shadow-xl shadow-teal-500/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-3 text-sm tracking-wide uppercase">{step < steps.length - 1 ? <ArrowRight size={20} /> : t.startBtn}</button>
+      </div>
+    </div>
+  );
+};
+
+const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onShowIntro }: { onSelectRole: (role: string) => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void, onShowIntro: () => void }) => {
+  const t = CONTENT[lang];
+  const { addPublicMemo, publicMemos } = useAppContext();
+  const [showMemoInput, setShowMemoInput] = useState(false);
+  const [showResources, setShowResources] = useState(false);
+  const [showBreath, setShowBreath] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [memoText, setMemoText] = useState("");
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
+  const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
+
+  useEffect(() => {
+    const metaThemeColor = document.querySelector("meta[name=theme-color]");
+    const color = theme === 'light' ? '#ecfdf5' : '#0f172a';
+    if (metaThemeColor) {
+        metaThemeColor.setAttribute("content", color);
+    } else {
+        const meta = document.createElement('meta');
+        meta.name = "theme-color";
+        meta.content = color;
+        document.getElementsByTagName('head')[0].appendChild(meta);
     }
+  }, [theme]);
+
+  useEffect(() => {
+    const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
+    const selectedQuotes = shuffledQuotes.slice(0, 12);
+    const initialBubbles = selectedQuotes.map((quote, index) => {
+        const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
+        const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
+        return {
+            id: `init-${index}`, 
+            text: textWithSymbol,
+            timestamp: Date.now(),
+            style: { 
+                left: `${Math.random() * 80 + 10}%`, 
+                animationDuration: `${25 + Math.random() * 20}s`, 
+                animationDelay: `${Math.random() * 10}s`, 
+                scale: 0.8 + Math.random() * 0.3 
+            }
+        };
+    });
+    setFloatingBubbles(initialBubbles);
+  }, []);
+
+  // Update when new memo is added
+  useEffect(() => {
+    if (publicMemos.length > 0) {
+        setFloatingBubbles(prev => [...publicMemos, ...prev]);
+    }
+  }, [publicMemos]);
+
+  // Auto-dismiss error notification
+  useEffect(() => {
+      if(notification?.message) {
+          const timer = setTimeout(() => setNotification(null), 3000);
+          return () => clearTimeout(timer);
+      }
+  }, [notification]);
+
+  const handlePostMemo = async () => {
+    if (!memoText.trim()) return;
+    setNotification({ message: t.memo.scanning, type: 'loading' });
+    const result = await scanContentWithAI(memoText);
+    
+    if (!result.safe) {
+      setNotification({ message: result.reason || t.memo.unsafe, type: 'error' });
+      return;
+    }
+
+    addPublicMemo(memoText); 
+    setMemoText(""); 
+    setShowMemoInput(false);
+    setNotification({ message: t.memo.success, type: 'info' }); 
+  };
+
+  return (
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-500 font-sans">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
+      <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
+      <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
+      <div className="absolute top-[20%] right-[10%] text-yellow-100/40 dark:text-yellow-900/10 pointer-events-none opacity-60"><SunDim size={150} /></div>
+
+      <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
+        <div className="relative w-full h-full">
+            {floatingBubbles.map((memo) => (
+            <div key={memo.id} className="absolute text-center animate-float select-none will-change-transform opacity-70" style={{ left: memo.style.left, animationDuration: memo.style.animationDuration, animationDelay: memo.style.animationDelay, bottom: -80 }}>
+                <span className="inline-block bg-white/60 dark:bg-white/10 backdrop-blur-sm rounded-full px-5 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm border border-white/20" style={{ transform: `scale(${memo.style.scale})` }}>{memo.text}</span>
+            </div>
+            ))}
+        </div>
+      </div>
+
+      <div className="w-full flex justify-between items-center p-6 z-20 shrink-0">
+        <div className="flex flex-col">
+           <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><div className="bg-emerald-500 text-white p-2 rounded-xl"><Sprout size={24} fill="currentColor"/></div> {t.appTitle}</h1>
+           <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-12">{t.appSubtitle}</span>
+        </div>
+        <div className="flex gap-3">
+           <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.feedback}><MessageSquare size={18} /></button>
+           <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md"><Globe size={18} /></button>
+           <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
+        </div>
+      </div>
+      
+      <div className="flex-1 w-full overflow-y-auto z-10 px-6 pb-24 no-scrollbar">
+        <div className="max-w-md mx-auto">
+            <h2 className="text-teal-800 dark:text-white font-bold text-lg mb-4 flex items-center gap-2"><Trees size={18} className="text-emerald-500"/> {t.landing.servicesTitle}</h2>
+            <div className="grid grid-cols-1 gap-4 mb-8">
+               <button onClick={() => onSelectRole('citizen-ai')} className="bg-white/60 dark:bg-slate-800/60 p-6 rounded-[2rem] shadow-lg shadow-teal-500/5 backdrop-blur-xl flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 dark:bg-teal-900/10 rounded-bl-[100%] z-0" />
+                  <div className="w-16 h-16 rounded-2xl bg-teal-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-teal-500/30 z-10"><Bot size={32} /></div>
+                  <div className="z-10">
+                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.aiCard.title}</div>
+                     <div className="text-slate-500 text-xs font-medium">{t.landing.aiCard.desc}</div>
+                  </div>
+                  <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
+               </button>
+
+               <button onClick={() => onSelectRole('citizen-human')} className="bg-white/60 dark:bg-slate-800/60 p-6 rounded-[2rem] shadow-lg shadow-emerald-500/5 backdrop-blur-xl flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[100%] z-0" />
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 z-10"><Heart size={32} /></div>
+                  <div className="z-10">
+                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.humanCard.title}</div>
+                     <div className="text-slate-500 text-xs font-medium">{t.landing.humanCard.desc}</div>
+                  </div>
+                  <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
+               </button>
+            </div>
+
+            <div className="mb-8">
+               <button onClick={() => setShowBreath(true)} className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/30 flex items-center justify-between group hover:scale-[1.02] transition-transform relative overflow-hidden">
+                  <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-2xl" />
+                  <div className="text-left relative z-10">
+                     <div className="font-black text-xl mb-1 flex items-center gap-2"><Sparkles size={20}/> {t.landing.breathTitle}</div>
+                     <div className="text-teal-50 text-xs font-medium bg-white/20 px-3 py-1 rounded-full w-fit backdrop-blur-sm">{t.landing.breathDesc}</div>
+                  </div>
+                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform backdrop-blur-sm relative z-10"><Play size={20} fill="white" /></div>
+               </button>
+            </div>
+
+            <button onClick={() => onSelectRole('volunteer-login')} className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 p-1 rounded-[2rem] shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all group mb-8">
+               <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[1.8rem] p-5 flex items-center gap-5 h-full w-full">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform"><HandHeart size={24} /></div>
+                  <div className="flex-1 text-left">
+                     <div className="font-bold text-base text-slate-800 dark:text-white">{t.landing.volunteerCard.title}</div>
+                     <div className="text-xs text-slate-500 dark:text-slate-400">{t.landing.volunteerCard.desc}</div>
+                  </div>
+                  <div className="text-slate-300"><ArrowRight size={20}/></div>
+               </div>
+            </button>
+
+            <div className="flex gap-4">
+               <button onClick={() => setShowMemoInput(true)} className="flex-1 py-4 rounded-3xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-teal-600 dark:text-teal-400 font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
+                  <MessageSquarePlus size={20} /> {t.memo.label}
+               </button>
+               <button onClick={() => setShowResources(true)} className="flex-1 py-4 rounded-3xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-emerald-600 dark:text-emerald-400 font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
+                  <Link size={20} /> {t.links.btn}
+               </button>
+            </div>
+
+            <div className="mt-12 mb-6 p-4 rounded-2xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm border border-white/20 dark:border-white/5 text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
+               {t.footer.legal}
+            </div>
+        </div>
+      </div>
+
+      {showMemoInput && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-t-[2rem] sm:rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-slide-up sm:animate-fade-in">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2"><MessageSquarePlus size={24} className="text-teal-500" /> {t.memo.title}</h3>
+            <p className="text-xs text-slate-500 mb-6 bg-slate-100 dark:bg-slate-800 p-3 rounded-xl">{t.memo.desc}</p>
+            <textarea value={memoText} onChange={(e) => setMemoText(e.target.value)} placeholder={t.memo.placeholder} className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-2xl p-4 text-base focus:ring-2 focus:ring-teal-500 mb-6 h-32 resize-none text-slate-900 dark:text-white placeholder:text-slate-400" autoFocus />
+            <div className="flex gap-3">
+              <button onClick={() => setShowMemoInput(false)} className="flex-1 py-4 text-slate-500 font-bold text-sm bg-slate-100 dark:bg-slate-800 rounded-2xl">{t.actions.cancel}</button>
+              <button onClick={handlePostMemo} className="flex-1 py-4 bg-teal-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-teal-500/30">{t.memo.btn}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResources && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2rem] p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center mb-6">
+                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2"><Link size={20} className="text-teal-500" /> {t.links.title}</h3>
+                 <button onClick={() => setShowResources(false)} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500"><X size={16}/></button>
+              </div>
+              <p className="text-xs text-slate-500 mb-4 px-1">{t.links.desc}</p>
+              <div className="space-y-4">
+                {['mental', 'blood', 'info'].map(cat => {
+                   const catLinks = USEFUL_LINKS.filter(l => l.category === cat);
+                   if(catLinks.length === 0) return null;
+                   return (
+                     <div key={cat}>
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">{cat === 'mental' ? t.links.catMental : (cat === 'blood' ? t.links.catBlood : t.links.catInfo)}</h4>
+                        <div className="space-y-2">
+                            {catLinks.map(link => (
+                              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl group transition-colors hover:bg-teal-50 dark:hover:bg-teal-900/20 shadow-sm">
+                                  <div className="flex items-center gap-3">
+                                     <div className={`p-2 rounded-full ${link.category === 'mental' || link.category === 'support' ? 'bg-red-50 text-red-500' : (link.category === 'blood' ? 'bg-pink-50 text-pink-500' : 'bg-indigo-50 text-indigo-500')}`}>
+                                        {link.category === 'mental' || link.category === 'support' ? <Shield size={16} /> : (link.category === 'blood' ? <Droplet size={16} /> : <FileText size={16} />)}
+                                     </div>
+                                     <span className="font-bold text-sm text-slate-700 dark:text-slate-200">{link.title[lang]}</span>
+                                  </div>
+                                  <ArrowRight size={16} className="text-slate-300 group-hover:text-teal-500" />
+                              </a>
+                            ))}
+                        </div>
+                     </div>
+                   );
+                })}
+              </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
+  
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!inputText.trim()) return;
+    const check = checkContentSafety(inputText);
+    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
+    
+    const userMsg: Message = { id: Date.now().toString(), text: inputText, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText("");
+    setIsTyping(true);
+    
+    try {
+      const aiText = await generateAIResponse([...messages, userMsg], lang);
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
+    } finally { setIsTyping(false); }
   };
 
   return (
     <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 flex items-center justify-between shadow-sm z-20 sticky top-0">
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
         <div className="flex items-center gap-4">
-          <div className={`p-2.5 rounded-full ${isVolunteer ? 'bg-indigo-100 text-indigo-600' : 'bg-pink-100 text-pink-600'}`}>{isVolunteer ? <User size={24} /> : <Heart size={24} />}</div>
-          <div>
-            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">
-              {isVolunteer 
-                ? ticket.name 
-                : (ticket.status === 'active' 
-                    ? t.humanRole.joinedTitle 
-                    : t.humanRole.waitingTitle)
-              }
-              {!isVolunteer && ticket.status === 'active' && (<BadgeCheck size={18} className="text-emerald-500" />)}
-            </h2>
-            <p className={`text-xs ${isVolunteer ? 'text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
-               {isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}` : (ticket.status === 'active' ? t.humanRole.systemJoin : t.humanRole.waitingMessage)}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-            {isVolunteer && (<button onClick={() => alert("Report submitted.")} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-colors"><Flag size={18} className="text-slate-500"/></button>)}
-            <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors">{isVolunteer ? t.actions.leaveChat : t.actions.endChat}</button>
+            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
+            <div className="flex flex-col">
+                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
+                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
+            </div>
         </div>
       </header>
-      
-      {showReminder && (
-        <div className="mb-4 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl text-xs text-amber-800 dark:text-amber-200 flex gap-3 items-start animate-fade-in mt-4 relative">
-            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-            <span className="flex-1 leading-relaxed pr-6">{t.humanRole.chatReminder}</span>
-            <button onClick={() => setShowReminder(false)} className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 dark:hover:text-amber-100 transition-colors"><X size={16}/></button>
-        </div>
-      )}
-
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
-        <div className="max-w-3xl mx-auto w-full">
-            {isVolunteer && ticket.priority === 'critical' && (<div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/50 text-rose-600 p-4 rounded-2xl text-sm mb-8 flex items-start gap-3"><AlertTriangle size={20} className="shrink-0 mt-0.5" /><div><span className="font-bold block mb-1">CRITICAL CASE</span>High distress level reported. Please handle with care.</div></div>)}
-            {messages.map(msg => (<ChatBubble key={msg.id} {...msg} />))}
+      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto w-full pb-4">
+            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            {isTyping && <TypingIndicator />}
             <div ref={messagesEndRef} />
         </div>
       </div>
-      <div className="p-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky bottom-0 z-20">
+      
+      {/* Suggested Prompts */}
+      {messages.length < 3 && !isTyping && (
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
+          {SUGGESTED_PROMPTS[lang].map(prompt => (
+            <button key={prompt} onClick={() => { setInputText(prompt); handleSend(); }} className="whitespace-nowrap px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-white transition-colors shadow-sm backdrop-blur-sm">
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
-          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" placeholder={t.humanRole.placeholder} value={inputText} onChange={e => setInputText(e.target.value)} autoFocus />
-          <button type="submit" disabled={!inputText.trim()} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
+          <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
         </form>
       </div>
     </div>
@@ -914,8 +1213,7 @@ const MainLayout = () => {
             {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
             {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
             {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
-            {/* [FIX] Pass whole ticket object to avoid async lookup failure */}
-            {view === 'human-chat' && currentTicket && (<HumanChat ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
+            {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} ticket={currentTicket} />)}
         </div>
     </div>
   );

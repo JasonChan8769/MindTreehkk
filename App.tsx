@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw, UserMinus
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw, UserMinus, Filter
 } from 'lucide-react';
 
 // Firebase Imports
@@ -273,10 +273,10 @@ const CONTENT = {
       // New Content for Volunteer Leaving
       volLeftTitle: "輔導員已離開",
       volLeftMsg: "輔導員已離開對話。你可以選擇繼續等待下一位輔導員，或是結束對話。",
-      btnWait: "繼續等待",
+      btnWait: "繼續等待 (返回隊列)",
       btnEnd: "結束對話",
-      volLeaveConfirm: "確定暫時離開？對話將會保留給下一位義工。",
-      leaveSuccess: "你已離開對話。個案已返回等待隊列。"
+      volLeaveConfirm: "確定暫時離開？\n\n求助者將會收到通知，並可選擇繼續等待下一位義工。",
+      leaveSuccess: "你已離開對話。"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -314,9 +314,14 @@ const CONTENT = {
       portalTitle: "控制台",
       welcome: "歡迎回來",
       exit: "登出",
-      activeRequests: "待處理個案",
-      noRequests: "暫時沒有新個案",
+      activeRequests: "個案列表",
+      noRequests: "暫時沒有相關個案",
       accept: "接聽",
+      statusConsulting: "諮詢中",
+      statusWaiting: "等待中",
+      filterAll: "所有個案",
+      filterWaiting: "待處理",
+      filterActive: "進行中",
       topic: "主訴",
       priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
       tabRequests: "求助個案",
@@ -439,10 +444,10 @@ const CONTENT = {
       // New Content for Volunteer Leaving
       volLeftTitle: "Counselor Left",
       volLeftMsg: "The counselor has left the session. You can wait for the next counselor or end the chat.",
-      btnWait: "Wait",
+      btnWait: "Wait (Return to Queue)",
       btnEnd: "End Chat",
-      volLeaveConfirm: "Leave temporarily? Case will be returned to queue.",
-      leaveSuccess: "You have left the session. Case returned to queue."
+      volLeaveConfirm: "Leave temporarily?\n\nThe user will be notified and can choose to wait for the next volunteer.",
+      leaveSuccess: "You have left the session."
     },
     memo: {
       cheerUp: "Community Voices",
@@ -480,9 +485,14 @@ const CONTENT = {
       portalTitle: "Dashboard",
       welcome: "Welcome back",
       exit: "Logout",
-      activeRequests: "Pending Cases",
-      noRequests: "No new cases currently",
+      activeRequests: "Case List",
+      noRequests: "No cases found for this filter",
       accept: "Accept",
+      statusConsulting: "Consulting",
+      statusWaiting: "Waiting",
+      filterAll: "All",
+      filterWaiting: "Waiting",
+      filterActive: "Active",
       topic: "Issue",
       priority: { critical: "Critical", high: "High", medium: "Medium", low: "Low" },
       tabRequests: "Requests",
@@ -836,7 +846,9 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // New function for volunteer leaving
   const leaveSession = async (ticketId: string) => {
-      // 1. Update status to 'volunteer_left' and remove assignment
+      // 1. Update status to 'volunteer_left' BUT do NOT remove assignment yet.
+      // This allows the prompt to appear for the citizen.
+      // The assignment will be cleared ONLY if citizen chooses to "Wait".
       await updateTicketStatus(ticketId, 'volunteer_left', null, null);
       
       // 2. Add system message
@@ -1627,6 +1639,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
   const { lang, tickets, volunteerProfile, feedbacks } = useAppContext();
   const t = CONTENT[lang].volunteer;
   const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
+  const [filterMode, setFilterMode] = useState<'all' | 'waiting' | 'active'>('waiting'); // Default filter to waiting
   
   const isAdmin = volunteerProfile.role === 'admin';
 
@@ -1642,6 +1655,13 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
       link.click();
       document.body.removeChild(link);
   };
+
+  const filteredTickets = tickets.filter(t => {
+      if (filterMode === 'all') return t.status === 'waiting' || t.status === 'active';
+      if (filterMode === 'waiting') return t.status === 'waiting';
+      if (filterMode === 'active') return t.status === 'active';
+      return false;
+  });
 
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
@@ -1674,23 +1694,53 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
                   </button>
               </div>
           )}
+
+          {/* New Filter Buttons */}
+          {(activeTab === 'requests' || !isAdmin) && (
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0"><Filter size={12}/> Filter:</span>
+                  <button onClick={() => setFilterMode('all')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-transparent text-slate-500 border-slate-200'}`}>
+                      {(t as any).filterAll || "All"}
+                  </button>
+                  <button onClick={() => setFilterMode('waiting')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'waiting' ? 'bg-blue-500 text-white border-blue-500' : 'bg-transparent text-slate-500 border-slate-200'}`}>
+                      {(t as any).filterWaiting || "Waiting"}
+                  </button>
+                  <button onClick={() => setFilterMode('active')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'active' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-transparent text-slate-500 border-slate-200'}`}>
+                      {(t as any).filterActive || "Active"}
+                  </button>
+              </div>
+          )}
        </div>
        
        <div className="flex-1 overflow-y-auto p-6">
          {(activeTab === 'requests' || !isAdmin) ? (
              <>
-                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({filteredTickets.length})</h3>
                  
-                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
+                 {filteredTickets.length === 0 ? (
                    <div className="text-center py-20 opacity-50">
                      <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
                      <p>{t.noRequests}</p>
                    </div>
                  ) : (
                    <div className="grid gap-4">
-                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
-                       <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
-                         <div className="flex justify-between items-start">
+                     {filteredTickets.map(ticket => (
+                       <div key={ticket.id} className={`p-6 rounded-2xl shadow-md border flex flex-col gap-4 relative overflow-hidden ${ticket.status === 'active' ? 'bg-slate-50 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
+                         
+                         {/* Status Badge */}
+                         <div className="absolute top-0 right-0 p-3">
+                             {ticket.status === 'active' ? (
+                                 <span className="bg-emerald-100 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"/> {(t as any).statusConsulting || "Consulting"}
+                                 </span>
+                             ) : (
+                                 <span className="bg-blue-50 text-blue-500 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                     <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"/> {(t as any).statusWaiting || "Waiting"}
+                                 </span>
+                             )}
+                         </div>
+
+                         <div className="flex justify-between items-start mt-2">
                             <div className="flex gap-2">
                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
                                <span className="text-slate-400 text-xs">{ticket.time}</span>
@@ -1703,7 +1753,19 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
                          <div className="flex gap-2 mt-2">
                             {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
                          </div>
-                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
+                         
+                         {/* Join Button - Only for waiting tickets or if it's assigned to me */}
+                         {ticket.status === 'waiting' ? (
+                             <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2 hover:bg-emerald-700 transition-colors">{t.accept}</button>
+                         ) : (
+                             ticket.volunteerName === volunteerProfile.name ? (
+                                <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2 hover:bg-emerald-700 transition-colors">Resume Chat</button>
+                             ) : (
+                                <div className="mt-2 text-center text-xs text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 py-3 rounded-xl">
+                                    Handled by {ticket.volunteerName || "Another Volunteer"}
+                                </div>
+                             )
+                         )}
                        </div>
                      ))}
                    </div>
@@ -1879,6 +1941,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
 
   // --- NEW: Handle Citizen choice after Volunteer left ---
   const handleCitizenWait = async () => {
+      // Logic: Set status back to 'waiting', and clear the assigned volunteer
       await updateTicketStatus(ticketId, 'waiting', null, null);
   };
 

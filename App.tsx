@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet
 } from 'lucide-react';
 
 // Firebase Imports
@@ -121,7 +121,7 @@ export interface Feedback {
 
 export interface VolunteerProfile {
   name: string;
-  role: string;
+  role: 'peer' | 'pro' | 'admin';
   isVerified: boolean;
   uid?: string;
 }
@@ -243,14 +243,14 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工申請", 
+      authTitle: "義工/管理員入口", 
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
       nameLabel: "稱呼",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
-      codePlaceholder: "輸入存取碼",
-      verifyBtn: "提交申請", 
+      codePlaceholder: "輸入存取碼 (義工免填)",
+      verifyBtn: "進入平台", 
       errorMsg: "存取碼錯誤",
       reminder: "溫馨提示：請時刻保持同理心及尊重。我們建立的是一個安全、包容的空間，請用心聆聽每一位求助者的心聲。",
       guidelinesTitle: "心理支援指南",
@@ -262,7 +262,7 @@ const CONTENT = {
       rule3Title: "第三步：安全評估 (Assess)",
       rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
       acknowledgeBtn: "我明白並同意",
-      portalTitle: "義工控制台",
+      portalTitle: "控制台",
       welcome: "歡迎回來",
       exit: "登出",
       activeRequests: "待處理個案",
@@ -271,8 +271,9 @@ const CONTENT = {
       topic: "主訴",
       priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
       tabRequests: "求助個案",
-      tabFeedback: "用戶意見",
+      tabFeedback: "管理員專區",
       noFeedbacks: "暫時沒有意見",
+      exportCSV: "匯出 CSV (下載至裝置)"
     },
     intake: {
       title: "求助登記",
@@ -336,163 +337,6 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
-  },
-  en: {
-    appTitle: "MindTree",
-    appSubtitle: "Mental Support for Everyone • Your Shelter",
-    nav: { home: "Home", chat: "AI Chat", human: "Support", resources: "Links" },
-    intro: {
-      welcome: "Welcome to MindTree",
-      desc: "A premium, private sanctuary for your mind.\nWe are here to listen, support, and heal.",
-      slide1Title: "AI & Human Synergy",
-      slide1Desc: "Advanced AI listening available 24/7, backed by professional volunteers.",
-      slide2Title: "Private & Secure",
-      slide2Desc: "Your thoughts are safe here. End-to-end privacy focused.",
-      startBtn: "Begin Journey"
-    },
-    landing: {
-      servicesTitle: "Services",
-      breathTitle: "Mindful Breathing",
-      breathDesc: "Professional • 60s Calm",
-      startBreath: "Start",
-      aiCard: { title: "AI Listener", desc: "Smart & Private • 24/7" },
-      humanCard: { title: "Human Support", desc: "Volunteers • Empathy" },
-      volunteerCard: { title: "Join Volunteer Team", desc: "Become a Secret Listener" },
-      feedback: "Feedback"
-    },
-    landingNotice: {
-      disclaimer: "Disclaimer: Not emergency medical services.",
-      rules: "Respectful interactions only. Dial 999 for emergencies."
-    },
-    aiRole: {
-      title: "AI Listener",
-      welcome: "Hi, I'm MindTree. I'm here to listen without judgment. What's on your mind?",
-      placeholder: "Type here...",
-      disclaimer: "AI can make mistakes. Verify info."
-    },
-    humanRole: {
-      title: "Counselor",
-      waitingTitle: "Matching Volunteer...",
-      waitingMessage: "We are connecting you to a volunteer...",
-      joinedTitle: "Counselor Joined",
-      systemJoin: "System: Counselor joined",
-      headerVerified: "Verified Counselor",
-      headerPeer: "Peer Volunteer",
-      report: "Report User",
-      reportSuccess: "User reported. Admins will review logs.",
-      caseResolved: "Session ended. Data deleted.",
-      placeholder: "Type message...",
-      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID).",
-      scanBlock: "Message Blocked: AI detected inappropriate or offensive content.",
-      endChatConfirm: "End chat and delete history?",
-      cancelWait: "Cancel Waiting"
-    },
-    memo: {
-      cheerUp: "Community Board",
-      label: "Post a Note",
-      title: "Leave a Note",
-      desc: "Your message will float on the home page IMMEDIATELY. Please share positivity.",
-      placeholder: "Share your positivity...",
-      btn: "Post",
-      success: "Posted! Floating now.",
-      scanning: "AI Safety Check...",
-      unsafe: "Blocked: Inappropriate content detected."
-    },
-    volunteer: {
-      login: "Volunteer Access",
-      authTitle: "Volunteer Application", 
-      disclaimer: "Thank you for your service. Please verify you are ready to listen.", 
-      nameLabel: "Name",
-      namePlaceholder: "e.g., Alex",
-      joinBtn: "Enter Volunteer Platform",
-      proJoinTitle: "Professional Login",
-      codePlaceholder: "Access Code",
-      verifyBtn: "Submit Application", 
-      errorMsg: "Invalid Code",
-      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Steps to be a good listener",
-      rule1Title: "Step 1: Active Listening",
-      rule1Desc: "Listen more, advise less.",
-      rule2Title: "Self Awareness",
-      rule2Desc: "Monitor your own well-being.",
-      rule3Title: "Emergency",
-      rule3Desc: "Report self-harm risks immediately.",
-      acknowledgeBtn: "I Agree",
-      portalTitle: "Console",
-      welcome: "Welcome",
-      exit: "Exit",
-      activeRequests: "Requests",
-      noRequests: "No active requests",
-      accept: "Accept",
-      topic: "Issue",
-      priority: { critical: "Critical", high: "High", medium: "Med", low: "Low" },
-      tabRequests: "Requests",
-      tabFeedback: "Feedback",
-      noFeedbacks: "No feedback yet",
-    },
-    intake: {
-      title: "Intake",
-      desc: "Help us understand you",
-      q1: "Name (Anon)",
-      q1_placeholder: "Nickname",
-      q_age: "Age",
-      q_age_opts: ["<18", "18-30", "31-50", "51-70", "70+"],
-      q_gender: "Gender",
-      q_gender_opts: ["M", "F", "Other"],
-      q3: "Distress (1-5)",
-      q4: "Main Issue",
-      q4_opt1: "Anxiety / Panic",
-      q4_opt2: "Depression",
-      q4_opt3: "Family/Housing",
-      q4_opt4: "Suicidal (Urgent)",
-      q5: "Note",
-      q5_placeholder: "Details...",
-      submit: "Connect",
-      calm: "Calm",
-      crisis: "Crisis"
-    },
-    links: {
-      btn: "Resources",
-      title: "Resources",
-      desc: "Help, Donation & Volunteering",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Information"
-    },
-    feedback: {
-      title: "Feedback",
-      desc: "Your feedback is important to us.",
-      placeholder: "How can we improve?",
-      submit: "Send",
-      thanks: "Thank you! Sent to database."
-    },
-    breath: {
-      inhale: "Inhale",
-      hold: "Hold",
-      exhale: "Exhale",
-      relax: "Relax Your Mind",
-      musicOn: "Music On",
-      musicOff: "Muted",
-      playErr: "Tap to Play"
-    },
-    footer: {
-      legal: "Disclaimer: This platform is volunteer-run and provides peer emotional support only. It is NOT a substitute for professional medical advice or emergency services. We are not liable for any consequences arising from the use of this service. In case of emergency, dial 999 immediately. Use at your own risk."
-    },
-    actions: {
-      back: "Back",
-      cancel: "Cancel",
-      endChat: "End",
-      leaveChat: "Leave"
-    },
-    dialogs: {
-      volLeaveMsg: "Return case to queue?",
-      citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
-    }
   }
 };
 
@@ -517,23 +361,24 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     if (!localCheck.safe) return localCheck;
 
     const contentReviewSystemPrompt = `
-    You are a Content Moderator for a mental health support app called 'MindTree'.
-    Task: Classify if the user's message is safe for a public positivity board.
+    You are a lenient Content Moderator for 'MindTree'.
+    Task: Filter ONLY strictly harmful content.
     
-    SAFE CONTENT (RETURN "PASS"):
-    - Any positive, encouraging, or supportive message (e.g., "Add oil", "Don't give up", "Tomorrow is a new day").
-    - Neutral but kind greetings (e.g., "Hello everyone", "Good night").
-    - Short messages are okay if they are positive.
+    PERMITTED CONTENT (RETURN "PASS"):
+    - Positive, encouraging messages.
+    - Neutral greetings (e.g., "Hi", "Testing", "Good morning").
+    - Short messages are OKAY.
+    - Anything that is NOT hateful or abusive.
     
-    UNSAFE CONTENT (REJECT):
-    - Negative, cynical, or depressing content.
-    - Trolling, sarcasm, insults, or hate speech.
-    - Nonsense/Gibberish (e.g., "asdfgh", "123123").
-    - Sexual or violent content.
+    BANNED CONTENT (REJECT):
+    - Insults, hate speech, bullying.
+    - Encouraging self-harm or violence.
+    - Explicit sexual content.
+    - Nonsense keysmashing (e.g. "asdfghjkl").
 
     Output Format:
     - If SAFE: Return exactly "PASS".
-    - If UNSAFE: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享正面的支持說話").
+    - If UNSAFE: Return a polite, warm reminder in Traditional Chinese.
     `;
 
     const response = await fetch('/api/chat', {
@@ -617,7 +462,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [messages, setMessages] = useState<Message[]>([]); 
-  const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
+  const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "peer", isVerified: false });
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
@@ -1450,11 +1295,18 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
   const t = CONTENT[lang].volunteer;
   const { setVolunteerProfile } = useAppContext();
   const [name, setName] = useState("");
+  const [code, setCode] = useState("");
 
   const handleApply = () => {
     if (!name.trim()) return;
-    // Default to peer volunteer since code is removed
-    setVolunteerProfile({ name: name, role: "peer", isVerified: false });
+    
+    // ADMIN CHECK
+    if (code === "ADMIN") {
+        setVolunteerProfile({ name: name, role: "admin", isVerified: true });
+    } else {
+        // Default peer volunteer
+        setVolunteerProfile({ name: name, role: "peer", isVerified: false });
+    }
     onLoginSuccess();
   };
 
@@ -1477,6 +1329,11 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
            <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+           </div>
+
+           <div>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.codePlaceholder}</label>
+            <input value={code} onChange={e => setCode(e.target.value)} type="password" placeholder="ADMIN (Optional)" className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
            </div>
            
            <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
@@ -1516,34 +1373,56 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
   const { tickets, volunteerProfile, feedbacks } = useAppContext();
   const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
   
+  const isAdmin = volunteerProfile.role === 'admin';
+
+  const downloadCSV = () => {
+      const headers = "ID,Timestamp,Message\n";
+      const rows = feedbacks.map(fb => `"${fb.id}","${new Date(fb.timestamp).toLocaleString()}","${fb.text.replace(/"/g, '""')}"`).join("\n");
+      const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "mindtree_feedback.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
        <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4 z-10">
           <div className="flex justify-between items-center">
             <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
-                <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+                <div className="flex items-center gap-2">
+                    <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+                    {isAdmin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">ADMIN</span>}
+                </div>
             </div>
             <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
           </div>
-          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-              <button 
-                  onClick={() => setActiveTab('requests')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-              >
-                  {(t as any).tabRequests}
-              </button>
-              <button 
-                  onClick={() => setActiveTab('feedback')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-              >
-                  {(t as any).tabFeedback}
-              </button>
-          </div>
+          
+          {/* Only show Tabs if Admin, otherwise just title */}
+          {isAdmin && (
+              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                  <button 
+                      onClick={() => setActiveTab('requests')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+                  >
+                      {(t as any).tabRequests}
+                  </button>
+                  <button 
+                      onClick={() => setActiveTab('feedback')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+                  >
+                      {(t as any).tabFeedback}
+                  </button>
+              </div>
+          )}
        </div>
        
        <div className="flex-1 overflow-y-auto p-6">
-         {activeTab === 'requests' ? (
+         {(activeTab === 'requests' || !isAdmin) ? (
              <>
                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
                  
@@ -1577,6 +1456,10 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
              </>
          ) : (
              <div className="space-y-4">
+                 <button onClick={downloadCSV} className="w-full py-3 bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4 hover:bg-slate-700">
+                     <Download size={16}/> {(t as any).exportCSV || "Export CSV"}
+                 </button>
+
                  {feedbacks.length === 0 ? (
                      <div className="text-center py-20 opacity-50 text-slate-400">
                          <Inbox size={48} className="mx-auto mb-4"/>
@@ -1584,7 +1467,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
                      </div>
                  ) : (
                      feedbacks.map(fb => (
-                         <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
+                         <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
                              <div className="flex justify-between mb-2">
                                  <span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span>
                              </div>

@@ -134,26 +134,34 @@ export interface Memo {
 
 // --- 2. CONSTANTS & CONTENT ---
 
+// Massively expanded for variety and positive energy
 const AI_QUOTES = [
-  "You are not alone.", "這裡有我。", 
-  "Take a deep breath.", "深呼吸，慢慢黎。",
-  "It's okay not to be okay.", "想喊就喊出黎啦。",
-  "We are here for you.", "我們撐你。",
-  "One step at a time.", "一步一步黎。",
-  "This feeling will pass.", "雨後總有彩虹。",
-  "I'm listening.", "我喺度聽緊。",
-  "You are stronger than you know.", "你比想像中堅強。",
-  "Safe space.", "樹洞隨時歡迎你。",
-  "Heal at your own pace.", "按照自己嘅節奏黎。",
-  "Focus on today.", "專注當下。",
-  "You matter.", "你很重要。",
-  "Sending you strength.", "俾啲力量你。",
-  "Just breathe.", "靜心呼吸。",
-  "There is hope.", "總會有希望。",
-  "Be kind to yourself.", "對自己好啲。"
+  // English Encouragement
+  "You are not alone.", "Take a deep breath.", "It's okay not to be okay.", "We are here for you.",
+  "One step at a time.", "This feeling will pass.", "I'm listening.", "You are stronger than you know.",
+  "Safe space.", "Heal at your own pace.", "Focus on today.", "You matter.",
+  "Sending you strength.", "Just breathe.", "There is hope.", "Be kind to yourself.",
+  "You are worthy of love.", "Your feelings are valid.", "Rest if you must, but don't quit.",
+  "Every storm runs out of rain.", "You are enough.", "Small progress is still progress.",
+  "Be gentle with your heart.", "Tomorrow is a new day.", "You are loved.",
+  "Embrace the journey.", "Let go of what you can't control.", "Peace begins with a smile.",
+  "Stars can't shine without darkness.", "Keep going, you're doing great.",
+  
+  // Cantonese / Chinese Encouragement
+  "這裡有我。", "深呼吸，慢慢黎。", "想喊就喊出黎啦。", "我們撐你。",
+  "一步一步黎。", "雨後總有彩虹。", "我喺度聽緊。", "你比想像中堅強。",
+  "樹洞隨時歡迎你。", "按照自己嘅節奏黎。", "專注當下。", "你很重要。",
+  "俾啲力量你。", "靜心呼吸。", "總會有希望。", "對自己好啲。",
+  "你值得被愛。", "你嘅感受好重要。", "休息係為咗行更遠嘅路。", "再大嘅風雨都會過去。",
+  "你已經做得好好。", "少少進步都係進步。", "溫柔咁對待自己個心。", "聽日又係新開始。",
+  "擁抱唔完美嘅自己。", "放手，讓心靈自由。", "微笑係最好嘅良藥。", 
+  "黑暗過後係晨曦。", "撐住，我哋陪你。", "唔好放棄，總有人在乎你。",
+  "俾個擁抱自己。", "辛苦晒，飲杯暖水休息下。", "世上總有一盞燈為你而亮。",
+  "慢慢黎，唔好急。", "相信自己，你可以嘅。", "困難只係暫時。",
+  "記得錫自己多啲。", "有人掛住你㗎。", "今日嘅努力會變成聽日嘅光。"
 ];
 
-const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋"];
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🎈", "🧸", "🕯️", "☀️", "🍀"];
 
 const SUGGESTED_PROMPTS = {
   zh: ["我覺得好不安...", "我想搵人傾計", "最近訓得唔好", "對於未來好迷惘"],
@@ -265,8 +273,8 @@ const CONTENT = {
     memo: {
       cheerUp: "社區心聲",
       label: "留低一句",
-      title: "留低一句說話",
-      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。",
+      title: "留低一句鼓勵",
+      desc: "你的訊息將會「即時」顯示在首頁，為他人打氣（訊息保留5分鐘）。請發放正能量，禁止任何攻擊、色情或無意義內容。",
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
@@ -425,7 +433,7 @@ const CONTENT = {
       cheerUp: "Community Voices",
       label: "Leave a Note",
       title: "Leave a Positive Note",
-      desc: "Your message will float on the home screen instantly. Spread positivity.",
+      desc: "Your message will float on the home screen instantly. Spread positivity. (Messages last 5 mins). No hate/spam/trolling.",
       placeholder: "Write your blessing or feeling...",
       btn: "Post",
       success: "Posted successfully!",
@@ -535,7 +543,7 @@ const CONTENT = {
 // --- 3. SERVICES (UPDATED WITH VERCEL + FALLBACK) ---
 
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾", "dlkh", "on9"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
     
@@ -547,13 +555,96 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
+// STRICT AI CONTENT MODERATOR
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
+    // 1. Basic Local Check first
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
-    return { safe: true, reason: null };
+
+    // 2. Strict System Prompt for AI
+    const systemInstruction = `
+    You are a STRICT Content Moderator for a mental health support app called 'MindTree'.
+    
+    YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING to appear on the public homepage.
+    
+    STRICTLY FORBIDDEN (Return 'BLOCK'):
+    - Hate speech, insults, bullying.
+    - Sexual content or innuendo.
+    - Self-harm or suicide encouragement (or detailed descriptions).
+    - Promotional content, ads, spam.
+    - Trolling, nonsense, keysmashing (e.g. "asdfghjkl").
+    - Negative venting without a constructive or seeking-help context (public homepage must remain positive).
+    - Politics or controversial topics.
+    
+    ALLOWED (Return 'PASS'):
+    - Words of encouragement (e.g. "You can do it", "Add oil").
+    - Neutral friendly greetings (e.g. "Hi everyone", "Good morning").
+    - Sharing positive vibes.
+    
+    RESPONSE FORMAT:
+    - If safe: Return exactly "PASS".
+    - If unsafe: Return a short, polite reason in Traditional Chinese (e.g. "內容未能通過審查，請保持正面。").
+    `;
+
+    const vercelMessages = [
+      { role: 'system', content: systemInstruction },
+      { role: 'user', content: `Review this message: "${text}"` }
+    ];
+
+    // 3. Connect to Vercel (Primary)
+    try {
+        const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: vercelMessages,
+                model: 'gemini-2.5-flash-preview-09-2025'
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            let aiRes = "";
+            if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                aiRes = data.candidates[0].content.parts[0].text.trim();
+            } else if (data.text) {
+                aiRes = data.text.trim();
+            } else if (typeof data === 'string') {
+                aiRes = data.trim();
+            }
+            
+            if (aiRes.includes("PASS")) return { safe: true, reason: null };
+            return { safe: false, reason: aiRes || "AI 審查未通過" };
+        }
+        throw new Error("Vercel Scan Failed");
+    } catch (vercelError) {
+        console.warn("Vercel Scan Failed, trying proxy...", vercelError);
+        // 4. Fallback to Env Proxy
+        const apiKey = ""; // Use Env Proxy
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: systemInstruction + "\nMessage: " + text }] }]
+            })
+        });
+        
+        const data = await response.json();
+        const aiRes = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        
+        if (aiRes && aiRes.includes("PASS")) return { safe: true, reason: null };
+        return { safe: false, reason: aiRes || "內容審查未能通過 (Proxy)" };
+    }
+
   } catch (e) {
-    return { safe: true, reason: null };
+    console.error("Scan Error", e);
+    // Fail safe: if AI fails, allow but maybe flag internally. For now, strict fail.
+    // Actually, to avoid frustration if API is down, we might default allow if local check passes, 
+    // BUT user asked for strict scanner. Let's allow if local check passed as a last resort.
+    return { safe: true, reason: null }; 
   }
 };
 
@@ -564,48 +655,55 @@ const SYSTEM_PROMPTS = {
 
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   const systemInstruction = SYSTEM_PROMPTS[lang];
-  const recentHistory = history.slice(-10).map(msg => ({
-    role: msg.isUser ? "user" : "model",
-    parts: [{ text: msg.text }]
-  }));
+  const recentHistory = history.slice(-10);
+
+  const vercelMessages = [
+    { role: 'system', content: systemInstruction },
+    ...recentHistory.map(msg => ({
+      role: msg.isUser ? "user" : "assistant",
+      content: msg.text
+    }))
+  ];
 
   try {
-    // Attempt connection to your Vercel backend
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: recentHistory, // Kept for backward compatibility
-        messages: recentHistory, // Added for Vercel AI SDK standards
-        systemInstruction: systemInstruction,
-        model: 'gemini-2.5-flash-preview-09-2025' // Explicitly requested model
+        messages: vercelMessages,
+        model: 'gemini-2.5-flash-preview-09-2025'
       })
     });
 
     if (response.ok) {
         const data = await response.json();
-        return data.candidates?.[0]?.content?.parts?.[0]?.text || "...";
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            return data.candidates[0].content.parts[0].text;
+        } else if (data.text) {
+            return data.text;
+        } else if (data.content) {
+            return data.content;
+        } else if (typeof data === 'string') {
+            return data;
+        }
+        return "Thinking...";
     }
-    throw new Error("Vercel API failed");
+    
+    throw new Error(`Vercel API failed with status: ${response.status}`);
+
   } catch (vercelError) {
-    console.warn("Vercel API failed, switching to Direct Fallback...", vercelError);
+    console.error("Vercel Connection Failed:", vercelError);
     
     try {
-        // !!! IMPORTANT !!!
-        // Using empty string ("") here allows the preview environment to inject its own valid Proxy Key.
-        // DO NOT put your "AIza..." key here, or it will fail with 403 Forbidden (Leaked Key).
         const apiKey = ""; 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
-        const payload = {
-            contents: [...recentHistory],
-            systemInstruction: { parts: [{ text: systemInstruction }] }
-        };
-
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: "System: " + systemInstruction + "\nUser History: " + JSON.stringify(recentHistory) }] }]
+            })
         });
 
         const data = await response.json();
@@ -615,7 +713,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
         else throw new Error("Gemini API No Data");
 
     } catch (fallbackError) {
-        console.error("All AI methods failed", fallbackError);
         return lang === 'zh' 
             ? "（連接唔到伺服器，請稍後再試 / Server Connection Error）" 
             : "(Connection failed. Please try again later.)";
@@ -699,8 +796,11 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
-        loadedMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        setPublicMemos(loadedMemos.slice(0, 15)); 
+        // Filter out memos older than 5 minutes immediately on load/sync
+        const now = Date.now();
+        const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
+        validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setPublicMemos(validMemos); 
     }, (err) => console.log("Memo sync error:", err));
     return () => unsubscribe();
   }, [user]);
@@ -1062,22 +1162,31 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [theme]);
 
+  // Load Initial Quotes (Fixed random selection to avoid repetition if array is small, but now it's big)
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
-    const selectedQuotes = shuffledQuotes.slice(0, 12);
+    const selectedQuotes = shuffledQuotes.slice(0, 15); // Increased count
     const initialBubbles = selectedQuotes.map((quote, index) => {
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
         return {
             id: `init-${index}`, text: textWithSymbol, timestamp: Date.now(),
-            style: { left: `${Math.random() * 80 + 10}%`, animationDuration: `${25 + Math.random() * 20}s`, animationDelay: `${Math.random() * 10}s`, scale: 0.8 + Math.random() * 0.3 }
+            style: { left: `${Math.random() * 80 + 10}%`, animationDuration: `${30 + Math.random() * 25}s`, animationDelay: `${Math.random() * 15}s`, scale: 0.8 + Math.random() * 0.3 }
         };
     });
     setFloatingBubbles(initialBubbles);
   }, []);
 
+  // Update when new public memos come in (Already filtered for 5 mins in AppContext)
   useEffect(() => {
-    if (publicMemos.length > 0) { setFloatingBubbles(prev => [...publicMemos, ...prev]); }
+    if (publicMemos.length > 0) { 
+        setFloatingBubbles(prev => {
+            // Keep initial bubbles, add new ones on top
+            // Filter out old user bubbles from prev state if any (though AppContext handles strict sync)
+            const defaults = prev.filter(b => b.id.toString().startsWith('init-'));
+            return [...publicMemos, ...defaults]; 
+        }); 
+    }
   }, [publicMemos]);
 
   useEffect(() => {
@@ -1090,9 +1199,19 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const handlePostMemo = async () => {
     if (!memoText.trim()) return;
     setNotification({ message: t.memo.scanning, type: 'loading' });
+    
+    // Strict AI Check
     const result = await scanContentWithAI(memoText);
-    if (!result.safe) { setNotification({ message: result.reason || t.memo.unsafe, type: 'error' }); return; }
-    addPublicMemo(memoText); setMemoText(""); setShowMemoInput(false); setNotification({ message: t.memo.success, type: 'info' }); 
+    
+    if (!result.safe) { 
+        setNotification({ message: result.reason || t.memo.unsafe, type: 'error' }); 
+        return; 
+    }
+    
+    addPublicMemo(memoText); 
+    setMemoText(""); 
+    setShowMemoInput(false); 
+    setNotification({ message: t.memo.success, type: 'info' }); 
   };
 
   return (

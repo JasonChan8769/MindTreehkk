@@ -588,9 +588,8 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
     console.warn("Vercel API failed, switching to Direct Fallback...", vercelError);
     
     try {
-        // Use empty string to allow environment injection of the service key
-        const apiKey = ""; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        const apiKey = "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I"; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [...recentHistory],

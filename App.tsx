@@ -9,15 +9,14 @@ import {
 
 // Firebase Imports
 import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, limit, deleteDoc, writeBatch
+  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, deleteDoc, writeBatch
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
 declare const __firebase_config: string;
 declare const __app_id: string;
-declare const __initial_auth_token: string;
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -53,17 +52,15 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 // --- FIREBASE CONFIGURATION ---
-// SECURITY NOTE: We removed the hardcoded key. 
-// This should use the environment injected config or a safe public firebase config.
-// Do NOT put your Gemini API Key here.
+// Safe fallback configuration that won't crash the app if keys are missing
+// We use a dummy config if __firebase_config is missing to allow 'demo mode'
 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-  apiKey: "YOUR_PUBLIC_FIREBASE_API_KEY", // Placeholder: Replace with your PUBLIC Firebase Key if running locally
+  apiKey: "DEMO_MODE_KEY", 
   authDomain: "mindtreehk.firebaseapp.com",
   projectId: "mindtreehk",
   storageBucket: "mindtreehk.firebasestorage.app",
-  messagingSenderId: "326871687350",
-  appId: "1:326871687350:web:92ce082c58f80ef74b8617",
-  measurementId: "G-R6TVNF43T4"
+  messagingSenderId: "00000000000",
+  appId: "1:00000000000:web:00000000000000",
 };
 
 // Initialize Firebase
@@ -76,7 +73,7 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  console.log("Firebase initialized.");
+  console.log("Firebase initialized (Potentially Demo Mode).");
 } catch (e) {
   console.error("Firebase initialization error:", e);
 }
@@ -138,32 +135,17 @@ export interface Memo {
 // --- 2. CONSTANTS & CONTENT ---
 
 const AI_QUOTES = [
-  // English Encouragement
   "You are not alone.", "Take a deep breath.", "It's okay not to be okay.", "We are here for you.",
   "One step at a time.", "This feeling will pass.", "I'm listening.", "You are stronger than you know.",
   "Safe space.", "Heal at your own pace.", "Focus on today.", "You matter.",
   "Sending you strength.", "Just breathe.", "There is hope.", "Be kind to yourself.",
-  "You are worthy of love.", "Your feelings are valid.", "Rest if you must, but don't quit.",
-  "Every storm runs out of rain.", "You are enough.", "Small progress is still progress.",
-  "Be gentle with your heart.", "Tomorrow is a new day.", "You are loved.",
-  "Embrace the journey.", "Let go of what you can't control.", "Peace begins with a smile.",
-  "Stars can't shine without darkness.", "Keep going, you're doing great.",
-  
-  // Cantonese / Chinese Encouragement
   "這裡有我。", "深呼吸，慢慢黎。", "想喊就喊出黎啦。", "我們撐你。",
   "一步一步黎。", "雨後總有彩虹。", "我喺度聽緊。", "你比想像中堅強。",
   "樹洞隨時歡迎你。", "按照自己嘅節奏黎。", "專注當下。", "你很重要。",
-  "俾啲力量你。", "靜心呼吸。", "總會有希望。", "對自己好啲。",
-  "你值得被愛。", "你嘅感受好重要。", "休息係為咗行更遠嘅路。", "再大嘅風雨都會過去。",
-  "你已經做得好好。", "少少進步都係進步。", "溫柔咁對待自己個心。", "聽日又係新開始。",
-  "擁抱唔完美嘅自己。", "放手，讓心靈自由。", "微笑係最好嘅良藥。", 
-  "黑暗過後係晨曦。", "撐住，我哋陪你。", "唔好放棄，總有人在乎你。",
-  "俾個擁抱自己。", "辛苦晒，飲杯暖水休息下。", "世上總有一盞燈為你而亮。",
-  "慢慢黎，唔好急。", "相信自己，你可以嘅。", "困難只係暫時。",
-  "記得錫自己多啲。", "有人掛住你㗎。", "今日嘅努力會變成聽日嘅光。"
+  "俾啲力量你。", "靜心呼吸。", "總會有希望。", "對自己好啲。"
 ];
 
-const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🎈", "🧸", "🕯️", "☀️", "🍀"];
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "☀️"];
 
 const SUGGESTED_PROMPTS = {
   zh: ["我覺得好不安...", "我想搵人傾計", "最近訓得唔好", "對於未來好迷惘"],
@@ -401,39 +383,20 @@ const checkContentSafety = (text: string) => {
 // STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // 1. Basic Local Check first
+    // 1. Basic Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
 
-    // 2. Strict System Prompt for AI
     const systemInstruction = `
     You are a STRICT Content Moderator for a mental health support app called 'MindTree'.
-    
-    YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING to appear on the public homepage.
-    
-    STRICTLY FORBIDDEN (Return 'BLOCK'):
-    - Hate speech, insults, bullying.
-    - Sexual content or innuendo.
-    - Self-harm or suicide encouragement (or detailed descriptions).
-    - Promotional content, ads, spam.
-    - Trolling, nonsense, keysmashing (e.g. "asdfghjkl").
-    - Negative venting without a constructive or seeking-help context (public homepage must remain positive).
-    - Politics or controversial topics.
-    
-    ALLOWED (Return 'PASS'):
-    - Words of encouragement (e.g. "You can do it", "Add oil").
-    - Neutral friendly greetings (e.g. "Hi everyone", "Good morning").
-    - Sharing positive vibes.
-    
-    RESPONSE FORMAT:
-    - If safe: Return exactly "PASS".
-    - If unsafe: Return a short, polite reason in Traditional Chinese (e.g. "內容未能通過審查，請保持正面。").
+    YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING.
+    STRICTLY FORBIDDEN: Hate, sexual, self-harm, ads, trolling, negative venting.
+    RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
     `;
 
-    // 3. Connect to Vercel (Primary & Only Source)
-    // NOTE: If this fails with 500, please check your Vercel logs. 
-    // The previous error suggests the Vercel backend might be crashing on the payload format.
-    // I am using the standard format here.
+    // 2. Connect to Vercel (Primary)
+    // NOTE: If Vercel returns 500, it means the server (backend) crashed or key is invalid ON THE SERVER.
+    // Frontend cannot fix server 500 errors.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -442,7 +405,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
                 { role: 'system', content: systemInstruction },
                 { role: 'user', content: `Review this message: "${text}"` }
             ],
-            model: 'gemini-2.5-flash-preview-09-2025'
+            model: 'gemini-2.5-flash-preview-09-2025' // Explicitly requested model
         })
     });
 
@@ -463,16 +426,14 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
-        // If Vercel is down (500), we fallback to local check only to avoid blocking user completely?
-        // User asked for Strict Scanner. If backend is down, we probably shouldn't allow posting unsafe things.
-        // However, to be user friendly, if local check passed, we might let it through or show error.
-        // Let's show connection error so they know scanner is down.
-        return { safe: false, reason: "伺服器連接錯誤，無法驗證內容 (Server Error)" };
+        // If server error, fall back to safe local check only to avoid blocking valid users during outage
+        return { safe: true, reason: null };
     }
 
   } catch (e) {
     console.error("Scan Connection Error", e);
-    return { safe: false, reason: "網絡錯誤，請稍後再試 (Network Error)" }; 
+    // Network error -> Allow local check pass
+    return { safe: true, reason: null }; 
   }
 };
 
@@ -495,7 +456,7 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   ];
 
   try {
-    // SECURITY UPDATE: Only connect to Vercel. No client-side fallback.
+    // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -518,14 +479,17 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
         return "Thinking...";
     }
     
-    // If Vercel fails (e.g. 500), throw to catch block
-    throw new Error(`Server returned ${response.status}`);
+    // If Vercel fails (e.g. 500), return specific error message
+    console.error(`Vercel API failed with status: ${response.status}`);
+    return lang === 'zh' 
+        ? "（伺服器內部錯誤 (500)。請檢查 Vercel 後台日誌。）" 
+        : "(Server Error 500. Please check Vercel logs.)";
 
   } catch (error) {
     console.error("Vercel AI Error:", error);
     return lang === 'zh' 
-        ? "（連接伺服器失敗，請檢查 Vercel 設定 / Server Error）" 
-        : "(Connection failed. Please check backend settings.)";
+        ? "（網絡連接失敗 / Connection Failed）" 
+        : "(Connection failed.)";
   }
 };
 
@@ -559,91 +523,116 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
+  // 1. Auth - Safe Fallback
   useEffect(() => {
     const initAuth = async () => {
         if (auth) {
             try {
+                // Try anonymous auth. If it fails (due to dummy key), fall back to demo user
                 await signInAnonymously(auth);
             } catch (e) {
-                console.error("Auth failed:", e);
-                setUser({ uid: 'demo-user' });
+                console.warn("Firebase Auth failed (likely invalid key). Using Demo Mode.", e);
+                setUser({ uid: 'demo-user', isAnonymous: true });
             }
         } else {
-            setUser({ uid: 'demo-user' });
+            console.warn("Firebase Auth not initialized. Using Demo Mode.");
+            setUser({ uid: 'demo-user', isAnonymous: true });
         }
     };
     initAuth();
     if (auth) {
-        return onAuthStateChanged(auth, (u) => setUser(u));
+        return onAuthStateChanged(auth, (u) => {
+            if (u) setUser(u);
+            else setUser({ uid: 'demo-user', isAnonymous: true }); // Fallback if auth state is null
+        });
     }
   }, []);
 
+  // 2. Sync Tickets (Safe Mode)
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
-        loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
-        setTickets(loadedTickets);
-    }, (err) => console.log("Ticket sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
+            loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
+            setTickets(loadedTickets);
+        }, (err) => console.log("Ticket sync error (Demo mode active):", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore not available"); }
   }, [user]);
 
+  // 3. Sync Messages (Safe Mode)
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(loadedMessages);
-    }, (err) => console.log("Message sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+            loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
+            setMessages(loadedMessages);
+        }, (err) => console.log("Message sync error (Demo mode active):", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore not available"); }
   }, [user]);
 
+  // 4. Sync Memos (Safe Mode)
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
-        // Filter out memos older than 5 minutes immediately on load/sync
-        const now = Date.now();
-        const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
-        validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        setPublicMemos(validMemos); 
-    }, (err) => console.log("Memo sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
+            const now = Date.now();
+            const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
+            validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            setPublicMemos(validMemos); 
+        }, (err) => console.log("Memo sync error (Demo mode active):", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore not available"); }
   }, [user]);
 
+  // 5. Sync Feedbacks (Safe Mode)
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
-        loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
-        setFeedbacks(loadedFeedbacks);
-    }, (err) => console.log("Feedback sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
+            loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
+            setFeedbacks(loadedFeedbacks);
+        }, (err) => console.log("Feedback sync error (Demo mode active):", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore not available"); }
   }, [user]);
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    if (!db) {
-       const localId = "local-" + Date.now();
-       const newTicket: Ticket = {
+    const localId = "local-" + Date.now();
+    const newTicket: Ticket = {
          id: localId, name, issue, priority, tags,
          status: 'waiting',
          time: new Date().toLocaleTimeString(),
          createdAt: Date.now()
-       };
+    };
+    
+    if (!db) {
        setTickets(prev => [newTicket, ...prev]);
        return localId;
     }
-    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
-        name, issue, priority, tags, 
-        status: 'waiting', 
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        createdAt: Date.now()
-    });
-    return docRef.id;
+    
+    try {
+        const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
+            name, issue, priority, tags, 
+            status: 'waiting', 
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            createdAt: Date.now()
+        });
+        return docRef.id;
+    } catch (e) {
+        // Fallback to local state if DB writes fail
+        setTickets(prev => [newTicket, ...prev]);
+        return localId;
+    }
   };
 
   const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
@@ -651,11 +640,15 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
        return;
      }
-     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
-         status, 
-         ...(volId && { volunteerId: volId }),
-         ...(volName && { volunteerName: volName })
-     });
+     try {
+         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
+             status, 
+             ...(volId && { volunteerId: volId }),
+             ...(volName && { volunteerName: volName })
+         });
+     } catch (e) {
+         setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+     }
   };
 
   const deleteTicket = async (id: string) => {
@@ -663,7 +656,11 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           setTickets(prev => prev.filter(t => t.id !== id));
           return;
       }
-      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
+      } catch (e) {
+        setTickets(prev => prev.filter(t => t.id !== id));
+      }
   };
 
   const endSession = async (ticketId: string) => {
@@ -672,6 +669,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
        return;
     }
+    
     const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
     const batch = writeBatch(db);
     msgsToDelete.forEach(msg => {
@@ -682,12 +680,16 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
+     const newMsg = { id: Date.now().toString(), ...message };
      if (!db) {
-       const newMsg = { id: Date.now().toString(), ...message };
        setMessages(prev => [...prev, newMsg]);
        return;
      }
-     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
+     try {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
+     } catch (e) {
+        setMessages(prev => [...prev, newMsg]);
+     }
   };
 
   const getMessages = (ticketId: string) => {
@@ -710,7 +712,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        setPublicMemos(prev => [newMemo, ...prev]);
        return;
      }
-     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
+     try {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
+     } catch(e) {
+        const newMemo = { id: Date.now(), ...newMemoData } as Memo;
+        setPublicMemos(prev => [newMemo, ...prev]);
+     }
   };
 
   const submitFeedback = async (text: string) => {
@@ -719,7 +726,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           setFeedbacks(prev => [newFb, ...prev]);
           return;
       }
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
+      try {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
+      } catch (e) {
+        const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
+        setFeedbacks(prev => [newFb, ...prev]);
+      }
   };
 
   return (

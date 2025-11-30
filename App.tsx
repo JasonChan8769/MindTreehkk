@@ -55,31 +55,32 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// --- FIREBASE CONFIGURATION ---
-let firebaseConfig = {};
+// --- FIREBASE CONFIGURATION (USER PROVIDED) ---
+// This configuration ensures cross-device connectivity
+const firebaseConfig = {
+  apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
+  authDomain: "mindtreehk.firebaseapp.com",
+  projectId: "mindtreehk",
+  storageBucket: "mindtreehk.firebasestorage.app",
+  messagingSenderId: "326871687350",
+  appId: "1:326871687350:web:92ce082c58f80ef74b8617",
+  measurementId: "G-R6TVNF43T4"
+};
+
+// Initialize Firebase
 let app = null;
 let auth = null;
 let db = null;
-let appId = 'default-app-id';
-let initialAuthToken = undefined;
+// Use a fixed App ID fallback to ensure different devices see the same data path
+let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
+// NOTE: We ignore __initial_auth_token here because we are using a custom Firebase project
+// which requires separate authentication (Anonymous).
 
 try {
-  if (typeof __firebase_config !== 'undefined') {
-    firebaseConfig = JSON.parse(__firebase_config);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
-  } else if (import.meta.env && import.meta.env.VITE_FIREBASE_CONFIG) {
-     firebaseConfig = JSON.parse(import.meta.env.VITE_FIREBASE_CONFIG);
-  }
-  
-  if (Object.keys(firebaseConfig).length > 0) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    console.log("Firebase initialized.");
-  } else {
-    console.warn("Firebase config not found. Running in demo mode.");
-  }
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  console.log("Firebase initialized with MindTree config.");
 } catch (e) {
   console.error("Firebase initialization error:", e);
 }
@@ -471,10 +472,13 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
         if (auth) {
-            if (initialAuthToken) {
-                await signInWithCustomToken(auth, initialAuthToken);
-            } else {
+            try {
+                // FORCE ANONYMOUS AUTH for custom project
                 await signInAnonymously(auth);
+            } catch (e) {
+                console.error("Auth failed:", e);
+                // Fallback for dev mode without firebase
+                setUser({ uid: 'demo-user' });
             }
         } else {
             setUser({ uid: 'demo-user' });
@@ -1308,7 +1312,7 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
   const handleApply = () => {
     if (!name.trim()) return;
     
-    // ADMIN CHECK via Name
+    // ADMIN CHECK via Name (SECRET CODE)
     if (name.trim() === "6221Like") {
         setVolunteerProfile({ name: "Admin", role: "admin", isVerified: true });
     } else {

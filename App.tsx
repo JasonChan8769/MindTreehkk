@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw
 } from 'lucide-react';
 
 // Firebase Imports
@@ -55,8 +55,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// --- FIREBASE CONFIGURATION (USER PROVIDED) ---
-// This configuration ensures cross-device connectivity
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
   authDomain: "mindtreehk.firebaseapp.com",
@@ -71,10 +70,7 @@ const firebaseConfig = {
 let app = null;
 let auth = null;
 let db = null;
-// Use a fixed App ID fallback to ensure different devices see the same data path
 let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
-// NOTE: We ignore __initial_auth_token here because we are using a custom Firebase project
-// which requires separate authentication (Anonymous).
 
 try {
   app = initializeApp(firebaseConfig);
@@ -167,8 +163,8 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
-// --- NEW ADDITION: CHAT CONVERSATION STARTERS ---
-const CONVERSATION_STARTERS = {
+// STATIC SUGGESTIONS (Fallback)
+const STATIC_SUGGESTIONS = {
   zh: {
     citizen: [
       "其實我唔知講咩好...",
@@ -283,9 +279,9 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工/管理員入口", 
+      authTitle: "義工入口", // REMOVED "/管理員" to keep it secret
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼 (輸入 6221Like 進入管理員模式)",
+      nameLabel: "稱呼", // REMOVED "6221Like" hint to keep it secret
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -1533,7 +1529,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
-  const [showSuggestions, setShowSuggestions] = useState(false); // Controls visibility of suggestions
+  const [showSuggestions, setShowSuggestions] = useState(false);
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
@@ -1541,6 +1537,10 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, showSuggestions]);
+
+  // Use STATIC suggestions directly (Reliable, works on all devices like AI Chat)
+  // This removes the dependency on the API which might fail on some devices
+  const currentSuggestions = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1569,11 +1569,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       await deleteTicket(ticketId);
       onLeave();
   };
-
-  // Select the appropriate prompts based on Role and Language
-  const currentSuggestions = isVolunteer 
-    ? CONVERSATION_STARTERS[lang].volunteer 
-    : CONVERSATION_STARTERS[lang].citizen;
 
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
@@ -1645,7 +1640,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
          </div>
       </div>
 
-      {/* --- AI SUGGESTION BAR --- */}
+      {/* --- STATIC SUGGESTION BAR (Works like AI Chat) --- */}
       <div className="bg-white dark:bg-slate-900 pt-2 shadow-up z-30">
         
         {/* Toggle Button */}

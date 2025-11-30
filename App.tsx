@@ -22,6 +22,13 @@ declare const __firebase_config: string;
 declare const __app_id: string;
 declare const __initial_auth_token: string;
 
+// --- GEMINI API KEY SETUP ---
+// 請在此填入你的 Gemini API Key，或確保環境變數已設定
+const GEMINI_API_KEY = ""; 
+// 注意：在正式產品中，建議不要將 Key 直接寫在前端代碼中。
+
+const apiKey = GEMINI_API_KEY; 
+
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
   constructor(props: { children: React.ReactNode }) {
@@ -550,10 +557,13 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
+// MODIFIED: DIRECT API CALL (Client-Side)
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
+
+    if (!apiKey) return { safe: true, reason: null }; // Pass if no API key
 
     const contentReviewSystemPrompt = `
     You are a lenient Content Moderator for 'MindTree'.
@@ -576,12 +586,12 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     - If UNSAFE: Return a polite, warm reminder in Traditional Chinese.
     `;
 
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: [{ role: "user", parts: [{ text: text }] }],
-        systemInstruction: contentReviewSystemPrompt,
+        contents: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: { parts: [{ text: contentReviewSystemPrompt }] },
         generationConfig: { temperature: 0.2 }
       })
     });
@@ -607,20 +617,23 @@ const SYSTEM_PROMPTS = {
   en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
 };
 
+// MODIFIED: DIRECT API CALL (Client-Side)
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   try {
+    if (!apiKey) throw new Error("No API Key");
+
     const systemInstruction = SYSTEM_PROMPTS[lang];
     const recentHistory = history.slice(-10).map(msg => ({
       role: msg.isUser ? "user" : "model",
       parts: [{ text: msg.text }]
     }));
 
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: recentHistory,
-        systemInstruction: systemInstruction 
+        contents: recentHistory,
+        systemInstruction: { parts: [{ text: systemInstruction }] }
       })
     });
 
@@ -1695,9 +1708,11 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
   );
 };
 
-// --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT ---
+// --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT (MODIFIED: Client-Side) ---
 const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: 'zh' | 'en'): Promise<string[]> => {
   try {
+    if (!apiKey) throw new Error("No API Key");
+
     const roleDesc = role === 'volunteer' ? (lang === 'zh' ? "輔導員/義工" : "Counselor/Volunteer") : (lang === 'zh' ? "求助者" : "User seeking help");
     
     // System prompt specifically for generating options
@@ -1717,12 +1732,13 @@ const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 
       parts: [{ text: `${msg.sender}: ${msg.text}` }]
     }));
 
-    const response = await fetch('/api/chat', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: recentHistory,
-        systemInstruction: systemInstruction 
+        contents: recentHistory,
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: { temperature: 0.4 }
       })
     });
 

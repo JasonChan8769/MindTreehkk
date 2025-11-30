@@ -24,7 +24,7 @@ declare const __initial_auth_token: string;
 
 // --- GEMINI API KEY SETUP ---
 // ⚠️ 重要：請在此填入你的 Google Gemini API Key (Flash 2.5) 以啟用跨裝置 AI 功能
-const GEMINI_API_KEY = "AIzaSyAHrm-0j4XQgaUW3eOVT0H7U7iCd_a2VZw"; 
+const GEMINI_API_KEY = ""; 
 
 const apiKey = GEMINI_API_KEY; 
 

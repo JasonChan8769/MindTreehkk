@@ -167,6 +167,45 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
+// --- NEW ADDITION: CHAT CONVERSATION STARTERS ---
+const CONVERSATION_STARTERS = {
+  zh: {
+    citizen: [
+      "其實我唔知講咩好...",
+      "我覺得好辛苦，頂唔順...",
+      "我只想有人聽我講...",
+      "最近發生咗好多事...",
+      "我覺得好孤單。",
+      "我驚我會做傻事..."
+    ],
+    volunteer: [
+      "我喺度，你可以慢慢講。",
+      "聽落去你真係好唔容易。",
+      "你已經做得好好，一步步黎。",
+      "介唔介意講多啲關於呢件事？",
+      "這裡是一個安全既地方，我會陪住你。",
+      "深呼吸，我地一齊面對。"
+    ]
+  },
+  en: {
+    citizen: [
+      "I don't know what to say...",
+      "I feel overwhelmed...",
+      "I just need someone to listen...",
+      "I feel so lonely.",
+      "I'm scared about the future..."
+    ],
+    volunteer: [
+      "I'm here for you, take your time.",
+      "That sounds really tough.",
+      "You are safe here, I'm listening.",
+      "Would you like to tell me more?",
+      "Let's take a deep breath together.",
+      "It's okay to feel this way."
+    ]
+  }
+};
+
 const USEFUL_LINKS = [
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "mental" },
@@ -347,9 +386,9 @@ const checkContentSafety = (text: string) => {
   const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
-  
+   
   if (text.trim().length < 2) return { safe: false, reason: "Message too short." };
-  
+   
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
   }
@@ -364,13 +403,13 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     const contentReviewSystemPrompt = `
     You are a lenient Content Moderator for 'MindTree'.
     Task: Filter ONLY strictly harmful content.
-    
+     
     PERMITTED CONTENT (RETURN "PASS"):
     - Positive, encouraging messages.
     - Neutral greetings (e.g., "Hi", "Testing", "Good morning").
     - Short messages are OKAY.
     - Anything that is NOT hateful or abusive.
-    
+     
     BANNED CONTENT (REJECT):
     - Insults, hate speech, bullying.
     - Encouraging self-harm or violence.
@@ -396,7 +435,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     if (!response.ok) return { safe: true, reason: null }; 
 
     const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
+     
     if (result === "PASS") {
       return { safe: true, reason: null };
     } else {
@@ -1494,13 +1533,14 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false); // Controls visibility of suggestions
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
   const chatMessages = messages.filter(m => m.ticketId === ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status]);
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, showSuggestions]);
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1514,6 +1554,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       isVerified: isVolunteer && volunteerProfile.isVerified
     });
     setText("");
+    setShowSuggestions(false); // Hide suggestions after sending
   };
 
   const handleEndChat = async () => {
@@ -1528,6 +1569,11 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       await deleteTicket(ticketId);
       onLeave();
   };
+
+  // Select the appropriate prompts based on Role and Language
+  const currentSuggestions = isVolunteer 
+    ? CONVERSATION_STARTERS[lang].volunteer 
+    : CONVERSATION_STARTERS[lang].citizen;
 
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
@@ -1592,23 +1638,48 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
          )}
          <div className="max-w-3xl mx-auto">
             {chatMessages.map(msg => {
-                // ALIGNMENT LOGIC:
-                // If I am Volunteer (isVolunteer=true): My msgs are `isUser=false`. So `isMe` = !msg.isUser
-                // If I am Citizen (isVolunteer=false): My msgs are `isUser=true`. So `isMe` = msg.isUser
                 const isMe = isVolunteer ? !msg.isUser : msg.isUser;
-                
-                // We pass `isMe` into the `isUser` prop of ChatBubble to control alignment (Right=Me, Left=Them)
                 return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
             })}
             <div ref={messagesEndRef}/>
          </div>
       </div>
 
-      <div className="p-4 bg-white dark:bg-slate-900 shadow-up">
-        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
-           <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
-           <button type="submit" className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform"><Send size={20}/></button>
-        </form>
+      {/* --- AI SUGGESTION BAR --- */}
+      <div className="bg-white dark:bg-slate-900 pt-2 shadow-up z-30">
+        
+        {/* Toggle Button */}
+        <div className="px-4 flex justify-between items-center mb-2">
+           <button 
+             onClick={() => setShowSuggestions(!showSuggestions)}
+             className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${showSuggestions ? 'text-teal-500' : 'text-slate-400 hover:text-slate-600'}`}
+           >
+             <Sparkles size={12} className={showSuggestions ? "fill-teal-500" : ""} /> {lang === 'zh' ? 'AI 提示' : 'AI Suggestions'}
+           </button>
+        </div>
+
+        {/* Suggestion Chips */}
+        {showSuggestions && (
+          <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar animate-fade-in">
+             {currentSuggestions.map((suggestion, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setText(suggestion)}
+                  className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
+                >
+                  {suggestion}
+                </button>
+             ))}
+          </div>
+        )}
+
+        {/* Chat Input */}
+        <div className="p-4 pt-0">
+          <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
+             <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
+             <button type="submit" className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform"><Send size={20}/></button>
+          </form>
+        </div>
       </div>
     </div>
   );

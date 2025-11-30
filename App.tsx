@@ -3,11 +3,11 @@ import {
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, X, Send, Bot, 
   Lock, BadgeCheck, Flag, AlertTriangle, 
   ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, LogOut,
-  Moon, Sun, Link, Globe,
+  Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, Wand2
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet
 } from 'lucide-react';
 
 // Firebase Imports
@@ -21,38 +21,6 @@ import {
 declare const __firebase_config: string;
 declare const __app_id: string;
 declare const __initial_auth_token: string;
-
-// --- GEMINI API SETUP ---
-const apiKey = ""; // Environment injects this automatically. If running locally, paste your key here.
-
-const callGemini = async (prompt: string, systemInstruction?: string) => {
-  try {
-    // Using Gemini 2.5 Flash as requested
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-    
-    const payload: any = {
-      contents: [{ parts: [{ text: prompt }] }]
-    };
-
-    if (systemInstruction) {
-      payload.systemInstruction = { parts: [{ text: systemInstruction }] };
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) throw new Error(`Gemini API Error: ${response.statusText}`);
-    
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  } catch (error) {
-    console.error("AI Service Error:", error);
-    return "";
-  }
-};
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -87,7 +55,8 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// --- FIREBASE CONFIGURATION ---
+// --- FIREBASE CONFIGURATION (USER PROVIDED) ---
+// This configuration ensures cross-device connectivity
 const firebaseConfig = {
   apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
   authDomain: "mindtreehk.firebaseapp.com",
@@ -98,11 +67,14 @@ const firebaseConfig = {
   measurementId: "G-R6TVNF43T4"
 };
 
+// Initialize Firebase
 let app = null;
 let auth = null;
 let db = null;
+// Use a fixed App ID fallback to ensure different devices see the same data path
 let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
-let initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : undefined;
+// NOTE: We ignore __initial_auth_token here because we are using a custom Firebase project
+// which requires separate authentication (Anonymous).
 
 try {
   app = initializeApp(firebaseConfig);
@@ -139,7 +111,6 @@ export interface Ticket {
   tags: string[];
   volunteerId?: string;
   volunteerName?: string;
-  volunteerHasLeft?: boolean; 
 }
 
 export interface Feedback {
@@ -230,8 +201,7 @@ const CONTENT = {
       aiCard: { title: "AI 樹洞", desc: "24/7 智能聆聽 • 即時回應" },
       humanCard: { title: "真人輔導", desc: "義工與社工 • 溫暖同行" },
       volunteerCard: { title: "加入義工團隊", desc: "成為別人的秘密樹窿" },
-      feedback: "提供意見",
-      installTitle: "下載教學",
+      feedback: "提供意見"
     },
     landingNotice: {
       disclaimer: "免責聲明：本平台提供情緒支援，並非緊急醫療服務。",
@@ -258,14 +228,7 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
-      cancelWait: "取消等待",
-      volunteerLeftTitle: "輔導員已離開",
-      volunteerLeftDesc: "輔導員已結束對話。你可以選擇重新排隊，或完全離開。",
-      requeue: "重新排隊 (下一位)",
-      exit: "離開 (刪除個案)",
-      systemVolunteerLeft: "系統訊息：輔導員已離開對話。",
-      aiAssist: "AI 提示",
-      loadingSuggestions: "正在生成建議...",
+      cancelWait: "取消等待"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -281,9 +244,9 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工入口", 
+      authTitle: "義工/管理員入口", 
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼", 
+      nameLabel: "稱呼 (輸入 6221Like 進入管理員模式)",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -374,19 +337,6 @@ const CONTENT = {
     },
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
-    },
-    tutorial: {
-      title: "如何安裝 MindTree",
-      desc: "將應用程式加到主畫面，以便隨時使用。",
-      iosTitle: "iOS (iPhone/iPad)",
-      iosStep1: "1. 點擊 Safari 下方的「分享」按鈕",
-      iosStep2: "2. 向下滑動並選擇「加至主畫面」",
-      androidTitle: "Android",
-      androidStep1: "1. 點擊 Chrome 右上角的選單 (⋮)",
-      androidStep2: "2. 選擇「安裝應用程式」或「加至主畫面」",
-      pcTitle: "電腦 / 桌面版",
-      pcStep1: "請將此網頁加入書籤 (Ctrl + D)，或在瀏覽器選單中選擇「安裝 MindTree」。",
-      close: "明白"
     }
   }
 };
@@ -432,50 +382,57 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     - If UNSAFE: Return a polite, warm reminder in Traditional Chinese.
     `;
 
-    const result = await callGemini(text, contentReviewSystemPrompt);
-    const cleanedResult = result.trim();
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: contentReviewSystemPrompt,
+        generationConfig: { temperature: 0.2 }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) return { safe: true, reason: null }; 
+
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
     
-    if (cleanedResult === "PASS" || cleanedResult.includes("PASS")) {
+    if (result === "PASS") {
       return { safe: true, reason: null };
     } else {
-      return { safe: false, reason: cleanedResult || "Content filtered by AI." };
+      return { safe: false, reason: result || "Content filtered by AI." };
     }
 
   } catch (e) {
-    console.error("Scanner Error:", e);
     return { safe: true, reason: null };
   }
 };
 
-const generateChatSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: Language): Promise<string[]> => {
-  try {
-    const contextPrompt = role === 'citizen'
-      ? "You are assisting a user who is seeking mental support in Cantonese. They might be struggling to express themselves. Provide 3 short, first-person phrases they can use to start expressing their feelings or situation. Keep it simple, natural, and in Traditional Chinese (Cantonese)."
-      : "You are assisting a volunteer counselor in Cantonese. Provide 3 short, empathetic, active-listening responses or gentle guiding questions they can use to support the user. Keep it professional, warm, and in Traditional Chinese (Cantonese).";
-
-    const historyText = history.slice(-5).map(m => `${m.sender}: ${m.text}`).join('\n');
-
-    const finalPrompt = `${contextPrompt}\n\nConversation Context:\n${historyText}\n\nOutput ONLY 3 sentences separated by '|'. No numbering. Example: 我覺得好辛苦|你慢慢講，我聽緊|還有其他野困擾你嗎`;
-
-    const result = await callGemini(finalPrompt);
-    if (!result) return [];
-    // Robust parsing for pipe separated values, handling potential extra text
-    const parts = result.split('|');
-    return parts.map(s => s.trim().replace(/^["']|["']$/g, '')).filter(s => s.length > 0).slice(0, 3);
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
+const SYSTEM_PROMPTS = {
+  zh: `你係「MindTree 樹洞」，一個有溫度、有思想嘅數碼同伴。用廣東話口語。禁止機械式回應。`,
+  en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
 };
 
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   try {
-    const systemInstruction = `You are MindTree, a thoughtful digital companion. Speak naturally in ${lang === 'zh' ? 'Cantonese' : 'English'}. Keep responses concise and warm.`;
-    const lastUserMsg = history[history.length - 1].text;
-    const prompt = `User said: "${lastUserMsg}". Reply as MindTree.`;
-    
-    const result = await callGemini(prompt, systemInstruction);
-    return result || "...";
+    const systemInstruction = SYSTEM_PROMPTS[lang];
+    const recentHistory = history.slice(-10).map(msg => ({
+      role: msg.isUser ? "user" : "model",
+      parts: [{ text: msg.text }]
+    }));
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: recentHistory,
+        systemInstruction: systemInstruction 
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error("API Error");
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "...";
   } catch (error) {
     return lang === 'zh' ? "（MindTree 正在思考...）" : "(MindTree is thinking...)";
   }
@@ -488,7 +445,6 @@ interface AppContextType {
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
   updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
   deleteTicket: (id: string) => Promise<void>;
-  volunteerLeaveSession: (ticketId: string) => Promise<void>;
   endSession: (ticketId: string) => Promise<void>;
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
@@ -612,9 +568,8 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
      }
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
-         ...(volId !== undefined && { volunteerId: volId }), // Only update if provided
-         ...(volName !== undefined && { volunteerName: volName }),
-         ...(status === 'waiting' && { volunteerHasLeft: false }) // Reset flag if requeuing
+         ...(volId && { volunteerId: volId }),
+         ...(volName && { volunteerName: volName })
      });
   };
 
@@ -624,24 +579,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           return;
       }
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
-  };
-
-  const volunteerLeaveSession = async (ticketId: string) => {
-      if (!db) return;
-      
-      // Update ticket to indicate volunteer left, but KEEP it active so user can see it
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticketId), {
-          volunteerHasLeft: true
-      });
-      
-      // Add system message
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-          text: CONTENT['zh'].humanRole.systemVolunteerLeft, // Default to ZH for system msg
-          isUser: false,
-          sender: "System",
-          timestamp: Date.now(),
-          ticketId
-      });
   };
 
   const endSession = async (ticketId: string) => {
@@ -716,7 +653,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, volunteerLeaveSession, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
       {children}
     </AppContext.Provider>
   );
@@ -746,17 +683,6 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
       <button onClick={onClose} className="opacity-80 hover:opacity-100 shrink-0"><X size={16} /></button>
     </div>
   );
-};
-
-// --- SUB-COMPONENTS MUST BE DEFINED BEFORE USE ---
-const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
-    const { updateTicketStatus } = useAppContext();
-    
-    const handleRequeue = async () => {
-        await updateTicketStatus(ticketId, 'waiting');
-    };
-
-    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center cursor-pointer">重新排隊 (下一位)</span>;
 };
 
 const TypingIndicator = () => (
@@ -819,46 +745,6 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   );
 };
 
-// --- TUTORIAL MODAL ---
-
-const TutorialModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
-    const t = CONTENT[lang].tutorial;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 w-full max-w-sm shadow-2xl relative overflow-y-auto max-h-[80vh]">
-                <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20}/></button>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2"><Download size={24} className="text-teal-500"/> {t.title}</h3>
-                <p className="text-xs text-slate-500 mb-6">{t.desc}</p>
-
-                <div className="space-y-6">
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-                        <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2"><Smartphone size={16}/> {t.iosTitle}</h4>
-                        <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-                            <li>{t.iosStep1} <ArrowRight size={12} className="inline"/></li>
-                            <li>{t.iosStep2}</li>
-                        </ul>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-                        <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2"><Smartphone size={16}/> {t.androidTitle}</h4>
-                         <ul className="text-sm text-slate-600 dark:text-slate-400 space-y-1">
-                            <li>{t.androidStep1} <ArrowRight size={12} className="inline"/></li>
-                            <li>{t.androidStep2}</li>
-                        </ul>
-                    </div>
-
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-                         <h4 className="font-bold text-slate-800 dark:text-white flex items-center gap-2 mb-2"><BookOpen size={16}/> {t.pcTitle}</h4>
-                         <p className="text-sm text-slate-600 dark:text-slate-400">{t.pcStep1}</p>
-                    </div>
-                </div>
-                
-                <button onClick={onClose} className="w-full py-3 bg-teal-600 text-white font-bold rounded-xl mt-6 shadow-lg shadow-teal-500/30">{t.close}</button>
-            </div>
-        </div>
-    );
-};
-
 // --- PRO BREATHING EXERCISE ---
 
 const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
@@ -874,8 +760,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   useEffect(() => {
     let timeLeft = totalDuration;
     
+    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.8; 
+        audioRef.current.volume = 0.8; // Increased volume
     }
 
     const cycle = async () => {
@@ -904,6 +791,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
+         // Explicitly triggered by user interaction - browsers like this
          audioRef.current.play()
           .then(() => setIsPlaying(true))
           .catch(e => console.error("Play failed:", e));
@@ -920,6 +808,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -1038,7 +927,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [showResources, setShowResources] = useState(false);
   const [showBreath, setShowBreath] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showTutorial, setShowTutorial] = useState(false);
   const [memoText, setMemoText] = useState("");
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
@@ -1115,7 +1003,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
-      {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} lang={lang} />}
       
       {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
@@ -1138,27 +1025,13 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
 
       <div className="w-full flex justify-between items-center p-6 z-20 shrink-0">
         <div className="flex flex-col">
-           {/* -- NEW LOGO DESIGN (Heart + Sprout) -- */}
-           <div className="flex items-center gap-3 mb-1">
-             <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-emerald-600 rounded-[1rem] flex items-center justify-center shadow-lg shadow-emerald-500/20 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"/>
-                <Heart size={28} className="text-white fill-white/20 relative z-10" />
-                <Sprout size={16} className="text-emerald-100 absolute bottom-3 right-3 z-20" />
-             </div>
-             <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight">
-               {t.appTitle}
-             </h1>
-           </div>
-           <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-16">{t.appSubtitle}</span>
+           <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><div className="bg-emerald-500 text-white p-2 rounded-xl"><Sprout size={24} fill="currentColor"/></div> {t.appTitle}</h1>
+           <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-12">{t.appSubtitle}</span>
         </div>
         <div className="flex gap-3">
-           {/* Download / Install Button */}
-           <button onClick={() => setShowTutorial(true)} className="flex items-center gap-1 px-3 py-2 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20 font-bold text-xs" title={t.landing.installTitle}>
-               <Download size={14} /> <span>安裝教學</span>
-           </button>
-           <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20" title={t.landing.feedback}><MessageSquare size={18} /></button>
-           <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20"><Globe size={18} /></button>
-           <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
+           <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.feedback}><MessageSquare size={18} /></button>
+           <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md"><Globe size={18} /></button>
+           <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
         </div>
       </div>
       
@@ -1347,28 +1220,287 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
   );
 };
 
-// --- SUB-COMPONENTS MUST BE DEFINED BEFORE USE ---
-const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
-    const { updateTicketStatus } = useAppContext();
-    const handleRequeue = async () => {
-        await updateTicketStatus(ticketId, 'waiting');
-    };
-    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center cursor-pointer">重新排隊 (下一位)</span>;
+// --- MISSING COMPONENTS (Restored) ---
+
+const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang].intake;
+  const [name, setName] = useState("");
+  const [age, setAge] = useState(t.q_age_opts[1]);
+  const [gender, setGender] = useState(t.q_gender_opts[0]);
+  const [distress, setDistress] = useState(3);
+  const [issue, setIssue] = useState(t.q4_opt1);
+  const [note, setNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state to prevent double submission
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent double click
+    setIsSubmitting(true);
+
+    // Logic to determine priority based on distress level and issue
+    let priority: Priority = 'medium';
+    if (distress >= 4 || issue === t.q4_opt4) priority = 'high';
+    if (issue === t.q4_opt4) priority = 'critical';
+
+    const tags = [age, gender, issue];
+    onComplete(name || t.q1_placeholder, note || issue, priority, tags);
+  };
+
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
+      <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-xl">
+        <button onClick={onBack} className="mb-6 text-slate-400 hover:text-slate-600 flex items-center gap-2"><ArrowLeft size={20}/> {CONTENT[lang].actions.back}</button>
+        <h2 className="text-2xl font-bold mb-2 dark:text-white">{t.title}</h2>
+        <p className="text-slate-500 mb-8 text-sm">{t.desc}</p>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q1}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.q1_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-teal-500 dark:text-white" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_age}</label>
+              <select value={age} onChange={e => setAge(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
+                {t.q_age_opts.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_gender}</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
+                {t.q_gender_opts.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q3} ({distress})</label>
+            <input type="range" min="1" max="5" value={distress} onChange={e => setDistress(parseInt(e.target.value))} className="w-full accent-teal-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+            <div className="flex justify-between text-xs text-slate-400 mt-1"><span>{t.calm}</span><span>{t.crisis}</span></div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q4}</label>
+            <div className="grid grid-cols-1 gap-2">
+              {[t.q4_opt1, t.q4_opt2, t.q4_opt3, t.q4_opt4].map(opt => (
+                <button key={opt} onClick={() => setIssue(opt)} className={`p-3 rounded-xl text-left text-sm font-medium transition-all ${issue === opt ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
+             <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
+          </div>
+
+          <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
+            {isSubmitting ? <Loader2 className="animate-spin" /> : t.submit}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, onLoginSuccess: () => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  const { setVolunteerProfile } = useAppContext();
+  const [name, setName] = useState("");
+
+  const handleApply = () => {
+    if (!name.trim()) return;
+    
+    // ADMIN CHECK via Name (SECRET CODE)
+    if (name.trim() === "6221Like") {
+        setVolunteerProfile({ name: "Admin", role: "admin", isVerified: true });
+    } else {
+        // Default peer volunteer
+        setVolunteerProfile({ name: name, role: "peer", isVerified: false });
+    }
+    onLoginSuccess();
+  };
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl">
+        <button onClick={onBack} className="mb-8 text-slate-400 hover:text-slate-600"><ArrowLeft size={24}/></button>
+        <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 mb-2">{t.authTitle}</h2>
+        <p className="text-sm text-slate-500 mb-6">{t.disclaimer}</p>
+        
+        {/* Empathy Reminder Block */}
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl mb-6 flex items-start gap-3 border border-emerald-100 dark:border-emerald-800/30">
+            <Heart size={18} className="text-emerald-600 shrink-0 mt-0.5 fill-emerald-100 dark:fill-emerald-900" />
+            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                {(t as any).reminder}
+            </p>
+        </div>
+        
+        <div className="space-y-4">
+           <div>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+           </div>
+           
+           <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
+             {t.verifyBtn}
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
+      <div className="max-w-2xl mx-auto">
+         <button onClick={onBack} className="mb-6 text-slate-400"><ArrowLeft size={24}/></button>
+         <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-4">{t.guidelinesTitle}</h2>
+         <p className="text-slate-500 mb-8">{t.guidelinesDesc}</p>
+
+         <div className="space-y-4 mb-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
+                <h3 className="font-bold text-lg dark:text-white mb-2">{(t as any)[`rule${i}Title`]}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">{(t as any)[`rule${i}Desc`]}</p>
+              </div>
+            ))}
+         </div>
+         <button onClick={onConfirm} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl">{t.acknowledgeBtn}</button>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (t: Ticket) => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  const { tickets, volunteerProfile, feedbacks } = useAppContext();
+  const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
+  
+  const isAdmin = volunteerProfile.role === 'admin';
+
+  const downloadCSV = () => {
+      const headers = "ID,Timestamp,Message\n";
+      const rows = feedbacks.map(fb => `"${fb.id}","${new Date(fb.timestamp).toLocaleString()}","${fb.text.replace(/"/g, '""')}"`).join("\n");
+      const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "mindtree_feedback.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+  };
+
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
+       <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4 z-10">
+          <div className="flex justify-between items-center">
+            <div>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
+                <div className="flex items-center gap-2">
+                    <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+                    {isAdmin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">ADMIN</span>}
+                </div>
+            </div>
+            <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
+          </div>
+          
+          {/* Only show Tabs if Admin, otherwise just title */}
+          {isAdmin && (
+              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+                  <button 
+                      onClick={() => setActiveTab('requests')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+                  >
+                      {(t as any).tabRequests}
+                  </button>
+                  <button 
+                      onClick={() => setActiveTab('feedback')}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+                  >
+                      {(t as any).tabFeedback}
+                  </button>
+              </div>
+          )}
+       </div>
+       
+       <div className="flex-1 overflow-y-auto p-6">
+         {(activeTab === 'requests' || !isAdmin) ? (
+             <>
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
+                 
+                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
+                   <div className="text-center py-20 opacity-50">
+                     <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
+                     <p>{t.noRequests}</p>
+                   </div>
+                 ) : (
+                   <div className="grid gap-4">
+                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
+                       <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                         <div className="flex justify-between items-start">
+                            <div className="flex gap-2">
+                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
+                               <span className="text-slate-400 text-xs">{ticket.time}</span>
+                            </div>
+                         </div>
+                         <div>
+                            <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
+                            <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
+                         </div>
+                         <div className="flex gap-2 mt-2">
+                            {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
+                         </div>
+                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+             </>
+         ) : (
+             <div className="space-y-4">
+                 <button onClick={downloadCSV} className="w-full py-3 bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4 hover:bg-slate-700">
+                     <Download size={16}/> {(t as any).exportCSV || "Export CSV"}
+                 </button>
+
+                 {feedbacks.length === 0 ? (
+                     <div className="text-center py-20 opacity-50 text-slate-400">
+                         <Inbox size={48} className="mx-auto mb-4"/>
+                         <p>{(t as any).noFeedbacks}</p>
+                     </div>
+                 ) : (
+                     feedbacks.map(fb => (
+                         <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                             <div className="flex justify-between mb-2">
+                                 <span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span>
+                             </div>
+                             <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">{fb.text}</p>
+                         </div>
+                     ))
+                 )}
+             </div>
+         )}
+       </div>
+    </div>
+  );
 };
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket, volunteerLeaveSession } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   
+  // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
   const chatMessages = messages.filter(m => m.ticketId === ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, suggestions]);
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status]);
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1382,36 +1514,22 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       isVerified: isVolunteer && volunteerProfile.isVerified
     });
     setText("");
-    setSuggestions([]); 
   };
 
   const handleEndChat = async () => {
-      if (isVolunteer) {
-          await volunteerLeaveSession(ticketId);
+      if(window.confirm(t.endChatConfirm)) {
+          await endSession(ticketId);
           onLeave();
-      } else {
-          if(window.confirm(t.endChatConfirm)) {
-              await endSession(ticketId); 
-              await deleteTicket(ticketId); 
-              onLeave();
-          }
       }
   };
 
   const handleCancelWait = async () => {
+      // PERMANENTLY DELETE TICKET TO CLEAN UP QUEUE
       await deleteTicket(ticketId);
       onLeave();
   };
 
-  const handleGetSuggestions = async () => {
-    setLoadingSuggestions(true);
-    setSuggestions([]);
-    const role = isVolunteer ? 'volunteer' : 'citizen';
-    const newSuggestions = await generateChatSuggestions(chatMessages, role, lang);
-    setSuggestions(newSuggestions);
-    setLoadingSuggestions(false);
-  };
-
+  // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (
           <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
@@ -1430,7 +1548,8 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       );
   }
 
-  if (liveTicket.status === 'resolved' && !liveTicket.volunteerHasLeft) {
+  // --- 2. ENDED SESSION VIEW ---
+  if (liveTicket.status === 'resolved') {
       return (
           <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
               <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
@@ -1442,8 +1561,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       );
   }
 
+  // --- 3. ACTIVE CHAT VIEW ---
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
          <div className="flex items-center gap-3">
            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
@@ -1457,102 +1577,37 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
            </div>
          </div>
          <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
-             <Trash2 size={14}/> {isVolunteer ? CONTENT[lang].actions.endChat : CONTENT[lang].actions.leaveChat}
+             <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
          </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
          {showWarning && (
-             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative animate-fade-in">
+             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
                 {t.chatReminder}
                 <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
                     <X size={14}/>
                 </button>
              </div>
          )}
-         
-         <div className="max-w-3xl mx-auto pb-4">
+         <div className="max-w-3xl mx-auto">
             {chatMessages.map(msg => {
+                // ALIGNMENT LOGIC:
+                // If I am Volunteer (isVolunteer=true): My msgs are `isUser=false`. So `isMe` = !msg.isUser
+                // If I am Citizen (isVolunteer=false): My msgs are `isUser=true`. So `isMe` = msg.isUser
                 const isMe = isVolunteer ? !msg.isUser : msg.isUser;
+                
+                // We pass `isMe` into the `isUser` prop of ChatBubble to control alignment (Right=Me, Left=Them)
                 return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
             })}
             <div ref={messagesEndRef}/>
          </div>
       </div>
 
-      {!isVolunteer && liveTicket.volunteerHasLeft && (
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-30 flex items-end sm:items-center justify-center p-4 animate-fade-in">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-                  <div className="flex flex-col items-center text-center mb-6">
-                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
-                          <LogOut size={32}/>
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{(t as any).volunteerLeftTitle}</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{(t as any).volunteerLeftDesc}</p>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                      <button 
-                        className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl"
-                      >
-                          <HumanChatRequeueButton ticketId={ticketId}/>
-                      </button>
-                      
-                      <button 
-                        onClick={async () => { await deleteTicket(ticketId); onLeave(); }}
-                        className="w-full py-3 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl"
-                      >
-                          {(t as any).exit}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
-
-      <div className="bg-white dark:bg-slate-900 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md shadow-up flex flex-col gap-2">
-        {loadingSuggestions && (
-            <div className="flex items-center gap-2 text-xs text-slate-400 px-4 animate-pulse">
-                <Wand2 size={12}/> {(t as any).loadingSuggestions || "Thinking..."}
-            </div>
-        )}
-        {suggestions.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 px-1 no-scrollbar">
-                {suggestions.map((sug, idx) => (
-                    <button 
-                        key={idx} 
-                        onClick={() => setText(sug)}
-                        className="whitespace-nowrap px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-full border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-colors"
-                    >
-                        {sug}
-                    </button>
-                ))}
-            </div>
-        )}
-
-        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2 w-full items-center">
-           <button 
-                type="button" 
-                onClick={handleGetSuggestions} 
-                disabled={loadingSuggestions || (!isVolunteer && liveTicket.volunteerHasLeft)}
-                className="w-10 h-10 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 flex items-center justify-center hover:scale-105 transition-transform"
-                title={(t as any).aiAssist || "AI Suggestions"}
-           >
-               <Wand2 size={18} className={loadingSuggestions ? "animate-spin" : ""}/>
-           </button>
-
-           <input 
-             value={text} 
-             onChange={e => setText(e.target.value)} 
-             disabled={(!isVolunteer && liveTicket.volunteerHasLeft)}
-             className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white disabled:opacity-50 min-w-0" 
-             placeholder={(!isVolunteer && liveTicket.volunteerHasLeft) ? (t as any).systemVolunteerLeft : t.placeholder}
-           />
-           <button 
-             type="submit" 
-             disabled={(!isVolunteer && liveTicket.volunteerHasLeft) || !text.trim()}
-             className="w-12 h-12 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
-           >
-               <Send size={20}/>
-           </button>
+      <div className="p-4 bg-white dark:bg-slate-900 shadow-up">
+        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
+           <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
+           <button type="submit" className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform"><Send size={20}/></button>
         </form>
       </div>
     </div>

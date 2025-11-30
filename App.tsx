@@ -107,6 +107,7 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
+  // Added 'volunteer_left' status to handle the new logic
   status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
   time: string;
   createdAt: number;
@@ -143,7 +144,7 @@ export interface Memo {
 
 // --- 2. CONSTANTS & CONTENT ---
 
-// Expanded AI Quotes for more variety
+// Expanded AI Quotes for more variety (Default bubbles)
 const AI_QUOTES = [
   "You are not alone.", "這裡有我。", 
   "Take a deep breath.", "深呼吸，慢慢黎。",
@@ -184,10 +185,17 @@ const AI_QUOTES = [
   "Breathe in peace.", "吸入平靜。",
   "Breathe out stress.", "呼出壓力。",
   "Be your own best friend.", "做自己最好嘅朋友。",
-  "Growth takes time.", "成長需要時間。"
+  "Growth takes time.", "成長需要時間。",
+  "Life is tough, but so are you.", "生活好難，但你更堅強。",
+  "Sending you a virtual hug.", "送你一個擁抱。",
+  "Be patient with yourself.", "對自己有耐性啲。",
+  "Stars can't shine without darkness.", "無黑暗就無星光。",
+  "It's just a bad day, not a bad life.", "只係今日唔順，唔係成世。",
+  "You are doing great.", "你做得好好架喇。",
+  "Believe in yourself.", "相信你自己。"
 ];
 
-const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🌊", "🌙", "⭐", "🍀", "🌺"];
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🌊", "🌙", "⭐", "🍀", "🌺", "🍵", "🕯️"];
 
 const SUGGESTED_PROMPTS = {
   zh: ["我覺得好不安...", "我想搵人傾計", "最近訓得唔好", "對於未來好迷惘"],
@@ -294,14 +302,13 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
-      volEndChatConfirm: "確定結束對話？求助者將會收到通知。",
+      volEndChatConfirm: "確定結束對話？求助者將會收到通知，並可選擇繼續等待。",
       cancelWait: "取消等待",
       // New Content for Volunteer Leaving
       volLeftTitle: "輔導員已離開",
       volLeftMsg: "輔導員已離開對話。你可以選擇繼續等待下一位輔導員，或是結束對話。",
       btnWait: "繼續等待 (返回隊列)",
       btnEnd: "結束對話",
-      volLeaveConfirm: "確定暫時離開？\n\n求助者將會收到通知，並可選擇繼續等待下一位義工。",
       leaveSuccess: "你已離開對話。"
     },
     memo: {
@@ -473,7 +480,6 @@ const CONTENT = {
       volLeftMsg: "The counselor has left the session. You can wait for the next counselor or end the chat.",
       btnWait: "Wait (Return to Queue)",
       btnEnd: "End Chat",
-      volLeaveConfirm: "Leave temporarily?\n\nThe user will be notified and can choose to wait for the next volunteer.",
       leaveSuccess: "You have left the session."
     },
     memo: {

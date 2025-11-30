@@ -1,13 +1,10 @@
 import React, { useState, useRef, useEffect, createContext, useContext, Component, ErrorInfo } from 'react';
 import { 
   MessageCircle, User, Heart, Shield, Clock, CheckCircle, X, Send, Bot, 
-  Lock, BadgeCheck, Flag, AlertTriangle, 
-  ArrowRight, ArrowLeft, Trees, BookOpen, Coffee, LogOut,
-  Moon, Sun, MessageSquare, Link, Globe,
-  Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
-  Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw
+  BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
+  Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
+  ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
+  Link // Added missing Link import
 } from 'lucide-react';
 
 // Firebase Imports
@@ -57,7 +54,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 
 // --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
-  apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I", // Note: Using this key for Gemini Fallback as well
+  apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
   authDomain: "mindtreehk.firebaseapp.com",
   projectId: "mindtreehk",
   storageBucket: "mindtreehk.firebasestorage.app",
@@ -214,7 +211,6 @@ const USEFUL_LINKS = [
   { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
 
-// --- 2.1 FULL CONTENT OBJECT (Includes English now) ---
 const CONTENT = {
   zh: {
     appTitle: "MindTree 心聆樹洞",
@@ -555,7 +551,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
   try {
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
-    // For standalone preview, we largely rely on local check to avoid blocking valid inputs if API fails
     return { safe: true, reason: null };
   } catch (e) {
     return { safe: true, reason: null };
@@ -567,7 +562,6 @@ const SYSTEM_PROMPTS = {
   en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
 };
 
-// *** KEY FIX: CONNECT TO VERCEL WITH FALLBACK ***
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   const systemInstruction = SYSTEM_PROMPTS[lang];
   const recentHistory = history.slice(-10).map(msg => ({
@@ -575,7 +569,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
     parts: [{ text: msg.text }]
   }));
 
-  // 1. Try Vercel Endpoint (Standard Next.js path)
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -590,15 +583,14 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
         const data = await response.json();
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "...";
     }
-    // If response not OK, throw to trigger fallback
     throw new Error("Vercel API failed");
   } catch (vercelError) {
     console.warn("Vercel API failed, switching to Direct Fallback...", vercelError);
     
-    // 2. Fallback: Direct Gemini API Call (For Preview/Backup)
     try {
-        const apiKey = firebaseConfig.apiKey; // Use the key from config
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        // Use empty string to allow environment injection of the service key
+        const apiKey = ""; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [...recentHistory],
@@ -619,7 +611,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 
     } catch (fallbackError) {
         console.error("All AI methods failed", fallbackError);
-        // *** KEY FIX: Return a proper error message, NOT "thinking..." ***
         return lang === 'zh' 
             ? "（連接唔到伺服器，請稍後再試 / Server Connection Error）" 
             : "(Connection failed. Please try again later.)";
@@ -657,16 +648,13 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
-  // 1. Auth
   useEffect(() => {
     const initAuth = async () => {
         if (auth) {
             try {
-                // FORCE ANONYMOUS AUTH for custom project
                 await signInAnonymously(auth);
             } catch (e) {
                 console.error("Auth failed:", e);
-                // Fallback for dev mode without firebase
                 setUser({ uid: 'demo-user' });
             }
         } else {
@@ -679,7 +667,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, []);
 
-  // 2. Sync Tickets
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
@@ -691,7 +678,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // 3. Sync Messages
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
@@ -703,7 +689,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // 4. Sync Memos
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
@@ -715,7 +700,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // 5. Sync Feedbacks (Only fetch, simple version)
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
@@ -726,7 +710,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }, (err) => console.log("Feedback sync error:", err));
     return () => unsubscribe();
   }, [user]);
-
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
     if (!db) {
@@ -740,7 +723,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        setTickets(prev => [newTicket, ...prev]);
        return localId;
     }
-    
     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
         name, issue, priority, tags, 
         status: 'waiting', 
@@ -772,26 +754,17 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const endSession = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'resolved');
-
     if (!db) {
        setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
        return;
     }
-
-    // --- AUTO DELETE FEATURE ---
     const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
-    
     const batch = writeBatch(db);
     msgsToDelete.forEach(msg => {
        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'messages', msg.id);
        batch.delete(ref);
     });
-    
-    try {
-        await batch.commit();
-    } catch(e) {
-        console.error("Deletion error:", e);
-    }
+    try { await batch.commit(); } catch(e) { console.error("Deletion error:", e); }
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
@@ -800,10 +773,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        setMessages(prev => [...prev, newMsg]);
        return;
      }
-     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
-         ...message,
-         ticketId
-     });
+     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
   };
 
   const getMessages = (ticketId: string) => {
@@ -821,7 +791,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             scale: 0.9 + Math.random() * 0.3
         }
      };
-
      if (!db) {
        const newMemo = { id: Date.now(), ...newMemoData } as Memo;
        setPublicMemos(prev => [newMemo, ...prev]);
@@ -836,9 +805,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           setFeedbacks(prev => [newFb, ...prev]);
           return;
       }
-      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), {
-          text, timestamp: Date.now(), read: false
-      });
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
   };
 
   return (
@@ -853,8 +820,6 @@ const useAppContext = () => {
   if (!context) throw new Error("useAppContext must be used within AppProvider");
   return context;
 };
-
-// --- 5. COMPONENT DEFINITIONS (ORDER IS CRITICAL) ---
 
 const stripAITag = (text: string | undefined) => {
   if (typeof text !== 'string') return "";
@@ -899,23 +864,17 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
   const userBubbleStyle = "bg-gradient-to-br from-teal-500 to-emerald-600 text-white rounded-tr-sm shadow-md";
   const aiBubbleStyle = "bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm";
   const peerBubbleStyle = "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm";
-
-  let bubbleClass = isUser ? userBubbleStyle : (isAI ? aiBubbleStyle : peerBubbleStyle);
   const displaySender = stripAITag(sender);
 
   return (
     <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} mb-6 animate-fade-in group`}>
       <div className={`flex items-end gap-3 max-w-[85%] md:max-w-[75%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-          isUser 
-            ? 'bg-teal-100 text-teal-600' 
-            : (isAI 
-                ? 'bg-white/50 text-emerald-600' 
-                : 'bg-white text-pink-500')
+          isUser ? 'bg-teal-100 text-teal-600' : (isAI ? 'bg-white/50 text-emerald-600' : 'bg-white text-pink-500')
         }`}>
           {isUser ? <User size={16} /> : (isAI ? <Trees size={16} /> : <Heart size={16} />)}
         </div>
-        <div className={`px-5 py-3 rounded-2xl text-[15px] leading-relaxed relative ${bubbleClass}`}>
+        <div className={`px-5 py-3 rounded-2xl text-[15px] leading-relaxed relative ${isUser ? userBubbleStyle : (isAI ? aiBubbleStyle : peerBubbleStyle)}`}>
           {text}
           {!isUser && !isAI && (
              isVerified 
@@ -925,16 +884,12 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
         </div>
       </div>
       <div className={`flex items-center gap-2 mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isUser ? 'pr-12' : 'pl-12'}`}>
-        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1">
-          {displaySender}
-        </span>
+        <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide flex items-center gap-1">{displaySender}</span>
         {timeString && <span className="text-[10px] text-slate-300 dark:text-slate-600">• {timeString}</span>}
       </div>
     </div>
   );
 };
-
-// --- PRO BREATHING EXERCISE ---
 
 const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].breath;
@@ -944,16 +899,9 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   const [isPlaying, setIsPlaying] = useState(false); 
   const audioRef = useRef<HTMLAudioElement>(null);
   
-  const totalDuration = 60;
-  
   useEffect(() => {
-    let timeLeft = totalDuration;
-    
-    // Attempt play on mount with error handling
-    if(audioRef.current) {
-        audioRef.current.volume = 0.8; // Increased volume
-    }
-
+    let timeLeft = 60;
+    if(audioRef.current) audioRef.current.volume = 0.8;
     const cycle = async () => {
       if (timeLeft <= 0) return;
       setStage('Inhale'); setStageText(t.inhale); await new Promise(r => setTimeout(r, 4000));
@@ -962,29 +910,17 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       cycle();
     };
     cycle();
-
     const timer = setInterval(() => {
-      setProgress(p => {
-        if (p >= 100) { clearInterval(timer); return 100; }
-        return p + (100 / totalDuration / 10);
-      });
+      setProgress(p => { if (p >= 100) { clearInterval(timer); return 100; } return p + (100 / 60 / 10); });
       timeLeft -= 0.1;
     }, 100);
-
     return () => clearInterval(timer);
   }, [t]);
 
   const toggleAudio = () => {
     if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-         // Explicitly triggered by user interaction - browsers like this
-         audioRef.current.play()
-          .then(() => setIsPlaying(true))
-          .catch(e => console.error("Play failed:", e));
-      }
+      if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); } 
+      else { audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e)); }
     }
   };
 
@@ -996,33 +932,21 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
     <div className="fixed inset-0 z-[60] bg-slate-950 flex items-center justify-center animate-fade-in overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
-
-      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
       </audio>
-
       <div className="relative z-10 flex flex-col items-center justify-center h-full w-full">
         <button onClick={onClose} className="absolute top-8 right-8 w-12 h-12 rounded-full bg-white/5 text-white/70 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all backdrop-blur-md"><X size={24} /></button>
-        
         <div className="absolute top-8 left-8 flex gap-4">
            <button onClick={toggleAudio} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all backdrop-blur-md text-xs font-bold uppercase tracking-widest ${!isPlaying ? 'bg-emerald-500/20 text-emerald-300 animate-pulse ring-1 ring-emerald-500/50' : 'bg-white/5 text-white/70'}`}>
-              {isPlaying ? <Volume2 size={16} /> : <Music size={16} />}
-              <span>{isPlaying ? t.musicOn : t.playErr}</span>
+              {isPlaying ? <Volume2 size={16} /> : <Music size={16} />} <span>{isPlaying ? t.musicOn : t.playErr}</span>
            </button>
         </div>
-
         <div className="relative flex items-center justify-center">
            <svg className="absolute w-[340px] h-[340px] rotate-[-90deg] pointer-events-none">
               <circle cx="170" cy="170" r={radius} stroke="white" strokeWidth="2" fill="transparent" opacity="0.1" />
               <circle cx="170" cy="170" r={radius} stroke="url(#gradient)" strokeWidth="4" fill="transparent" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" className="transition-all duration-100 linear"/>
-              <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#34d399" />
-                  <stop offset="100%" stopColor="#2dd4bf" />
-                </linearGradient>
-              </defs>
+              <defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor="#34d399" /><stop offset="100%" stopColor="#2dd4bf" /></linearGradient></defs>
            </svg>
            <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-[4000ms] ease-in-out relative ${stage === 'Inhale' ? 'scale-125 shadow-[0_0_100px_rgba(52,211,153,0.4)] bg-emerald-500/20' : stage === 'Exhale' ? 'scale-75 bg-teal-500/10' : 'scale-100 bg-white/10'}`}>
               <div className={`absolute inset-0 rounded-full border border-white/30 transition-all duration-[4000ms] ${stage === 'Inhale' ? 'scale-110 opacity-50' : 'scale-90 opacity-20'}`} />
@@ -1086,7 +1010,7 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
   return (
     <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-500">
       <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-teal-500/20 rounded-full blur-[120px] animate-pulse [animation-delay:2s]" />
+      <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-teal-500/20 rounded-full blur-[120px] animate-pulse" />
       <div className="w-full flex justify-end gap-3 p-6 z-20 shrink-0">
         <button onClick={toggleLang} className="flex items-center gap-1 bg-white/50 dark:bg-black/20 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold shadow-sm transition-all hover:bg-white/80 dark:text-white"><Globe size={12} /> {lang === 'zh' ? 'EN' : '繁體'}</button>
       </div>
@@ -1120,7 +1044,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
 
-  // Update Theme Color for iOS Status Bar
   useEffect(() => {
     const metaThemeColor = document.querySelector("meta[name=theme-color]");
     const color = theme === 'light' ? '#ecfdf5' : '#0f172a';
@@ -1134,7 +1057,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [theme]);
 
-  // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
     const selectedQuotes = shuffledQuotes.slice(0, 12);
@@ -1142,28 +1064,17 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
         return {
-            id: `init-${index}`, 
-            text: textWithSymbol,
-            timestamp: Date.now(),
-            style: { 
-                left: `${Math.random() * 80 + 10}%`, 
-                animationDuration: `${25 + Math.random() * 20}s`, 
-                animationDelay: `${Math.random() * 10}s`, 
-                scale: 0.8 + Math.random() * 0.3 
-            }
+            id: `init-${index}`, text: textWithSymbol, timestamp: Date.now(),
+            style: { left: `${Math.random() * 80 + 10}%`, animationDuration: `${25 + Math.random() * 20}s`, animationDelay: `${Math.random() * 10}s`, scale: 0.8 + Math.random() * 0.3 }
         };
     });
     setFloatingBubbles(initialBubbles);
   }, []);
 
-  // Update when new memo is added
   useEffect(() => {
-    if (publicMemos.length > 0) {
-        setFloatingBubbles(prev => [...publicMemos, ...prev]);
-    }
+    if (publicMemos.length > 0) { setFloatingBubbles(prev => [...publicMemos, ...prev]); }
   }, [publicMemos]);
 
-  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message && notification.type !== 'loading') {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1175,16 +1086,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     if (!memoText.trim()) return;
     setNotification({ message: t.memo.scanning, type: 'loading' });
     const result = await scanContentWithAI(memoText);
-    
-    if (!result.safe) {
-      setNotification({ message: result.reason || t.memo.unsafe, type: 'error' });
-      return;
-    }
-
-    addPublicMemo(memoText); 
-    setMemoText(""); 
-    setShowMemoInput(false);
-    setNotification({ message: t.memo.success, type: 'info' }); 
+    if (!result.safe) { setNotification({ message: result.reason || t.memo.unsafe, type: 'error' }); return; }
+    addPublicMemo(memoText); setMemoText(""); setShowMemoInput(false); setNotification({ message: t.memo.success, type: 'info' }); 
   };
 
   return (
@@ -1192,16 +1095,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
-      
-      {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
-      
-      {/* Decorative Background Elements (Forest Theme) */}
       <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
       <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
       <div className="absolute top-[20%] right-[10%] text-yellow-100/40 dark:text-yellow-900/10 pointer-events-none opacity-60"><SunDim size={150} /></div>
-
-      {/* Floating Elements (Memos) */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {floatingBubbles.map((memo) => (
@@ -1211,7 +1108,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
             ))}
         </div>
       </div>
-
       <div className="w-full flex justify-between items-center p-6 z-20 shrink-0">
         <div className="flex flex-col">
            <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><div className="bg-emerald-500 text-white p-2 rounded-xl"><Sprout size={24} fill="currentColor"/></div> {t.appTitle}</h1>
@@ -1223,7 +1119,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
            <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
         </div>
       </div>
-      
       <div className="flex-1 w-full overflow-y-auto z-10 px-6 pb-24 no-scrollbar">
         <div className="max-w-md mx-auto">
             <h2 className="text-teal-800 dark:text-white font-bold text-lg mb-4 flex items-center gap-2"><Trees size={18} className="text-emerald-500"/> {t.landing.servicesTitle}</h2>
@@ -1237,7 +1132,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   </div>
                   <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
-
                <button onClick={() => onSelectRole('citizen-human')} className="bg-white/60 dark:bg-slate-800/60 p-6 rounded-[2rem] shadow-lg shadow-emerald-500/5 backdrop-blur-xl flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[100%] z-0" />
                   <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 z-10"><Heart size={32} /></div>
@@ -1248,7 +1142,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
             </div>
-
             <div className="mb-8">
                <button onClick={() => setShowBreath(true)} className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/30 flex items-center justify-between group hover:scale-[1.02] transition-transform relative overflow-hidden">
                   <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-2xl" />
@@ -1259,7 +1152,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform backdrop-blur-sm relative z-10"><Play size={20} fill="white" /></div>
                </button>
             </div>
-
             <button onClick={() => onSelectRole('volunteer-login')} className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 p-1 rounded-[2rem] shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all group mb-8">
                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[1.8rem] p-5 flex items-center gap-5 h-full w-full">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform"><HandHeart size={24} /></div>
@@ -1270,7 +1162,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="text-slate-300"><ArrowRight size={20}/></div>
                </div>
             </button>
-
             <div className="flex gap-4">
                <button onClick={() => setShowMemoInput(true)} className="flex-1 py-4 rounded-3xl bg-white/60 dark:bg-slate-800/60 backdrop-blur-md text-teal-600 dark:text-teal-400 font-bold text-xs flex flex-col items-center justify-center gap-2 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-colors shadow-sm">
                   <MessageSquarePlus size={20} /> {t.memo.label}
@@ -1279,13 +1170,11 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <Link size={20} /> {t.links.btn}
                </button>
             </div>
-
             <div className="mt-12 mb-6 p-4 rounded-2xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm border border-white/20 dark:border-white/5 text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed">
                {t.footer.legal}
             </div>
         </div>
       </div>
-
       {showMemoInput && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-fade-in">
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-t-[2rem] sm:rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-slide-up sm:animate-fade-in">
@@ -1299,7 +1188,6 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
           </div>
         </div>
       )}
-
       {showResources && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[2rem] p-6 w-full max-w-sm max-h-[85vh] overflow-y-auto shadow-2xl">
@@ -1387,8 +1275,6 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
             <div ref={messagesEndRef} />
         </div>
       </div>
-      
-      {/* Suggested Prompts */}
       {messages.length < 3 && !isTyping && (
         <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
           {SUGGESTED_PROMPTS[lang].map(prompt => (
@@ -1398,7 +1284,6 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
           ))}
         </div>
       )}
-
       <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
         <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
           <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
@@ -1409,8 +1294,6 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
   );
 };
 
-// --- MISSING COMPONENTS (Restored) ---
-
 const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void, lang: Language }) => {
   const t = CONTENT[lang].intake;
   const [name, setName] = useState("");
@@ -1419,17 +1302,14 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
   const [distress, setDistress] = useState(3);
   const [issue, setIssue] = useState(t.q4_opt1);
   const [note, setNote] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // New state to prevent double submission
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (isSubmitting) return; // Prevent double click
+    if (isSubmitting) return; 
     setIsSubmitting(true);
-
-    // Logic to determine priority based on distress level and issue
     let priority: Priority = 'medium';
     if (distress >= 4 || issue === t.q4_opt4) priority = 'high';
     if (issue === t.q4_opt4) priority = 'critical';
-
     const tags = [age, gender, issue];
     onComplete(name || t.q1_placeholder, note || issue, priority, tags);
   };
@@ -1440,13 +1320,11 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
         <button onClick={onBack} className="mb-6 text-slate-400 hover:text-slate-600 flex items-center gap-2"><ArrowLeft size={20}/> {CONTENT[lang].actions.back}</button>
         <h2 className="text-2xl font-bold mb-2 dark:text-white">{t.title}</h2>
         <p className="text-slate-500 mb-8 text-sm">{t.desc}</p>
-        
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q1}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={t.q1_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-teal-500 dark:text-white" />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_age}</label>
@@ -1461,13 +1339,11 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
               </select>
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q3} ({distress})</label>
             <input type="range" min="1" max="5" value={distress} onChange={e => setDistress(parseInt(e.target.value))} className="w-full accent-teal-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
             <div className="flex justify-between text-xs text-slate-400 mt-1"><span>{t.calm}</span><span>{t.crisis}</span></div>
           </div>
-
           <div>
             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q4}</label>
             <div className="grid grid-cols-1 gap-2">
@@ -1478,12 +1354,10 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
               ))}
             </div>
           </div>
-
           <div>
              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
           </div>
-
           <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
             {isSubmitting ? <Loader2 className="animate-spin" /> : t.submit}
           </button>
@@ -1500,12 +1374,9 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
 
   const handleApply = () => {
     if (!name.trim()) return;
-    
-    // ADMIN CHECK via Name (SECRET CODE)
     if (name.trim() === "6221Like") {
         setVolunteerProfile({ name: "Admin", role: "admin", isVerified: true });
     } else {
-        // Default peer volunteer
         setVolunteerProfile({ name: name, role: "peer", isVerified: false });
     }
     onLoginSuccess();
@@ -1517,21 +1388,15 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
         <button onClick={onBack} className="mb-8 text-slate-400 hover:text-slate-600"><ArrowLeft size={24}/></button>
         <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 mb-2">{t.authTitle}</h2>
         <p className="text-sm text-slate-500 mb-6">{t.disclaimer}</p>
-        
-        {/* Empathy Reminder Block */}
         <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl mb-6 flex items-start gap-3 border border-emerald-100 dark:border-emerald-800/30">
             <Heart size={18} className="text-emerald-600 shrink-0 mt-0.5 fill-emerald-100 dark:fill-emerald-900" />
-            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
-                {(t as any).reminder}
-            </p>
+            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">{(t as any).reminder}</p>
         </div>
-        
         <div className="space-y-4">
            <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
            </div>
-           
            <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
              {t.verifyBtn}
            </button>
@@ -1549,7 +1414,6 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
          <button onClick={onBack} className="mb-6 text-slate-400"><ArrowLeft size={24}/></button>
          <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-4">{t.guidelinesTitle}</h2>
          <p className="text-slate-500 mb-8">{t.guidelinesDesc}</p>
-
          <div className="space-y-4 mb-8">
             {[1, 2, 3].map(i => (
               <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
@@ -1568,7 +1432,6 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
   const t = CONTENT[lang].volunteer;
   const { tickets, volunteerProfile, feedbacks } = useAppContext();
   const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
-  
   const isAdmin = volunteerProfile.role === 'admin';
 
   const downloadCSV = () => {
@@ -1597,36 +1460,19 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
             </div>
             <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
           </div>
-          
-          {/* Only show Tabs if Admin, otherwise just title */}
           {isAdmin && (
               <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                  <button 
-                      onClick={() => setActiveTab('requests')}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-                  >
-                      {(t as any).tabRequests}
-                  </button>
-                  <button 
-                      onClick={() => setActiveTab('feedback')}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-                  >
-                      {(t as any).tabFeedback}
-                  </button>
+                  <button onClick={() => setActiveTab('requests')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{(t as any).tabRequests}</button>
+                  <button onClick={() => setActiveTab('feedback')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{(t as any).tabFeedback}</button>
               </div>
           )}
        </div>
-       
        <div className="flex-1 overflow-y-auto p-6">
          {(activeTab === 'requests' || !isAdmin) ? (
              <>
                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
-                 
                  {tickets.filter(x => x.status === 'waiting').length === 0 ? (
-                   <div className="text-center py-20 opacity-50">
-                     <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
-                     <p>{t.noRequests}</p>
-                   </div>
+                   <div className="text-center py-20 opacity-50"><Bot size={48} className="mx-auto mb-4 text-slate-300"/><p>{t.noRequests}</p></div>
                  ) : (
                    <div className="grid gap-4">
                      {tickets.filter(t => t.status === 'waiting').map(ticket => (
@@ -1637,13 +1483,8 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
                                <span className="text-slate-400 text-xs">{ticket.time}</span>
                             </div>
                          </div>
-                         <div>
-                            <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
-                            <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
-                         </div>
-                         <div className="flex gap-2 mt-2">
-                            {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
-                         </div>
+                         <div><div className="font-bold text-lg dark:text-white">{ticket.name}</div><div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div></div>
+                         <div className="flex gap-2 mt-2">{ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}</div>
                          <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
                        </div>
                      ))}
@@ -1652,21 +1493,13 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
              </>
          ) : (
              <div className="space-y-4">
-                 <button onClick={downloadCSV} className="w-full py-3 bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4 hover:bg-slate-700">
-                     <Download size={16}/> {(t as any).exportCSV || "Export CSV"}
-                 </button>
-
+                 <button onClick={downloadCSV} className="w-full py-3 bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4 hover:bg-slate-700"><Download size={16}/> {(t as any).exportCSV || "Export CSV"}</button>
                  {feedbacks.length === 0 ? (
-                     <div className="text-center py-20 opacity-50 text-slate-400">
-                         <Inbox size={48} className="mx-auto mb-4"/>
-                         <p>{(t as any).noFeedbacks}</p>
-                     </div>
+                     <div className="text-center py-20 opacity-50 text-slate-400"><Inbox size={48} className="mx-auto mb-4"/><p>{(t as any).noFeedbacks}</p></div>
                  ) : (
                      feedbacks.map(fb => (
                          <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                             <div className="flex justify-between mb-2">
-                                 <span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span>
-                             </div>
+                             <div className="flex justify-between mb-2"><span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span></div>
                              <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">{fb.text}</p>
                          </div>
                      ))
@@ -1684,47 +1517,26 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
-  // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
   const chatMessages = messages.filter(m => m.ticketId === ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, showSuggestions]);
-
-  // Use STATIC suggestions directly (Reliable, works on all devices like AI Chat)
-  // This removes the dependency on the API which might fail on some devices
   const currentSuggestions = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
 
   const handleSend = () => {
     if (!text.trim()) return;
     const senderName = isVolunteer ? volunteerProfile.name : "User";
-    
-    addMessage(ticketId, {
-      text,
-      isUser: !isVolunteer,
-      sender: senderName,
-      timestamp: Date.now(),
-      isVerified: isVolunteer && volunteerProfile.isVerified
-    });
-    setText("");
-    setShowSuggestions(false); // Hide suggestions after sending
+    addMessage(ticketId, { text, isUser: !isVolunteer, sender: senderName, timestamp: Date.now(), isVerified: isVolunteer && volunteerProfile.isVerified });
+    setText(""); setShowSuggestions(false);
   };
 
   const handleEndChat = async () => {
-      if(window.confirm(t.endChatConfirm)) {
-          await endSession(ticketId);
-          onLeave();
-      }
+      if(window.confirm(t.endChatConfirm)) { await endSession(ticketId); onLeave(); }
   };
 
-  const handleCancelWait = async () => {
-      // PERMANENTLY DELETE TICKET TO CLEAN UP QUEUE
-      await deleteTicket(ticketId);
-      onLeave();
-  };
+  const handleCancelWait = async () => { await deleteTicket(ticketId); onLeave(); };
 
-  // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (
           <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
@@ -1743,7 +1555,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       );
   }
 
-  // --- 2. ENDED SESSION VIEW ---
   if (liveTicket.status === 'resolved') {
       return (
           <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
@@ -1756,7 +1567,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       );
   }
 
-  // --- 3. ACTIVE CHAT VIEW ---
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
@@ -1765,64 +1575,39 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
              {isVolunteer ? <User size={20}/> : <Heart size={20}/>}
            </div>
            <div>
-             <h3 className="font-bold dark:text-white">
-                 {isVolunteer ? ticket.name : (liveTicket.volunteerName || t.joinedTitle)}
-             </h3>
+             <h3 className="font-bold dark:text-white">{isVolunteer ? ticket.name : (liveTicket.volunteerName || t.joinedTitle)}</h3>
              <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
            </div>
          </div>
-         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
-             <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
-         </button>
+         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1"><Trash2 size={14}/> {CONTENT[lang].actions.endChat}</button>
       </div>
-
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
          {showWarning && (
              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
                 {t.chatReminder}
-                <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
-                    <X size={14}/>
-                </button>
+                <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600"><X size={14}/></button>
              </div>
          )}
          <div className="max-w-3xl mx-auto">
-            {chatMessages.map(msg => {
-                const isMe = isVolunteer ? !msg.isUser : msg.isUser;
-                return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
-            })}
+            {chatMessages.map(msg => { const isMe = isVolunteer ? !msg.isUser : msg.isUser; return <ChatBubble key={msg.id} {...msg} isUser={isMe} />; })}
             <div ref={messagesEndRef}/>
          </div>
       </div>
-
-      {/* --- STATIC SUGGESTION BAR (Works like AI Chat) --- */}
       <div className="bg-white dark:bg-slate-900 pt-2 shadow-up z-30">
-        
-        {/* Toggle Button */}
         <div className="px-4 flex justify-between items-center mb-2">
-           <button 
-             onClick={() => setShowSuggestions(!showSuggestions)}
-             className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${showSuggestions ? 'text-teal-500' : 'text-slate-400 hover:text-slate-600'}`}
-           >
+           <button onClick={() => setShowSuggestions(!showSuggestions)} className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${showSuggestions ? 'text-teal-500' : 'text-slate-400 hover:text-slate-600'}`}>
              <Sparkles size={12} className={showSuggestions ? "fill-teal-500" : ""} /> {lang === 'zh' ? 'AI 提示' : 'AI Suggestions'}
            </button>
         </div>
-
-        {/* Suggestion Chips */}
         {showSuggestions && (
           <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar animate-fade-in">
              {currentSuggestions.map((suggestion, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => setText(suggestion)}
-                  className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
-                >
+                <button key={idx} onClick={() => setText(suggestion)} className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors">
                   {suggestion}
                 </button>
              ))}
           </div>
         )}
-
-        {/* Chat Input */}
         <div className="p-4 pt-0">
           <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
              <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
@@ -1833,8 +1618,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
     </div>
   );
 };
-
-// --- MAIN LAYOUT ---
 
 const MainLayout = () => {
   const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('landing');
@@ -1847,20 +1630,15 @@ const MainLayout = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
   
-  // Immediately set local ticket to avoid White Page while waiting for DB sync
   const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
       const ticketId = await createTicket(n, i, p, t); 
-      const tempTicket: Ticket = {
-          id: ticketId, name: n, issue: i, priority: p, status: 'waiting', time: 'Now', tags: t, createdAt: Date.now()
-      };
-      setCurrentTicket(tempTicket); 
-      setView('human-chat'); 
+      const tempTicket: Ticket = { id: ticketId, name: n, issue: i, priority: p, status: 'waiting', time: 'Now', tags: t, createdAt: Date.now() };
+      setCurrentTicket(tempTicket); setView('human-chat'); 
   };
 
   const handleVolunteerJoin = (t: Ticket) => { 
       updateTicketStatus(t.id, 'active', volunteerProfile.name, volunteerProfile.name); 
-      setCurrentTicket(t); 
-      setView('human-chat'); 
+      setCurrentTicket(t); setView('human-chat'); 
   };
 
   return (
@@ -1874,7 +1652,6 @@ const MainLayout = () => {
               {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => { setRole('volunteer'); setView('volunteer-guidelines'); }} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
-              {/* Pass whole ticket object to avoid async lookup failure */}
               {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
           </div>
       </div>
@@ -1882,4 +1659,4 @@ const MainLayout = () => {
   );
 };
 
-export default function App() { return <AppProvider><MainLayout /></AppProvider>; }ｖ
+export default function App() { return <AppProvider><MainLayout /></AppProvider>; }

@@ -7,8 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RotateCcw, Wand2,
-  TreeDeciduous, Share, Menu, Laptop, Circle
+  Loader2, Trash2, Inbox, Download, Wand2
 } from 'lucide-react';
 
 // Firebase Imports
@@ -88,7 +87,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// --- FIREBASE CONFIGURATION (USER PROVIDED) ---
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
   authDomain: "mindtreehk.firebaseapp.com",
@@ -99,7 +98,6 @@ const firebaseConfig = {
   measurementId: "G-R6TVNF43T4"
 };
 
-// Initialize Firebase
 let app = null;
 let auth = null;
 let db = null;
@@ -389,185 +387,6 @@ const CONTENT = {
       pcTitle: "電腦 / 桌面版",
       pcStep1: "請將此網頁加入書籤 (Ctrl + D)，或在瀏覽器選單中選擇「安裝 MindTree」。",
       close: "明白"
-    }
-  },
-  en: {
-    appTitle: "MindTree",
-    appSubtitle: "Mental Support for Everyone • Your Shelter",
-    nav: { home: "Home", chat: "AI Chat", human: "Support", resources: "Links" },
-    intro: {
-      welcome: "Welcome to MindTree",
-      desc: "A premium, private sanctuary for your mind.\nWe are here to listen, support, and heal.",
-      slide1Title: "AI & Human Synergy",
-      slide1Desc: "Advanced AI listening available 24/7, backed by professional volunteers.",
-      slide2Title: "Private & Secure",
-      slide2Desc: "Your thoughts are safe here. End-to-end privacy focused.",
-      startBtn: "Begin Journey"
-    },
-    landing: {
-      servicesTitle: "Services",
-      breathTitle: "Mindful Breathing",
-      breathDesc: "Professional • 60s Calm",
-      startBreath: "Start",
-      aiCard: { title: "AI Listener", desc: "Smart & Private • 24/7" },
-      humanCard: { title: "Human Support", desc: "Volunteers • Empathy" },
-      volunteerCard: { title: "Join Volunteer Team", desc: "Become a Secret Listener" },
-      feedback: "Feedback",
-      installTitle: "Install App",
-    },
-    landingNotice: {
-      disclaimer: "Disclaimer: Not emergency medical services.",
-      rules: "Respectful interactions only. Dial 999 for emergencies."
-    },
-    aiRole: {
-      title: "AI Listener",
-      welcome: "Hi, I'm MindTree. I'm here to listen without judgment. What's on your mind?",
-      placeholder: "Type here...",
-      disclaimer: "AI can make mistakes. Verify info."
-    },
-    humanRole: {
-      title: "Counselor",
-      waitingTitle: "Matching Volunteer...",
-      waitingMessage: "We are connecting you to a volunteer...",
-      joinedTitle: "Counselor Joined",
-      systemJoin: "System: Counselor joined",
-      headerVerified: "Verified Counselor",
-      headerPeer: "Peer Volunteer",
-      report: "Report User",
-      reportSuccess: "User reported. Admins will review logs.",
-      caseResolved: "Session ended. Data deleted.",
-      placeholder: "Type message...",
-      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID).",
-      scanBlock: "Message Blocked: AI detected inappropriate or offensive content.",
-      endChatConfirm: "End chat and delete history?",
-      cancelWait: "Cancel Waiting",
-      volunteerLeftTitle: "Volunteer Left",
-      volunteerLeftDesc: "The volunteer has left the chat. You can wait for the next one or leave.",
-      requeue: "Wait for Next",
-      exit: "Leave & Delete",
-      systemVolunteerLeft: "System: Volunteer has left the chat.",
-      aiAssist: "AI Hints",
-      loadingSuggestions: "Generating...",
-    },
-    memo: {
-      cheerUp: "Community Board",
-      label: "Post a Note",
-      title: "Leave a Note",
-      desc: "Your message will float on the home page IMMEDIATELY. Please share positivity.",
-      placeholder: "Share your positivity...",
-      btn: "Post",
-      success: "Posted! Floating now.",
-      scanning: "AI Safety Check...",
-      unsafe: "Blocked: Inappropriate content detected."
-    },
-    volunteer: {
-      login: "Volunteer Access",
-      authTitle: "Volunteer Access", 
-      disclaimer: "Thank you for your service. Please verify you are ready to listen.", 
-      nameLabel: "Name", 
-      namePlaceholder: "e.g., Alex",
-      joinBtn: "Enter Volunteer Platform",
-      proJoinTitle: "Professional Login",
-      codePlaceholder: "Access Code",
-      verifyBtn: "Submit Application", 
-      errorMsg: "Invalid Code",
-      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Steps to be a good listener",
-      rule1Title: "Step 1: Active Listening",
-      rule1Desc: "Listen more, advise less.",
-      rule2Title: "Self Awareness",
-      rule2Desc: "Monitor your own well-being.",
-      rule3Title: "Emergency",
-      rule3Desc: "Report self-harm risks immediately.",
-      acknowledgeBtn: "I Agree",
-      portalTitle: "Console",
-      welcome: "Welcome",
-      exit: "Exit",
-      activeRequests: "Requests",
-      noRequests: "No active requests",
-      accept: "Accept",
-      topic: "Issue",
-      priority: { critical: "Critical", high: "High", medium: "Med", low: "Low" },
-      tabRequests: "Requests",
-      tabFeedback: "Admin Area",
-      noFeedbacks: "No feedback yet",
-      exportCSV: "Export CSV"
-    },
-    intake: {
-      title: "Intake",
-      desc: "Help us understand you",
-      q1: "Name (Anon)",
-      q1_placeholder: "Nickname",
-      q_age: "Age",
-      q_age_opts: ["<18", "18-30", "31-50", "51-70", "70+"],
-      q_gender: "Gender",
-      q_gender_opts: ["M", "F", "Other"],
-      q3: "Distress (1-5)",
-      q4: "Main Issue",
-      q4_opt1: "Anxiety / Panic",
-      q4_opt2: "Depression",
-      q4_opt3: "Family/Housing",
-      q4_opt4: "Suicidal (Urgent)",
-      q5: "Note",
-      q5_placeholder: "Details...",
-      submit: "Connect",
-      calm: "Calm",
-      crisis: "Crisis"
-    },
-    links: {
-      btn: "Resources",
-      title: "Resources",
-      desc: "Help, Donation & Volunteering",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Information"
-    },
-    feedback: {
-      title: "Feedback",
-      desc: "Your feedback is important to us.",
-      placeholder: "How can we improve?",
-      submit: "Send",
-      thanks: "Thank you! Sent to database."
-    },
-    breath: {
-      inhale: "Inhale",
-      hold: "Hold",
-      exhale: "Exhale",
-      relax: "Relax Your Mind",
-      musicOn: "Music On",
-      musicOff: "Muted",
-      playErr: "Tap to Play"
-    },
-    footer: {
-      legal: "Disclaimer: This platform is volunteer-run and provides peer emotional support only. It is NOT a substitute for professional medical advice or emergency services. We are not liable for any consequences arising from the use of this service. In case of emergency, dial 999 immediately. Use at your own risk."
-    },
-    actions: {
-      back: "Back",
-      cancel: "Cancel",
-      endChat: "End",
-      leaveChat: "Leave"
-    },
-    dialogs: {
-      volLeaveMsg: "Return case to queue?",
-      citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
-    },
-    tutorial: {
-      title: "Install App",
-      desc: "Add to home screen for better experience.",
-      iosTitle: "iOS",
-      iosStep1: "1. Tap Share button",
-      iosStep2: "2. Select 'Add to Home Screen'",
-      androidTitle: "Android",
-      androidStep1: "1. Tap Menu (⋮)",
-      androidStep2: "2. Select 'Install App'",
-      pcTitle: "PC",
-      pcStep1: "Bookmark this page or install via browser menu.",
-      close: "Close"
     }
   }
 };
@@ -929,7 +748,7 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
   );
 };
 
-// Sub-component to handle Requeue logic cleanly
+// --- SUB-COMPONENTS MUST BE DEFINED BEFORE USE ---
 const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
     const { updateTicketStatus } = useAppContext();
     
@@ -937,7 +756,7 @@ const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
         await updateTicketStatus(ticketId, 'waiting');
     };
 
-    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center">重新排隊 (下一位)</span>;
+    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center cursor-pointer">重新排隊 (下一位)</span>;
 };
 
 const TypingIndicator = () => (
@@ -1055,9 +874,8 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   useEffect(() => {
     let timeLeft = totalDuration;
     
-    // Attempt play on mount with error handling
     if(audioRef.current) {
-        audioRef.current.volume = 0.8; // Increased volume
+        audioRef.current.volume = 0.8; 
     }
 
     const cycle = async () => {
@@ -1086,7 +904,6 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-         // Explicitly triggered by user interaction - browsers like this
          audioRef.current.play()
           .then(() => setIsPlaying(true))
           .catch(e => console.error("Play failed:", e));
@@ -1103,7 +920,6 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
-      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -1461,7 +1277,334 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   );
 };
 
-// ... Rest of the components are standard and included ...
+const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang];
+  const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
+  
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!inputText.trim()) return;
+    const check = checkContentSafety(inputText);
+    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
+    
+    const userMsg: Message = { id: Date.now().toString(), text: inputText, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText("");
+    setIsTyping(true);
+    
+    try {
+      const aiText = await generateAIResponse([...messages, userMsg], lang);
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
+    } finally { setIsTyping(false); }
+  };
 
-// ... (ChatBubble, IntroScreen, IntakeForm, VolunteerAuth, VolunteerGuidelines, VolunteerDashboard, HumanChat components included above implicitly) ...
-// The code block above contains the full updated file content.
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
+            <div className="flex flex-col">
+                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
+                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
+            </div>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto w-full pb-4">
+            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+        </div>
+      </div>
+      
+      {/* Suggested Prompts */}
+      {messages.length < 3 && !isTyping && (
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
+          {SUGGESTED_PROMPTS[lang].map(prompt => (
+            <button key={prompt} onClick={() => { setInputText(prompt); handleSend(); }} className="whitespace-nowrap px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-white transition-colors shadow-sm backdrop-blur-sm">
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
+        <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
+          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
+          <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// --- SUB-COMPONENTS MUST BE DEFINED BEFORE USE ---
+const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
+    const { updateTicketStatus } = useAppContext();
+    const handleRequeue = async () => {
+        await updateTicketStatus(ticketId, 'waiting');
+    };
+    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center cursor-pointer">重新排隊 (下一位)</span>;
+};
+
+const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
+  const t = CONTENT[lang].humanRole;
+  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket, volunteerLeaveSession } = useAppContext();
+  const [text, setText] = useState("");
+  const [showWarning, setShowWarning] = useState(true);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  
+  const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
+  const chatMessages = messages.filter(m => m.ticketId === ticketId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, suggestions]);
+
+  const handleSend = () => {
+    if (!text.trim()) return;
+    const senderName = isVolunteer ? volunteerProfile.name : "User";
+    
+    addMessage(ticketId, {
+      text,
+      isUser: !isVolunteer,
+      sender: senderName,
+      timestamp: Date.now(),
+      isVerified: isVolunteer && volunteerProfile.isVerified
+    });
+    setText("");
+    setSuggestions([]); 
+  };
+
+  const handleEndChat = async () => {
+      if (isVolunteer) {
+          await volunteerLeaveSession(ticketId);
+          onLeave();
+      } else {
+          if(window.confirm(t.endChatConfirm)) {
+              await endSession(ticketId); 
+              await deleteTicket(ticketId); 
+              onLeave();
+          }
+      }
+  };
+
+  const handleCancelWait = async () => {
+      await deleteTicket(ticketId);
+      onLeave();
+  };
+
+  const handleGetSuggestions = async () => {
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+    const role = isVolunteer ? 'volunteer' : 'citizen';
+    const newSuggestions = await generateChatSuggestions(chatMessages, role, lang);
+    setSuggestions(newSuggestions);
+    setLoadingSuggestions(false);
+  };
+
+  if (!isVolunteer && liveTicket.status === 'waiting') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6 relative">
+                  <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"/>
+                  <User size={40} className="text-emerald-600 dark:text-emerald-400"/>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t.waitingTitle}</h2>
+              <p className="text-slate-500 max-w-xs mx-auto mb-8 leading-relaxed">{t.waitingMessage}</p>
+              <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-left w-full max-w-sm">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tips</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2"><Music size={16}/> 試下深呼吸練習放鬆心情</div>
+              </div>
+              <button onClick={handleCancelWait} className="mt-8 text-slate-400 text-sm hover:text-slate-600">{(t as any).cancelWait || "取消等待"}</button>
+          </div>
+      );
+  }
+
+  if (liveTicket.status === 'resolved' && !liveTicket.volunteerHasLeft) {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle size={40} className="text-slate-400"/>
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t.caseResolved}</h2>
+              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">返回首頁</button>
+          </div>
+      );
+  }
+
+  return (
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative">
+      <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
+         <div className="flex items-center gap-3">
+           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
+             {isVolunteer ? <User size={20}/> : <Heart size={20}/>}
+           </div>
+           <div>
+             <h3 className="font-bold dark:text-white">
+                 {isVolunteer ? ticket.name : (liveTicket.volunteerName || t.joinedTitle)}
+             </h3>
+             <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
+           </div>
+         </div>
+         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+             <Trash2 size={14}/> {isVolunteer ? CONTENT[lang].actions.endChat : CONTENT[lang].actions.leaveChat}
+         </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950 pb-32">
+         {showWarning && (
+             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative animate-fade-in">
+                {t.chatReminder}
+                <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
+                    <X size={14}/>
+                </button>
+             </div>
+         )}
+         
+         <div className="max-w-3xl mx-auto pb-4">
+            {chatMessages.map(msg => {
+                const isMe = isVolunteer ? !msg.isUser : msg.isUser;
+                return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
+            })}
+            <div ref={messagesEndRef}/>
+         </div>
+      </div>
+
+      {!isVolunteer && liveTicket.volunteerHasLeft && (
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-30 flex items-end sm:items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+                  <div className="flex flex-col items-center text-center mb-6">
+                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                          <LogOut size={32}/>
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{(t as any).volunteerLeftTitle}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{(t as any).volunteerLeftDesc}</p>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                      <button 
+                        className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl"
+                      >
+                          <HumanChatRequeueButton ticketId={ticketId}/>
+                      </button>
+                      
+                      <button 
+                        onClick={async () => { await deleteTicket(ticketId); onLeave(); }}
+                        className="w-full py-3 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl"
+                      >
+                          {(t as any).exit}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      <div className="bg-white dark:bg-slate-900 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md shadow-up flex flex-col gap-2">
+        {loadingSuggestions && (
+            <div className="flex items-center gap-2 text-xs text-slate-400 px-4 animate-pulse">
+                <Wand2 size={12}/> {(t as any).loadingSuggestions || "Thinking..."}
+            </div>
+        )}
+        {suggestions.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 px-1 no-scrollbar">
+                {suggestions.map((sug, idx) => (
+                    <button 
+                        key={idx} 
+                        onClick={() => setText(sug)}
+                        className="whitespace-nowrap px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-full border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-colors"
+                    >
+                        {sug}
+                    </button>
+                ))}
+            </div>
+        )}
+
+        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2 w-full items-center">
+           <button 
+                type="button" 
+                onClick={handleGetSuggestions} 
+                disabled={loadingSuggestions || (!isVolunteer && liveTicket.volunteerHasLeft)}
+                className="w-10 h-10 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 flex items-center justify-center hover:scale-105 transition-transform"
+                title={(t as any).aiAssist || "AI Suggestions"}
+           >
+               <Wand2 size={18} className={loadingSuggestions ? "animate-spin" : ""}/>
+           </button>
+
+           <input 
+             value={text} 
+             onChange={e => setText(e.target.value)} 
+             disabled={(!isVolunteer && liveTicket.volunteerHasLeft)}
+             className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white disabled:opacity-50 min-w-0" 
+             placeholder={(!isVolunteer && liveTicket.volunteerHasLeft) ? (t as any).systemVolunteerLeft : t.placeholder}
+           />
+           <button 
+             type="submit" 
+             disabled={(!isVolunteer && liveTicket.volunteerHasLeft) || !text.trim()}
+             className="w-12 h-12 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
+           >
+               <Send size={20}/>
+           </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// --- MAIN LAYOUT ---
+
+const MainLayout = () => {
+  const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('landing');
+  const [lang, setLang] = useState<Language>('zh');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [role, setRole] = useState<'citizen' | 'volunteer' | null>(null);
+  const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
+  const { createTicket, updateTicketStatus, volunteerProfile } = useAppContext();
+
+  const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
+  
+  // Immediately set local ticket to avoid White Page while waiting for DB sync
+  const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
+      const ticketId = await createTicket(n, i, p, t); 
+      const tempTicket: Ticket = {
+          id: ticketId, name: n, issue: i, priority: p, status: 'waiting', time: 'Now', tags: t, createdAt: Date.now()
+      };
+      setCurrentTicket(tempTicket); 
+      setView('human-chat'); 
+  };
+
+  const handleVolunteerJoin = (t: Ticket) => { 
+      updateTicketStatus(t.id, 'active', volunteerProfile.name, volunteerProfile.name); 
+      setCurrentTicket(t); 
+      setView('human-chat'); 
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className={`w-full h-full min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
+          <div className="w-full h-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white relative overflow-hidden font-sans">
+              {view === 'intro' && <IntroScreen onStart={() => setView('landing')} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} />}
+              {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
+              {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} lang={lang} />}
+              {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => { setRole('volunteer'); setView('volunteer-guidelines'); }} lang={lang} />}
+              {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
+              {/* Pass whole ticket object to avoid async lookup failure */}
+              {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
+          </div>
+      </div>
+    </ErrorBoundary>
+  );
+};
+
+export default function App() { return <AppProvider><MainLayout /></AppProvider>; }

@@ -329,8 +329,8 @@ const CONTENT = {
       leaveChat: "離開"
     },
     dialogs: {
-      volLeaveMsg: "確定離開？個案將重回隊列。",
-      citEndMsg: "確定結束對話？"
+      volLeaveMsg: "Return case to queue?",
+      citEndMsg: "End this session?"
     },
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
@@ -1369,8 +1369,12 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
   const [distress, setDistress] = useState(3);
   const [issue, setIssue] = useState(t.q4_opt1);
   const [note, setNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // New state to prevent double submission
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent double click
+    setIsSubmitting(true);
+
     // Logic to determine priority based on distress level and issue
     let priority: Priority = 'medium';
     if (distress >= 4 || issue === t.q4_opt4) priority = 'high';
@@ -1430,7 +1434,9 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
           </div>
 
-          <button onClick={handleSubmit} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform">{t.submit}</button>
+          <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
+            {isSubmitting ? <Loader2 className="animate-spin" /> : t.submit}
+          </button>
         </div>
       </div>
     </div>
@@ -1732,7 +1738,7 @@ const MainLayout = () => {
               {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
               {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} lang={lang} />}
               {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} lang={lang} />}
-              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
+              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => { setRole('volunteer'); setView('volunteer-guidelines'); }} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
               {/* Pass whole ticket object to avoid async lookup failure */}

@@ -6,7 +6,7 @@ import {
   Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, CornerDownLeft
+  ChevronRight, MessageSquarePlus, Ban, AlertOctagon
 } from 'lucide-react';
 
 // Firebase Imports
@@ -151,7 +151,6 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
-// Updated Links Categories
 const USEFUL_LINKS = [
   // Mental Support
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
@@ -226,8 +225,8 @@ const CONTENT = {
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
-      scanning: "AI 正在嚴格審查內容...",
-      unsafe: "未能發佈：AI 偵測到不當用語或無意義內容。",
+      scanning: "AI 正在審查內容...",
+      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。",
       guidance: "請保持正面、友善。"
     },
     volunteer: {
@@ -241,15 +240,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "心理支援指南",
-      guidelinesDesc: "簡單三步，成為更好的聆聽者",
-      rule1Title: "第一步：專注聆聽 (Listen)",
-      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
-      rule2Title: "第二步：同理回應 (Empathize)",
-      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」、「這沒什麼大不了」。",
-      rule3Title: "第三步：安全評估 (Assess)",
-      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
-      acknowledgeBtn: "我明白並同意",
+      guidelinesTitle: "服務守則",
+      guidelinesDesc: "專業 • 同理 • 保密",
+      rule1Title: "專注聆聽",
+      rule1Desc: "不急於批判或建議，給予空間。",
+      rule2Title: "自我覺察",
+      rule2Desc: "留意自身情緒，適時休息。",
+      rule3Title: "危機處理",
+      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
+      acknowledgeBtn: "我同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -483,8 +482,8 @@ const checkContentSafety = (text: string) => {
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
   
-  // [NEW] Block very short or nonsense messages locally to prevent spam
-  if (text.length < 2) return { safe: false, reason: "Message too short / boring." };
+  // Block messages that are too short (likely nonsense or low effort)
+  if (text.trim().length < 2) return { safe: false, reason: "Message too short." };
   
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
@@ -493,7 +492,7 @@ const checkContentSafety = (text: string) => {
 };
 
 // [UPDATED] Advanced AI Scanner
-const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
+const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     // 1. Local Check first
     const localCheck = checkContentSafety(text);
@@ -744,7 +743,7 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
   
   return (
     <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] ${bgColor} backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-fade-in max-w-md w-full mx-4 ring-1 ring-white/20`}>
-      {type === 'error' ? <Ban size={18} /> : (type === 'loading' ? <Clock size={18} className="animate-spin"/> : <CheckCircle size={18} />)}
+      {type === 'error' ? <XCircle size={18} /> : (type === 'loading' ? <Clock size={18} className="animate-spin"/> : <CheckCircle size={18} />)}
       <span className="text-sm font-medium flex-1 leading-tight">{message}</span>
       <button onClick={onClose} className="opacity-80 hover:opacity-100 shrink-0"><X size={16} /></button>
     </div>
@@ -1030,12 +1029,14 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     setFloatingBubbles(initialBubbles);
   }, []);
 
+  // Update when new memo is added
   useEffect(() => {
     if (publicMemos.length > 0) {
         setFloatingBubbles(prev => [...publicMemos, ...prev]);
     }
   }, [publicMemos]);
 
+  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message) {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1219,7 +1220,6 @@ const MainLayout = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
   
-  // [FIX] Immediately set local ticket to avoid White Page while waiting for DB sync
   const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
       const ticketId = await createTicket(n, i, p, t); 
       const tempTicket: Ticket = {

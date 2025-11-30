@@ -6,7 +6,7 @@ import {
   Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus
+  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, CornerDownLeft
 } from 'lucide-react';
 
 // Firebase Imports
@@ -40,12 +40,10 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
-          <AlertTriangle size={48} className="text-red-500 mb-4" />
+          <AlertOctagon size={48} className="text-red-500 mb-4" />
           <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page.</p>
-          <div className="bg-slate-200 p-4 rounded text-xs font-mono overflow-auto max-w-full">
-            {this.state.error?.toString()}
-          </div>
+          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page. <br/>請重新整理頁面。</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-teal-600 text-white rounded-lg">Refresh</button>
         </div>
       );
     }
@@ -153,14 +151,20 @@ const SUGGESTED_PROMPTS = {
   en: ["I feel anxious...", "I need to talk", "Can't sleep well", "Confused about future"]
 };
 
+// Updated Links Categories
 const USEFUL_LINKS = [
+  // Mental Support
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "mental" },
   { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "mental" },
   { id: 4, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "mental" },
   { id: 5, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "mental" },
+  
+  // Blood Donation
   { id: 6, title: { zh: "紅十字會輸血服務中心", en: "Red Cross Blood Transfusion" }, url: "https://www5.ha.org.hk/rcbts/", category: "blood" },
   { id: 7, title: { zh: "捐血站位置", en: "Donor Centres Locations" }, url: "https://www5.ha.org.hk/rcbts/donor-centres", category: "blood" },
+
+  // Information
   { id: 8, title: { zh: "民政事務總署 - 大埔區", en: "HAD - Tai Po District" }, url: "https://www.had.gov.hk/en/18_districts/my_district/tai_po.htm", category: "info" },
   { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
@@ -222,8 +226,9 @@ const CONTENT = {
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
-      scanning: "AI 正在審查內容...",
-      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。"
+      scanning: "AI 正在嚴格審查內容...",
+      unsafe: "未能發佈：AI 偵測到不當用語或無意義內容。",
+      guidance: "請保持正面、友善。"
     },
     volunteer: {
       login: "義工登入",
@@ -236,15 +241,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "服務守則",
-      guidelinesDesc: "專業 • 同理 • 保密",
-      rule1Title: "專注聆聽",
-      rule1Desc: "不急於批判或建議，給予空間。",
-      rule2Title: "自我覺察",
-      rule2Desc: "留意自身情緒，適時休息。",
-      rule3Title: "危機處理",
-      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
-      acknowledgeBtn: "我同意",
+      guidelinesTitle: "心理支援指南",
+      guidelinesDesc: "簡單三步，成為更好的聆聽者",
+      rule1Title: "第一步：專注聆聽 (Listen)",
+      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
+      rule2Title: "第二步：同理回應 (Empathize)",
+      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」、「這沒什麼大不了」。",
+      rule3Title: "第三步：安全評估 (Assess)",
+      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
+      acknowledgeBtn: "我明白並同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -472,33 +477,68 @@ const CONTENT = {
 
 // --- 3. SERVICES ---
 
+// [UPDATED] Strict Local Content Safety Check
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
+  
+  // [NEW] Block very short or nonsense messages locally to prevent spam
+  if (text.length < 2) return { safe: false, reason: "Message too short / boring." };
+  
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
   }
   return { safe: true, reason: null };
 };
 
-const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
+// [UPDATED] Advanced AI Scanner
+const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
   try {
+    // 1. Local Check first
+    const localCheck = checkContentSafety(text);
+    if (!localCheck.safe) return localCheck;
+
+    // 2. AI Check
     const contentReviewSystemPrompt = `
-    You are a strict Content Moderator for 'MindTree'.
-    Analyze input text.
-    RULES:
-    1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, gibberish.
-    2. ALLOW (Safe): Distress, sadness, depression, general conversation.
-    OUTPUT: Return "PASS" if safe, otherwise return short reason in Traditional Chinese.
+    You are a very strict Content Moderator for 'MindTree'.
+    Task: Analyze the user's message for public display.
+    
+    CRITERIA FOR REJECTION (UNSAFE):
+    - Nonsense, keyboard smashing (e.g. 'sfdgsdg', '123123').
+    - One or two word low-effort comments (e.g. 'Hi', 'Testing', 'Good', 'Yo').
+    - Trolling, sarcasm, or cynical remarks.
+    - Offensive, hateful, sexual, violent, or illegal content.
+    - Anything not explicitly warm, kind, and supportive.
+
+    CRITERIA FOR APPROVAL (SAFE):
+    - Must be positive, supportive, encouraging, warm, or empathetic sentences.
+    
+    Output Format:
+    - If APPROVED: Return exactly "PASS".
+    - If REJECTED: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享更有意義的支持說話").
     `;
 
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const localCheck = checkContentSafety(text);
-            resolve(localCheck);
-        }, 1000);
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: contentReviewSystemPrompt,
+        generationConfig: { temperature: 0.2 } // Low temp for strict rules
+      })
     });
+
+    const data = await response.json();
+    if (!response.ok) return { safe: true, reason: null }; // Fail open to prevent blocking legitimate users on error
+
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (result === "PASS") {
+      return { safe: true, reason: null };
+    } else {
+      return { safe: false, reason: result || "Content filtered by AI." };
+    }
 
   } catch (e) {
     return { safe: true, reason: null };
@@ -704,7 +744,7 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
   
   return (
     <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[100] ${bgColor} backdrop-blur-md text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-fade-in max-w-md w-full mx-4 ring-1 ring-white/20`}>
-      {type === 'error' ? <XCircle size={18} /> : (type === 'loading' ? <Clock size={18} className="animate-spin"/> : <CheckCircle size={18} />)}
+      {type === 'error' ? <Ban size={18} /> : (type === 'loading' ? <Clock size={18} className="animate-spin"/> : <CheckCircle size={18} />)}
       <span className="text-sm font-medium flex-1 leading-tight">{message}</span>
       <button onClick={onClose} className="opacity-80 hover:opacity-100 shrink-0"><X size={16} /></button>
     </div>
@@ -990,14 +1030,12 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     setFloatingBubbles(initialBubbles);
   }, []);
 
-  // Update when new memo is added
   useEffect(() => {
     if (publicMemos.length > 0) {
         setFloatingBubbles(prev => [...publicMemos, ...prev]);
     }
   }, [publicMemos]);
 
-  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message) {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1208,7 +1246,6 @@ const MainLayout = () => {
               {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
-              {/* [FIX] Pass whole ticket object to avoid async lookup failure */}
               {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
           </div>
       </div>

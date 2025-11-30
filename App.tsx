@@ -232,15 +232,16 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工專區",
-      disclaimer: "感謝你的無私奉獻。請遵守義工守則。",
+      authTitle: "義工申請", // Changed from 義工專區
+      disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", // Updated
       nameLabel: "稱呼",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
       codePlaceholder: "輸入存取碼",
-      verifyBtn: "驗證",
+      verifyBtn: "提交申請", // Changed from 驗證
       errorMsg: "存取碼錯誤",
+      reminder: "溫馨提示：請時刻保持同理心及尊重。我們建立的是一個安全、包容的空間，請用心聆聽每一位求助者的心聲。", // Added
       guidelinesTitle: "心理支援指南",
       guidelinesDesc: "簡單三步，成為更好的聆聽者",
       rule1Title: "第一步：專注聆聽 (Listen)",
@@ -383,15 +384,16 @@ const CONTENT = {
     },
     volunteer: {
       login: "Volunteer Access",
-      authTitle: "Volunteer Portal",
-      disclaimer: "Thank you for your service.",
+      authTitle: "Volunteer Application", // Changed
+      disclaimer: "Thank you for your service. Please verify you are ready to listen.", // Updated
       nameLabel: "Name",
       namePlaceholder: "e.g., Alex",
       joinBtn: "Enter Volunteer Platform",
       proJoinTitle: "Professional Login",
       codePlaceholder: "Access Code",
-      verifyBtn: "Verify",
+      verifyBtn: "Submit Application", // Changed
       errorMsg: "Invalid Code",
+      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.", // Added
       guidelinesTitle: "Support Guidelines",
       guidelinesDesc: "3 Steps to be a good listener",
       rule1Title: "Step 1: Active Listening",
@@ -1368,20 +1370,13 @@ const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: s
 const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, onLoginSuccess: () => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
   const { setVolunteerProfile } = useAppContext();
-  const [code, setCode] = useState("");
   const [name, setName] = useState("");
-  const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    if (code === "8888") { // Simple demo code
-      setVolunteerProfile({ name: name || "Volunteer", role: "peer", isVerified: false });
-      onLoginSuccess();
-    } else if (code === "PRO999") {
-      setVolunteerProfile({ name: name || "Social Worker", role: "pro", isVerified: true });
-      onLoginSuccess();
-    } else {
-      setError(t.errorMsg);
-    }
+  const handleApply = () => {
+    if (!name.trim()) return;
+    // Default to peer volunteer since code is removed
+    setVolunteerProfile({ name: name, role: "peer", isVerified: false });
+    onLoginSuccess();
   };
 
   return (
@@ -1389,19 +1384,25 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl">
         <button onClick={onBack} className="mb-8 text-slate-400 hover:text-slate-600"><ArrowLeft size={24}/></button>
         <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 mb-2">{t.authTitle}</h2>
-        <p className="text-sm text-slate-500 mb-8">{t.disclaimer}</p>
+        <p className="text-sm text-slate-500 mb-6">{t.disclaimer}</p>
+        
+        {/* Empathy Reminder Block */}
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl mb-6 flex items-start gap-3 border border-emerald-100 dark:border-emerald-800/30">
+            <Heart size={18} className="text-emerald-600 shrink-0 mt-0.5 fill-emerald-100 dark:fill-emerald-900" />
+            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
+                {(t as any).reminder}
+            </p>
+        </div>
         
         <div className="space-y-4">
            <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
            </div>
-           <div>
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.proJoinTitle}</label>
-            <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder={t.codePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-           </div>
-           {error && <p className="text-rose-500 text-sm font-bold text-center bg-rose-50 p-2 rounded-lg">{error}</p>}
-           <button onClick={handleLogin} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30">{t.verifyBtn}</button>
+           
+           <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
+             {t.verifyBtn}
+           </button>
         </div>
       </div>
     </div>

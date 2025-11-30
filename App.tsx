@@ -517,22 +517,23 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     if (!localCheck.safe) return localCheck;
 
     const contentReviewSystemPrompt = `
-    You are a very strict Content Moderator for 'MindTree'.
-    Task: Analyze the user's message for public display.
+    You are a Content Moderator for a mental health support app called 'MindTree'.
+    Task: Classify if the user's message is safe for a public positivity board.
     
-    CRITERIA FOR REJECTION (UNSAFE):
-    - Nonsense, keyboard smashing (e.g. 'sfdgsdg', '123123').
-    - One or two word low-effort comments (e.g. 'Hi', 'Testing', 'Good', 'Yo').
-    - Trolling, sarcasm, or cynical remarks.
-    - Offensive, hateful, sexual, violent, or illegal content.
-    - Anything not explicitly warm, kind, and supportive.
+    SAFE CONTENT (RETURN "PASS"):
+    - Any positive, encouraging, or supportive message (e.g., "Add oil", "Don't give up", "Tomorrow is a new day").
+    - Neutral but kind greetings (e.g., "Hello everyone", "Good night").
+    - Short messages are okay if they are positive.
+    
+    UNSAFE CONTENT (REJECT):
+    - Negative, cynical, or depressing content.
+    - Trolling, sarcasm, insults, or hate speech.
+    - Nonsense/Gibberish (e.g., "asdfgh", "123123").
+    - Sexual or violent content.
 
-    CRITERIA FOR APPROVAL (SAFE):
-    - Must be positive, supportive, encouraging, warm, or empathetic sentences.
-    
     Output Format:
-    - If APPROVED: Return exactly "PASS".
-    - If REJECTED: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享更有意義的支持說話").
+    - If SAFE: Return exactly "PASS".
+    - If UNSAFE: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享正面的支持說話").
     `;
 
     const response = await fetch('/api/chat', {

@@ -245,7 +245,7 @@ const CONTENT = {
       login: "義工登入",
       authTitle: "義工/管理員入口", 
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼",
+      nameLabel: "稱呼 (輸入 6221Like 進入管理員模式)",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -443,6 +443,7 @@ interface AppContextType {
   tickets: Ticket[];
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
   updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
+  deleteTicket: (id: string) => Promise<void>;
   endSession: (ticketId: string) => Promise<void>;
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
@@ -568,6 +569,14 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
      });
   };
 
+  const deleteTicket = async (id: string) => {
+      if(!db) {
+          setTickets(prev => prev.filter(t => t.id !== id));
+          return;
+      }
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
+  };
+
   const endSession = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'resolved');
 
@@ -640,7 +649,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
       {children}
     </AppContext.Provider>
   );
@@ -1295,14 +1304,13 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
   const t = CONTENT[lang].volunteer;
   const { setVolunteerProfile } = useAppContext();
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
 
   const handleApply = () => {
     if (!name.trim()) return;
     
-    // ADMIN CHECK
-    if (code === "ADMIN") {
-        setVolunteerProfile({ name: name, role: "admin", isVerified: true });
+    // ADMIN CHECK via Name
+    if (name.trim() === "6221Like") {
+        setVolunteerProfile({ name: "Admin", role: "admin", isVerified: true });
     } else {
         // Default peer volunteer
         setVolunteerProfile({ name: name, role: "peer", isVerified: false });
@@ -1329,11 +1337,6 @@ const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, o
            <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-           </div>
-
-           <div>
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.codePlaceholder}</label>
-            <input value={code} onChange={e => setCode(e.target.value)} type="password" placeholder="ADMIN (Optional)" className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
            </div>
            
            <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
@@ -1484,8 +1487,9 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  const { messages, addMessage, volunteerProfile, tickets, endSession, updateTicketStatus } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
+  const [showWarning, setShowWarning] = useState(true);
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
@@ -1516,8 +1520,8 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   };
 
   const handleCancelWait = async () => {
-      // Mark as resolved so it disappears from volunteer dashboard
-      await updateTicketStatus(ticketId, 'resolved');
+      // PERMANENTLY DELETE TICKET TO CLEAN UP QUEUE
+      await deleteTicket(ticketId);
       onLeave();
   };
 
@@ -1574,9 +1578,14 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
-         <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30">
-            {t.chatReminder}
-         </div>
+         {showWarning && (
+             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
+                {t.chatReminder}
+                <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
+                    <X size={14}/>
+                </button>
+             </div>
+         )}
          <div className="max-w-3xl mx-auto">
             {chatMessages.map(msg => {
                 // ALIGNMENT LOGIC:

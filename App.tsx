@@ -107,6 +107,7 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
+  // Added 'volunteer_left' status to handle the new logic
   status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
   time: string;
   createdAt: number;
@@ -1404,77 +1405,6 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
            </div>
         </div>
       )}
-    </div>
-  );
-};
-
-const AIChat = ({ onBack }: { onBack: () => void }) => {
-  const { lang } = useAppContext();
-  const t = CONTENT[lang];
-  const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
-  const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
-  
-  const handleSend = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!inputText.trim()) return;
-    const check = checkContentSafety(inputText);
-    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
-    
-    const userMsg: Message = { id: Date.now().toString(), text: inputText, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setInputText("");
-    setIsTyping(true);
-    
-    try {
-      const aiText = await generateAIResponse([...messages, userMsg], lang);
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
-    } catch (e) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
-    } finally { setIsTyping(false); }
-  };
-
-  return (
-    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
-      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
-      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
-        <div className="flex items-center gap-4">
-            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
-            <div className="flex flex-col">
-                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
-                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
-            </div>
-        </div>
-      </header>
-      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
-        <div className="max-w-3xl mx-auto w-full pb-4">
-            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
-            {isTyping && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-        </div>
-      </div>
-      
-      {/* Suggested Prompts */}
-      {messages.length < 3 && !isTyping && (
-        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
-          {SUGGESTED_PROMPTS[lang].map(prompt => (
-            <button key={prompt} onClick={() => { setInputText(prompt); handleSend(); }} className="whitespace-nowrap px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-white transition-colors shadow-sm backdrop-blur-sm">
-              {prompt}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
-        <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
-          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
-          <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
-        </form>
-      </div>
     </div>
   );
 };

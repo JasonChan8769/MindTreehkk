@@ -6,7 +6,7 @@ import {
   Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle // [FIX] Added XCircle
+  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck
 } from 'lucide-react';
 
 // Firebase Imports
@@ -655,10 +655,10 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!db) {
        const localId = "local-" + Date.now();
        const newTicket: Ticket = {
-          id: localId, name, issue, priority, tags,
-          status: 'waiting',
-          time: new Date().toLocaleTimeString(),
-          createdAt: Date.now()
+         id: localId, name, issue, priority, tags,
+         status: 'waiting',
+         time: new Date().toLocaleTimeString(),
+         createdAt: Date.now()
        };
        setTickets(prev => [newTicket, ...prev]);
        return localId;
@@ -1110,8 +1110,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 dark:bg-teal-900/10 rounded-bl-[100%] z-0" />
                   <div className="w-16 h-16 rounded-2xl bg-teal-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-teal-500/30 z-10"><Bot size={32} /></div>
                   <div className="z-10">
-                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.aiCard.title}</div>
-                     <div className="text-slate-500 text-xs font-medium">{t.landing.aiCard.desc}</div>
+                      <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.aiCard.title}</div>
+                      <div className="text-slate-500 text-xs font-medium">{t.landing.aiCard.desc}</div>
                   </div>
                   <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
@@ -1120,8 +1120,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[100%] z-0" />
                   <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 z-10"><Heart size={32} /></div>
                   <div className="z-10">
-                     <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.humanCard.title}</div>
-                     <div className="text-slate-500 text-xs font-medium">{t.landing.humanCard.desc}</div>
+                      <div className="font-bold text-xl text-slate-800 dark:text-white mb-1">{t.landing.humanCard.title}</div>
+                      <div className="text-slate-500 text-xs font-medium">{t.landing.humanCard.desc}</div>
                   </div>
                   <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
@@ -1131,8 +1131,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                <button onClick={() => setShowBreath(true)} className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/30 flex items-center justify-between group hover:scale-[1.02] transition-transform relative overflow-hidden">
                   <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-2xl" />
                   <div className="text-left relative z-10">
-                     <div className="font-black text-xl mb-1 flex items-center gap-2"><Sparkles size={20}/> {t.landing.breathTitle}</div>
-                     <div className="text-teal-50 text-xs font-medium bg-white/20 px-3 py-1 rounded-full w-fit backdrop-blur-sm">{t.landing.breathDesc}</div>
+                      <div className="font-black text-xl mb-1 flex items-center gap-2"><Sparkles size={20}/> {t.landing.breathTitle}</div>
+                      <div className="text-teal-50 text-xs font-medium bg-white/20 px-3 py-1 rounded-full w-fit backdrop-blur-sm">{t.landing.breathDesc}</div>
                   </div>
                   <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform backdrop-blur-sm relative z-10"><Play size={20} fill="white" /></div>
                </button>
@@ -1142,8 +1142,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[1.8rem] p-5 flex items-center gap-5 h-full w-full">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform"><HandHeart size={24} /></div>
                   <div className="flex-1 text-left">
-                     <div className="font-bold text-base text-slate-800 dark:text-white">{t.landing.volunteerCard.title}</div>
-                     <div className="text-xs text-slate-500 dark:text-slate-400">{t.landing.volunteerCard.desc}</div>
+                      <div className="font-bold text-base text-slate-800 dark:text-white">{t.landing.volunteerCard.title}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{t.landing.volunteerCard.desc}</div>
                   </div>
                   <div className="text-slate-300"><ArrowRight size={20}/></div>
                </div>
@@ -1281,6 +1281,258 @@ const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
         <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
           <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
           <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// --- MISSING COMPONENTS (Restored) ---
+
+const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang].intake;
+  const [name, setName] = useState("");
+  const [age, setAge] = useState(t.q_age_opts[1]);
+  const [gender, setGender] = useState(t.q_gender_opts[0]);
+  const [distress, setDistress] = useState(3);
+  const [issue, setIssue] = useState(t.q4_opt1);
+  const [note, setNote] = useState("");
+
+  const handleSubmit = () => {
+    // Logic to determine priority based on distress level and issue
+    let priority: Priority = 'medium';
+    if (distress >= 4 || issue === t.q4_opt4) priority = 'high';
+    if (issue === t.q4_opt4) priority = 'critical';
+
+    const tags = [age, gender, issue];
+    onComplete(name || t.q1_placeholder, note || issue, priority, tags);
+  };
+
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
+      <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-xl">
+        <button onClick={onBack} className="mb-6 text-slate-400 hover:text-slate-600 flex items-center gap-2"><ArrowLeft size={20}/> {CONTENT[lang].actions.back}</button>
+        <h2 className="text-2xl font-bold mb-2 dark:text-white">{t.title}</h2>
+        <p className="text-slate-500 mb-8 text-sm">{t.desc}</p>
+        
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q1}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.q1_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-teal-500 dark:text-white" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_age}</label>
+              <select value={age} onChange={e => setAge(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
+                {t.q_age_opts.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_gender}</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
+                {t.q_gender_opts.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q3} ({distress})</label>
+            <input type="range" min="1" max="5" value={distress} onChange={e => setDistress(parseInt(e.target.value))} className="w-full accent-teal-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
+            <div className="flex justify-between text-xs text-slate-400 mt-1"><span>{t.calm}</span><span>{t.crisis}</span></div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q4}</label>
+            <div className="grid grid-cols-1 gap-2">
+              {[t.q4_opt1, t.q4_opt2, t.q4_opt3, t.q4_opt4].map(opt => (
+                <button key={opt} onClick={() => setIssue(opt)} className={`p-3 rounded-xl text-left text-sm font-medium transition-all ${issue === opt ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
+             <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
+          </div>
+
+          <button onClick={handleSubmit} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform">{t.submit}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, onLoginSuccess: () => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  const { setVolunteerProfile } = useAppContext();
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = () => {
+    if (code === "8888") { // Simple demo code
+      setVolunteerProfile({ name: name || "Volunteer", role: "peer", isVerified: false });
+      onLoginSuccess();
+    } else if (code === "PRO999") {
+      setVolunteerProfile({ name: name || "Social Worker", role: "pro", isVerified: true });
+      onLoginSuccess();
+    } else {
+      setError(t.errorMsg);
+    }
+  };
+
+  return (
+    <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
+      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl">
+        <button onClick={onBack} className="mb-8 text-slate-400 hover:text-slate-600"><ArrowLeft size={24}/></button>
+        <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 mb-2">{t.authTitle}</h2>
+        <p className="text-sm text-slate-500 mb-8">{t.disclaimer}</p>
+        
+        <div className="space-y-4">
+           <div>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+           </div>
+           <div>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.proJoinTitle}</label>
+            <input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder={t.codePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
+           </div>
+           {error && <p className="text-rose-500 text-sm font-bold text-center bg-rose-50 p-2 rounded-lg">{error}</p>}
+           <button onClick={handleLogin} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30">{t.verifyBtn}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => void, onBack: () => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
+      <div className="max-w-2xl mx-auto">
+         <button onClick={onBack} className="mb-6 text-slate-400"><ArrowLeft size={24}/></button>
+         <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-4">{t.guidelinesTitle}</h2>
+         <p className="text-slate-500 mb-8">{t.guidelinesDesc}</p>
+
+         <div className="space-y-4 mb-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
+                <h3 className="font-bold text-lg dark:text-white mb-2">{(t as any)[`rule${i}Title`]}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">{(t as any)[`rule${i}Desc`]}</p>
+              </div>
+            ))}
+         </div>
+         <button onClick={onConfirm} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl">{t.acknowledgeBtn}</button>
+      </div>
+    </div>
+  );
+};
+
+const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (t: Ticket) => void, lang: Language }) => {
+  const t = CONTENT[lang].volunteer;
+  const { tickets, volunteerProfile } = useAppContext();
+  
+  return (
+    <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
+       <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex justify-between items-center z-10">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
+            <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+          </div>
+          <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
+       </div>
+       
+       <div className="flex-1 overflow-y-auto p-6">
+         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
+         
+         {tickets.filter(x => x.status === 'waiting').length === 0 ? (
+           <div className="text-center py-20 opacity-50">
+             <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
+             <p>{t.noRequests}</p>
+           </div>
+         ) : (
+           <div className="grid gap-4">
+             {tickets.filter(t => t.status === 'waiting').map(ticket => (
+               <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                 <div className="flex justify-between items-start">
+                    <div className="flex gap-2">
+                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
+                       <span className="text-slate-400 text-xs">{ticket.time}</span>
+                    </div>
+                 </div>
+                 <div>
+                    <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
+                    <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
+                 </div>
+                 <div className="flex gap-2 mt-2">
+                    {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
+                 </div>
+                 <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
+               </div>
+             ))}
+           </div>
+         )}
+       </div>
+    </div>
+  );
+};
+
+const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
+  const t = CONTENT[lang].humanRole;
+  const { messages, addMessage, volunteerProfile } = useAppContext();
+  const [text, setText] = useState("");
+  
+  const chatMessages = messages.filter(m => m.ticketId === ticketId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages]);
+
+  const handleSend = () => {
+    if (!text.trim()) return;
+    const senderName = isVolunteer ? volunteerProfile.name : "User";
+    
+    addMessage(ticketId, {
+      text,
+      isUser: !isVolunteer,
+      sender: senderName,
+      timestamp: Date.now(),
+      isVerified: isVolunteer && volunteerProfile.isVerified
+    });
+    setText("");
+  };
+
+  return (
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+      <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
+         <div className="flex items-center gap-3">
+           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
+             {isVolunteer ? <User size={20}/> : <Heart size={20}/>}
+           </div>
+           <div>
+             <h3 className="font-bold dark:text-white">{isVolunteer ? ticket.name : t.joinedTitle}</h3>
+             <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
+           </div>
+         </div>
+         <button onClick={onLeave} className="px-4 py-2 bg-rose-50 text-rose-500 text-xs font-bold rounded-full">{CONTENT[lang].actions.endChat}</button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
+         <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30">
+            {t.chatReminder}
+         </div>
+         <div className="max-w-3xl mx-auto">
+            {chatMessages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            <div ref={messagesEndRef}/>
+         </div>
+      </div>
+
+      <div className="p-4 bg-white dark:bg-slate-900 shadow-up">
+        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
+           <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
+           <button type="submit" className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform"><Send size={20}/></button>
         </form>
       </div>
     </div>

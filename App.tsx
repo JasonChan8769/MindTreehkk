@@ -6,14 +6,15 @@ import {
   Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck
+  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
+  Loader2, Trash2, Inbox
 } from 'lucide-react';
 
 // Firebase Imports
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, limit
+  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, limit, deleteDoc, writeBatch
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
@@ -108,6 +109,14 @@ export interface Ticket {
   createdAt: number;
   tags: string[];
   volunteerId?: string;
+  volunteerName?: string;
+}
+
+export interface Feedback {
+  id: string;
+  text: string;
+  timestamp: number;
+  read: boolean;
 }
 
 export interface VolunteerProfile {
@@ -213,10 +222,11 @@ const CONTENT = {
       headerPeer: "同行者義工",
       report: "檢舉用戶",
       reportSuccess: "已檢舉該用戶。管理員將會審查對話紀錄。",
-      caseResolved: "對話已結束。希望你有好過一點。",
+      caseResolved: "對話已結束。數據已銷毀。",
       placeholder: "輸入訊息...",
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
-      scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。"
+      scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
+      endChatConfirm: "確定結束並刪除紀錄？"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -232,16 +242,16 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工申請", // Changed from 義工專區
-      disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", // Updated
+      authTitle: "義工申請", 
+      disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
       nameLabel: "稱呼",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
       codePlaceholder: "輸入存取碼",
-      verifyBtn: "提交申請", // Changed from 驗證
+      verifyBtn: "提交申請", 
       errorMsg: "存取碼錯誤",
-      reminder: "溫馨提示：請時刻保持同理心及尊重。我們建立的是一個安全、包容的空間，請用心聆聽每一位求助者的心聲。", // Added
+      reminder: "溫馨提示：請時刻保持同理心及尊重。我們建立的是一個安全、包容的空間，請用心聆聽每一位求助者的心聲。",
       guidelinesTitle: "心理支援指南",
       guidelinesDesc: "簡單三步，成為更好的聆聽者",
       rule1Title: "第一步：專注聆聽 (Listen)",
@@ -258,7 +268,10 @@ const CONTENT = {
       noRequests: "暫時沒有新個案",
       accept: "接聽",
       topic: "主訴",
-      priority: { critical: "緊急", high: "高", medium: "中", low: "低" }
+      priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
+      tabRequests: "求助個案",
+      tabFeedback: "用戶意見",
+      noFeedbacks: "暫時沒有意見",
     },
     intake: {
       title: "求助登記",
@@ -294,7 +307,7 @@ const CONTENT = {
       title: "提供意見",
       desc: "你的意見對我們很重要。請告訴我們如何改進。",
       placeholder: "請輸入你的意見...",
-      submit: "以電郵傳送",
+      submit: "傳送",
       thanks: "感謝你的意見！我們會盡快處理。"
     },
     breath: {
@@ -366,10 +379,11 @@ const CONTENT = {
       headerPeer: "Peer Volunteer",
       report: "Report User",
       reportSuccess: "User reported. Admins will review logs.",
-      caseResolved: "Session ended. Take care.",
+      caseResolved: "Session ended. Data deleted.",
       placeholder: "Type message...",
       chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID).",
-      scanBlock: "Message Blocked: AI detected inappropriate or offensive content."
+      scanBlock: "Message Blocked: AI detected inappropriate or offensive content.",
+      endChatConfirm: "End chat and delete history?"
     },
     memo: {
       cheerUp: "Community Board",
@@ -384,16 +398,16 @@ const CONTENT = {
     },
     volunteer: {
       login: "Volunteer Access",
-      authTitle: "Volunteer Application", // Changed
-      disclaimer: "Thank you for your service. Please verify you are ready to listen.", // Updated
+      authTitle: "Volunteer Application", 
+      disclaimer: "Thank you for your service. Please verify you are ready to listen.", 
       nameLabel: "Name",
       namePlaceholder: "e.g., Alex",
       joinBtn: "Enter Volunteer Platform",
       proJoinTitle: "Professional Login",
       codePlaceholder: "Access Code",
-      verifyBtn: "Submit Application", // Changed
+      verifyBtn: "Submit Application", 
       errorMsg: "Invalid Code",
-      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.", // Added
+      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.",
       guidelinesTitle: "Support Guidelines",
       guidelinesDesc: "3 Steps to be a good listener",
       rule1Title: "Step 1: Active Listening",
@@ -410,7 +424,10 @@ const CONTENT = {
       noRequests: "No active requests",
       accept: "Accept",
       topic: "Issue",
-      priority: { critical: "Critical", high: "High", medium: "Med", low: "Low" }
+      priority: { critical: "Critical", high: "High", medium: "Med", low: "Low" },
+      tabRequests: "Requests",
+      tabFeedback: "Feedback",
+      noFeedbacks: "No feedback yet",
     },
     intake: {
       title: "Intake",
@@ -446,7 +463,7 @@ const CONTENT = {
       title: "Feedback",
       desc: "Your feedback is important to us.",
       placeholder: "How can we improve?",
-      submit: "Send via Email",
+      submit: "Send",
       thanks: "Thank you! Sent to database."
     },
     breath: {
@@ -577,7 +594,8 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 interface AppContextType {
   tickets: Ticket[];
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
-  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string) => void;
+  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
+  endSession: (ticketId: string) => Promise<void>;
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
   getMessages: (ticketId: string) => Message[];
@@ -585,6 +603,8 @@ interface AppContextType {
   setVolunteerProfile: (profile: VolunteerProfile) => void;
   publicMemos: Memo[];
   addPublicMemo: (text: string) => void;
+  feedbacks: Feedback[];
+  submitFeedback: (text: string) => Promise<void>;
   user: any;
 }
 
@@ -596,6 +616,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [messages, setMessages] = useState<Message[]>([]); 
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "", isVerified: false });
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
   // 1. Auth
   useEffect(() => {
@@ -652,6 +673,18 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
+  // 5. Sync Feedbacks (Only fetch, simple version)
+  useEffect(() => {
+    if (!user || !db) return;
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
+        loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
+        setFeedbacks(loadedFeedbacks);
+    }, (err) => console.log("Feedback sync error:", err));
+    return () => unsubscribe();
+  }, [user]);
+
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
     if (!db) {
@@ -675,15 +708,40 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return docRef.id;
   };
 
-  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string) => {
+  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
      if (!db) {
        setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
        return;
      }
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
-         ...(volId && { volunteerId: volId }) 
+         ...(volId && { volunteerId: volId }),
+         ...(volName && { volunteerName: volName })
      });
+  };
+
+  const endSession = async (ticketId: string) => {
+    await updateTicketStatus(ticketId, 'resolved');
+
+    if (!db) {
+       setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
+       return;
+    }
+
+    // --- AUTO DELETE FEATURE ---
+    const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
+    
+    const batch = writeBatch(db);
+    msgsToDelete.forEach(msg => {
+       const ref = doc(db, 'artifacts', appId, 'public', 'data', 'messages', msg.id);
+       batch.delete(ref);
+    });
+    
+    try {
+        await batch.commit();
+    } catch(e) {
+        console.error("Deletion error:", e);
+    }
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
@@ -722,8 +780,19 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
+  const submitFeedback = async (text: string) => {
+      if(!db) {
+          const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
+          setFeedbacks(prev => [newFb, ...prev]);
+          return;
+      }
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), {
+          text, timestamp: Date.now(), read: false
+      });
+  };
+
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, user }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
       {children}
     </AppContext.Provider>
   );
@@ -922,12 +991,13 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
 
 const FeedbackModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].feedback;
+  const { submitFeedback } = useAppContext();
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!text.trim()) return;
-    window.open(`mailto:admin@mindtree.hk?subject=MindTree Feedback&body=${encodeURIComponent(text)}`);
+    await submitFeedback(text);
     setSent(true);
     setTimeout(onClose, 2000);
   };
@@ -1434,47 +1504,86 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
 
 const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (t: Ticket) => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
-  const { tickets, volunteerProfile } = useAppContext();
+  const { tickets, volunteerProfile, feedbacks } = useAppContext();
+  const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
   
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
-       <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex justify-between items-center z-10">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
-            <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+       <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4 z-10">
+          <div className="flex justify-between items-center">
+            <div>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
+                <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
+            </div>
+            <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
           </div>
-          <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
+              <button 
+                  onClick={() => setActiveTab('requests')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+              >
+                  {(t as any).tabRequests}
+              </button>
+              <button 
+                  onClick={() => setActiveTab('feedback')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
+              >
+                  {(t as any).tabFeedback}
+              </button>
+          </div>
        </div>
        
        <div className="flex-1 overflow-y-auto p-6">
-         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
-         
-         {tickets.filter(x => x.status === 'waiting').length === 0 ? (
-           <div className="text-center py-20 opacity-50">
-             <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
-             <p>{t.noRequests}</p>
-           </div>
+         {activeTab === 'requests' ? (
+             <>
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
+                 
+                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
+                   <div className="text-center py-20 opacity-50">
+                     <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
+                     <p>{t.noRequests}</p>
+                   </div>
+                 ) : (
+                   <div className="grid gap-4">
+                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
+                       <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                         <div className="flex justify-between items-start">
+                            <div className="flex gap-2">
+                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
+                               <span className="text-slate-400 text-xs">{ticket.time}</span>
+                            </div>
+                         </div>
+                         <div>
+                            <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
+                            <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
+                         </div>
+                         <div className="flex gap-2 mt-2">
+                            {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
+                         </div>
+                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+             </>
          ) : (
-           <div className="grid gap-4">
-             {tickets.filter(t => t.status === 'waiting').map(ticket => (
-               <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
-                 <div className="flex justify-between items-start">
-                    <div className="flex gap-2">
-                       <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
-                       <span className="text-slate-400 text-xs">{ticket.time}</span>
-                    </div>
-                 </div>
-                 <div>
-                    <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
-                    <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
-                 </div>
-                 <div className="flex gap-2 mt-2">
-                    {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
-                 </div>
-                 <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
-               </div>
-             ))}
-           </div>
+             <div className="space-y-4">
+                 {feedbacks.length === 0 ? (
+                     <div className="text-center py-20 opacity-50 text-slate-400">
+                         <Inbox size={48} className="mx-auto mb-4"/>
+                         <p>{(t as any).noFeedbacks}</p>
+                     </div>
+                 ) : (
+                     feedbacks.map(fb => (
+                         <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm">
+                             <div className="flex justify-between mb-2">
+                                 <span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span>
+                             </div>
+                             <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">{fb.text}</p>
+                         </div>
+                     ))
+                 )}
+             </div>
          )}
        </div>
     </div>
@@ -1483,13 +1592,15 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  const { messages, addMessage, volunteerProfile } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession } = useAppContext();
   const [text, setText] = useState("");
   
+  // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
+  const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
   const chatMessages = messages.filter(m => m.ticketId === ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages]);
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status]);
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1505,6 +1616,46 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
     setText("");
   };
 
+  const handleEndChat = async () => {
+      if(window.confirm(t.endChatConfirm)) {
+          await endSession(ticketId);
+          onLeave();
+      }
+  };
+
+  // --- 1. WAITING ROOM VIEW (For Citizen) ---
+  if (!isVolunteer && liveTicket.status === 'waiting') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6 relative">
+                  <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"/>
+                  <User size={40} className="text-emerald-600 dark:text-emerald-400"/>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t.waitingTitle}</h2>
+              <p className="text-slate-500 max-w-xs mx-auto mb-8 leading-relaxed">{t.waitingMessage}</p>
+              <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-left w-full max-w-sm">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tips</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2"><Music size={16}/> 試下深呼吸練習放鬆心情</div>
+              </div>
+              <button onClick={onLeave} className="mt-8 text-slate-400 text-sm hover:text-slate-600">取消等待</button>
+          </div>
+      );
+  }
+
+  // --- 2. ENDED SESSION VIEW ---
+  if (liveTicket.status === 'resolved') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle size={40} className="text-slate-400"/>
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t.caseResolved}</h2>
+              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">返回首頁</button>
+          </div>
+      );
+  }
+
+  // --- 3. ACTIVE CHAT VIEW ---
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
@@ -1513,11 +1664,15 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
              {isVolunteer ? <User size={20}/> : <Heart size={20}/>}
            </div>
            <div>
-             <h3 className="font-bold dark:text-white">{isVolunteer ? ticket.name : t.joinedTitle}</h3>
+             <h3 className="font-bold dark:text-white">
+                 {isVolunteer ? ticket.name : (liveTicket.volunteerName || t.joinedTitle)}
+             </h3>
              <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
            </div>
          </div>
-         <button onClick={onLeave} className="px-4 py-2 bg-rose-50 text-rose-500 text-xs font-bold rounded-full">{CONTENT[lang].actions.endChat}</button>
+         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+             <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
+         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
@@ -1564,7 +1719,7 @@ const MainLayout = () => {
   };
 
   const handleVolunteerJoin = (t: Ticket) => { 
-      updateTicketStatus(t.id, 'active', volunteerProfile.name); 
+      updateTicketStatus(t.id, 'active', volunteerProfile.name, volunteerProfile.name); 
       setCurrentTicket(t); 
       setView('human-chat'); 
   };

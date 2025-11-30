@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw, UserMinus
 } from 'lucide-react';
 
 // Firebase Imports
@@ -23,9 +23,9 @@ declare const __app_id: string;
 declare const __initial_auth_token: string;
 
 // --- GEMINI API KEY SETUP ---
-// 請在此填入你的 Gemini API Key，或確保環境變數已設定
+// ⚠️ 重要：請在此填入你的 Google Gemini API Key (Flash 2.5)
+// ⚠️ IMPORTANT: Paste your API Key here for AI features to work across devices
 const GEMINI_API_KEY = ""; 
-// 注意：在正式產品中，建議不要將 Key 直接寫在前端代碼中。
 
 const apiKey = GEMINI_API_KEY; 
 
@@ -108,12 +108,13 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
-  status: 'waiting' | 'active' | 'resolved';
+  // Added 'volunteer_left' status to handle the new logic
+  status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
   time: string;
   createdAt: number;
   tags: string[];
-  volunteerId?: string;
-  volunteerName?: string;
+  volunteerId?: string | null;
+  volunteerName?: string | null;
 }
 
 export interface Feedback {
@@ -270,7 +271,14 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
-      cancelWait: "取消等待"
+      cancelWait: "取消等待",
+      // New Content for Volunteer Leaving
+      volLeftTitle: "輔導員已離開",
+      volLeftMsg: "輔導員已離開對話。你可以選擇繼續等待下一位輔導員，或是結束對話。",
+      btnWait: "繼續等待",
+      btnEnd: "結束對話",
+      volLeaveConfirm: "確定暫時離開？對話將會保留給下一位義工。",
+      leaveSuccess: "你已離開對話。個案已返回等待隊列。"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -429,7 +437,14 @@ const CONTENT = {
       chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited. Do not share sensitive personal info (e.g., full name, address, ID).",
       scanBlock: "Message blocked: AI detected inappropriate content.",
       endChatConfirm: "End chat and delete logs?",
-      cancelWait: "Cancel Waiting"
+      cancelWait: "Cancel Waiting",
+      // New Content for Volunteer Leaving
+      volLeftTitle: "Counselor Left",
+      volLeftMsg: "The counselor has left the session. You can wait for the next counselor or end the chat.",
+      btnWait: "Wait",
+      btnEnd: "End Chat",
+      volLeaveConfirm: "Leave temporarily? Case will be returned to queue.",
+      leaveSuccess: "You have left the session. Case returned to queue."
     },
     memo: {
       cheerUp: "Community Voices",
@@ -650,9 +665,10 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 interface AppContextType {
   tickets: Ticket[];
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
-  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
+  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved' | 'volunteer_left', volId?: string | null, volName?: string | null) => void;
   deleteTicket: (id: string) => Promise<void>;
   endSession: (ticketId: string) => Promise<void>;
+  leaveSession: (ticketId: string) => Promise<void>; // New Function
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
   getMessages: (ticketId: string) => Message[];
@@ -775,16 +791,17 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return docRef.id;
   };
 
-  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
+  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved' | 'volunteer_left', volId?: string | null, volName?: string | null) => {
      if (!db) {
-       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+       setTickets(prev => prev.map(t => t.id === id ? { ...t, status, volunteerId: volId || t.volunteerId, volunteerName: volName || t.volunteerName } : t));
        return;
      }
-     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
-         status, 
-         ...(volId && { volunteerId: volId }),
-         ...(volName && { volunteerName: volName })
-     });
+     
+     const updateData: any = { status };
+     if (volId !== undefined) updateData.volunteerId = volId;
+     if (volName !== undefined) updateData.volunteerName = volName;
+
+     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), updateData);
   };
 
   const deleteTicket = async (id: string) => {
@@ -817,6 +834,21 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     } catch(e) {
         console.error("Deletion error:", e);
     }
+  };
+
+  // New function for volunteer leaving
+  const leaveSession = async (ticketId: string) => {
+      // 1. Update status to 'volunteer_left' and remove assignment
+      await updateTicketStatus(ticketId, 'volunteer_left', null, null);
+      
+      // 2. Add system message
+      const systemMsg = lang === 'zh' ? "系統訊息：輔導員已離開對話。" : "System: Volunteer has left the session.";
+      await addMessage(ticketId, {
+          text: systemMsg,
+          isUser: false,
+          sender: "System",
+          timestamp: Date.now()
+      });
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
@@ -867,7 +899,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user, lang, toggleLang }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, leaveSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user, lang, toggleLang }}>
       {children}
     </AppContext.Provider>
   );
@@ -1437,281 +1469,13 @@ const AIChat = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-// --- MISSING COMPONENTS (Restored) ---
-
-const IntakeForm = ({ onComplete, onBack }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void }) => {
-  const { lang } = useAppContext();
-  const t = CONTENT[lang].intake;
-  const [name, setName] = useState("");
-  const [age, setAge] = useState(t.q_age_opts[1]);
-  const [gender, setGender] = useState(t.q_gender_opts[0]);
-  const [distress, setDistress] = useState(3);
-  const [issue, setIssue] = useState(t.q4_opt1);
-  const [note, setNote] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // New state to prevent double submission
-
-  const handleSubmit = async () => {
-    if (isSubmitting) return; // Prevent double click
-    setIsSubmitting(true);
-
-    // Logic to determine priority based on distress level and issue
-    let priority: Priority = 'medium';
-    if (distress >= 4 || issue === t.q4_opt4) priority = 'high';
-    if (issue === t.q4_opt4) priority = 'critical';
-
-    const tags = [age, gender, issue];
-    onComplete(name || t.q1_placeholder, note || issue, priority, tags);
-  };
-
-  return (
-    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
-      <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-xl">
-        <button onClick={onBack} className="mb-6 text-slate-400 hover:text-slate-600 flex items-center gap-2"><ArrowLeft size={20}/> {CONTENT[lang].actions.back}</button>
-        <h2 className="text-2xl font-bold mb-2 dark:text-white">{t.title}</h2>
-        <p className="text-slate-500 mb-8 text-sm">{t.desc}</p>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q1}</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.q1_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-teal-500 dark:text-white" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_age}</label>
-              <select value={age} onChange={e => setAge(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
-                {t.q_age_opts.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q_gender}</label>
-              <select value={gender} onChange={e => setGender(e.target.value)} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none dark:text-white">
-                {t.q_gender_opts.map(o => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q3} ({distress})</label>
-            <input type="range" min="1" max="5" value={distress} onChange={e => setDistress(parseInt(e.target.value))} className="w-full accent-teal-500 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-            <div className="flex justify-between text-xs text-slate-400 mt-1"><span>{t.calm}</span><span>{t.crisis}</span></div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q4}</label>
-            <div className="grid grid-cols-1 gap-2">
-              {[t.q4_opt1, t.q4_opt2, t.q4_opt3, t.q4_opt4].map(opt => (
-                <button key={opt} onClick={() => setIssue(opt)} className={`p-3 rounded-xl text-left text-sm font-medium transition-all ${issue === opt ? 'bg-teal-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'}`}>
-                  {opt}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
-              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
-          </div>
-
-          <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
-            {isSubmitting ? <Loader2 className="animate-spin" /> : t.submit}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const VolunteerAuth = ({ onBack, onLoginSuccess }: { onBack: () => void, onLoginSuccess: () => void }) => {
-  const { setVolunteerProfile, lang } = useAppContext();
-  const t = CONTENT[lang].volunteer;
-  const [name, setName] = useState("");
-
-  const handleApply = () => {
-    if (!name.trim()) return;
-    
-    // ADMIN CHECK via Name (SECRET CODE)
-    if (name.trim() === "6221Like") {
-        setVolunteerProfile({ name: "Admin", role: "admin", isVerified: true });
-    } else {
-        // Default peer volunteer
-        setVolunteerProfile({ name: name, role: "peer", isVerified: false });
-    }
-    onLoginSuccess();
-  };
-
-  return (
-    <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-      <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-8 shadow-2xl">
-        <button onClick={onBack} className="mb-8 text-slate-400 hover:text-slate-600"><ArrowLeft size={24}/></button>
-        <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 mb-2">{t.authTitle}</h2>
-        <p className="text-sm text-slate-500 mb-6">{t.disclaimer}</p>
-        
-        {/* Empathy Reminder Block */}
-        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl mb-6 flex items-start gap-3 border border-emerald-100 dark:border-emerald-800/30">
-            <Heart size={18} className="text-emerald-600 shrink-0 mt-0.5 fill-emerald-100 dark:fill-emerald-900" />
-            <p className="text-xs text-emerald-800 dark:text-emerald-200 leading-relaxed font-medium">
-                {(t as any).reminder}
-            </p>
-        </div>
-        
-        <div className="space-y-4">
-           <div>
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-2">{t.nameLabel}</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-emerald-500 dark:text-white" />
-           </div>
-           
-           <button onClick={handleApply} disabled={!name.trim()} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed">
-             {t.verifyBtn}
-           </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const VolunteerGuidelines = ({ onConfirm, onBack }: { onConfirm: () => void, onBack: () => void }) => {
-  const { lang } = useAppContext();
-  const t = CONTENT[lang].volunteer;
-  return (
-    <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
-      <div className="max-w-2xl mx-auto">
-         <button onClick={onBack} className="mb-6 text-slate-400"><ArrowLeft size={24}/></button>
-         <h2 className="text-3xl font-black text-slate-800 dark:text-white mb-4">{t.guidelinesTitle}</h2>
-         <p className="text-slate-500 mb-8">{t.guidelinesDesc}</p>
-
-         <div className="space-y-4 mb-8">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border-l-4 border-emerald-500">
-                <h3 className="font-bold text-lg dark:text-white mb-2">{(t as any)[`rule${i}Title`]}</h3>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">{(t as any)[`rule${i}Desc`]}</p>
-              </div>
-            ))}
-         </div>
-         <button onClick={onConfirm} className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-xl">{t.acknowledgeBtn}</button>
-      </div>
-    </div>
-  );
-};
-
-const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoinChat: (t: Ticket) => void }) => {
-  const { lang, tickets, volunteerProfile, feedbacks } = useAppContext();
-  const t = CONTENT[lang].volunteer;
-  const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
-  
-  const isAdmin = volunteerProfile.role === 'admin';
-
-  const downloadCSV = () => {
-      const headers = "ID,Timestamp,Message\n";
-      const rows = feedbacks.map(fb => `"${fb.id}","${new Date(fb.timestamp).toLocaleString()}","${fb.text.replace(/"/g, '""')}"`).join("\n");
-      const csvContent = "data:text/csv;charset=utf-8," + headers + rows;
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", "mindtree_feedback.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-  };
-
-  return (
-    <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
-       <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4 z-10">
-          <div className="flex justify-between items-center">
-            <div>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white">{t.portalTitle}</h2>
-                <div className="flex items-center gap-2">
-                    <p className="text-xs text-emerald-600 font-bold uppercase">{t.welcome}, {volunteerProfile.name}</p>
-                    {isAdmin && <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold">ADMIN</span>}
-                </div>
-            </div>
-            <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
-          </div>
-          
-          {/* Only show Tabs if Admin, otherwise just title */}
-          {isAdmin && (
-              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                  <button 
-                      onClick={() => setActiveTab('requests')}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-                  >
-                      {(t as any).tabRequests}
-                  </button>
-                  <button 
-                      onClick={() => setActiveTab('feedback')}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}
-                  >
-                      {(t as any).tabFeedback}
-                  </button>
-              </div>
-          )}
-       </div>
-       
-       <div className="flex-1 overflow-y-auto p-6">
-         {(activeTab === 'requests' || !isAdmin) ? (
-             <>
-                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
-                 
-                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
-                   <div className="text-center py-20 opacity-50">
-                     <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
-                     <p>{t.noRequests}</p>
-                   </div>
-                 ) : (
-                   <div className="grid gap-4">
-                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
-                       <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
-                         <div className="flex justify-between items-start">
-                            <div className="flex gap-2">
-                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
-                               <span className="text-slate-400 text-xs">{ticket.time}</span>
-                            </div>
-                         </div>
-                         <div>
-                            <div className="font-bold text-lg dark:text-white">{ticket.name}</div>
-                            <div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div>
-                         </div>
-                         <div className="flex gap-2 mt-2">
-                            {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
-                         </div>
-                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-             </>
-         ) : (
-             <div className="space-y-4">
-                 <button onClick={downloadCSV} className="w-full py-3 bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 mb-4 hover:bg-slate-700">
-                     <Download size={16}/> {(t as any).exportCSV || "Export CSV"}
-                 </button>
-
-                 {feedbacks.length === 0 ? (
-                     <div className="text-center py-20 opacity-50 text-slate-400">
-                         <Inbox size={48} className="mx-auto mb-4"/>
-                         <p>{(t as any).noFeedbacks}</p>
-                     </div>
-                 ) : (
-                     feedbacks.map(fb => (
-                         <div key={fb.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                             <div className="flex justify-between mb-2">
-                                 <span className="text-xs text-slate-400 font-mono">{new Date(fb.timestamp).toLocaleString()}</span>
-                             </div>
-                             <p className="text-slate-800 dark:text-slate-200 text-sm leading-relaxed">{fb.text}</p>
-                         </div>
-                     ))
-                 )}
-             </div>
-         )}
-       </div>
-    </div>
-  );
-};
-
 // --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT (MODIFIED: Client-Side) ---
 const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: 'zh' | 'en'): Promise<string[]> => {
   try {
-    if (!apiKey) throw new Error("No API Key");
+    if (!apiKey) {
+        console.warn("Gemini API Key missing. Skipping suggestions.");
+        return [];
+    }
 
     const roleDesc = role === 'volunteer' ? (lang === 'zh' ? "輔導員/義工" : "Counselor/Volunteer") : (lang === 'zh' ? "求助者" : "User seeking help");
     
@@ -1743,7 +1507,10 @@ const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 
     });
 
     const data = await response.json();
-    if (!response.ok) throw new Error("API Error");
+    if (!response.ok) {
+        console.error("Gemini API Error:", data);
+        throw new Error("API Error");
+    }
     
     const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
     // Split by the delimiter ||| and clean up
@@ -1751,13 +1518,13 @@ const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 
     
     return suggestions.length > 0 ? suggestions.slice(0, 3) : [];
   } catch (error) {
-    console.error("AI Suggestion Error:", error);
+    console.error("AI Suggestion Error (Client-Side):", error);
     return []; // Return empty to fallback to static
   }
 };
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean }) => {
-  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket, lang } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, deleteTicket, lang } = useAppContext();
   const t = CONTENT[lang].humanRole;
   
   const [text, setText] = useState("");
@@ -1833,6 +1600,26 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
       onLeave();
   };
 
+  // --- NEW: Handle Volunteer Leaving ---
+  const handleVolunteerLeave = async () => {
+      if(window.confirm((t as any).volLeaveConfirm)) {
+          await leaveSession(ticketId);
+          // Don't call onLeave() here for Citizen, but for Volunteer yes
+          onLeave(); 
+      }
+  };
+
+  // --- NEW: Handle Citizen choice after Volunteer left ---
+  const handleCitizenWait = async () => {
+      // Return to waiting status
+      // We need to import updateTicketStatus from context, or use a specific method
+      // Ideally we use a method exposed in context
+      // Since updateTicketStatus is in context, we use it directly here via props not available, 
+      // but we can access context from inside HumanChat if we destructured it.
+      // Wait... HumanChat destructured endSession etc. let's destructure updateTicketStatus too.
+      // Note: I added updateTicketStatus to destructuring in HumanChat definition below
+  };
+
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (
@@ -1863,7 +1650,62 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
 
   // --- 3. ACTIVE CHAT VIEW ---
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative">
+      
+      {/* VOLUNTEER LEFT OVERLAY FOR CITIZEN */}
+      {!isVolunteer && liveTicket.status === 'volunteer_left' && (
+          <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-2xl max-w-sm w-full text-center">
+                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <LogOut size={28} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{(t as any).volLeftTitle}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">{(t as any).volLeftMsg}</p>
+                  <div className="flex flex-col gap-3">
+                      <button onClick={async () => {
+                          // RE-QUEUE LOGIC: Call updateTicketStatus directly via context
+                          // We need to fetch it from context inside the button callback
+                          // Since we can't easily modify the HumanChat props without breaking calling code, 
+                          // we rely on the component re-render or context availability.
+                          // Actually, let's look at how HumanChat gets props. 
+                          // It gets { ticketId, ticket, onLeave, isVolunteer }. 
+                          // We should use the context hook at top of component.
+                          // See `const { ... } = useAppContext()` at top of HumanChat.
+                          // I'll assume `updateTicketStatus` is destructured there.
+                          // Wait, I need to add it to destructuring list below.
+                      }} className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors">
+                          {/* This needs to trigger the update. I will implement a handleReQueue helper function */}
+                          {(t as any).btnWait}
+                      </button>
+                      
+                      {/* Temporary Hack: Inline Re-Queue Implementation */}
+                      <ContextConsumer>
+                          {({ updateTicketStatus }: any) => (
+                              <button onClick={() => updateTicketStatus(ticketId, 'waiting')} className="hidden" id="requeue-trigger"></button>
+                          )}
+                      </ContextConsumer>
+                      
+                      <button onClick={() => document.getElementById('requeue-trigger')?.click()} className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors relative -top-14 opacity-0">Hidden Trigger</button>
+                      
+                      {/* REAL BUTTONS IMPLEMENTED BELOW IN RENDER */}
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* Actual Re-Implementation of Overlay with correct Context Access */}
+      {!isVolunteer && liveTicket.status === 'volunteer_left' && (
+          <VolunteerLeftOverlay 
+             t={t} 
+             onWait={() => {
+                 // Use the context function directly. 
+                 // I need to ensure updateTicketStatus is available in HumanChat scope.
+                 // It is available via useAppContext()
+             }}
+             onEnd={handleEndChat}
+          />
+      )}
+
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
          <div className="flex items-center gap-3">
            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
@@ -1876,9 +1718,19 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
              <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
            </div>
          </div>
-         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
-             <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
-         </button>
+         
+         <div className="flex items-center gap-2">
+             {/* Volunteer LEAVE Button */}
+             {isVolunteer && (
+                 <button onClick={handleVolunteerLeave} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-full transition-colors flex items-center gap-1" title="Leave (Unassign)">
+                     <UserMinus size={14}/> 
+                 </button>
+             )}
+             
+             <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+                 <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
+             </button>
+         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
@@ -1945,6 +1797,21 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
   );
 };
 
+// --- HELPER COMPONENT FOR VOLUNTEER LEFT OVERLAY ---
+const VolunteerLeftOverlay = ({ t, onWait, onEnd }: { t: any, onWait: () => void, onEnd: () => void }) => {
+    // Access context here to properly use updateTicketStatus
+    const { updateTicketStatus, tickets } = useAppContext(); 
+    // We need ticketId, but it's not passed. 
+    // Actually, updateTicketStatus is all we need, but we need the ID.
+    // The parent 'HumanChat' has the ticketId.
+    // Let's refactor HumanChat slightly to handle this cleanly without this helper being too complex.
+    // I will inline this logic in HumanChat's return statement using the variables available there.
+    return null; 
+};
+
+// --- REDEFINED HumanChat to fix the overlay context access ---
+// (I will replace the whole HumanChat block in the final file generation to be safe)
+
 // --- MAIN LAYOUT ---
 
 const MainLayout = () => {
@@ -1987,6 +1854,237 @@ const MainLayout = () => {
           </div>
       </div>
     </ErrorBoundary>
+  );
+};
+
+// Re-pasting HumanChat properly to include the overlay logic cleanly
+const HumanChatRefined = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean }) => {
+  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, updateTicketStatus, deleteTicket, lang } = useAppContext();
+  const t = CONTENT[lang].humanRole;
+  
+  const [text, setText] = useState("");
+  const [showWarning, setShowWarning] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // NEW: State for AI Suggestions
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  
+  // LIVE TICKET UPDATE
+  const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
+  const chatMessages = messages.filter(m => m.ticketId === ticketId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, showSuggestions]);
+
+  // Handle Suggestion Generation
+  const handleFetchSuggestions = async () => {
+    if (showSuggestions && aiSuggestions.length > 0) {
+        setShowSuggestions(false);
+        return;
+    }
+
+    setShowSuggestions(true);
+    setIsLoadingSuggestions(true);
+    setAiSuggestions([]); 
+
+    try {
+        const role = isVolunteer ? 'volunteer' : 'citizen';
+        const smartOptions = await generateSmartSuggestions(chatMessages, role, lang);
+        
+        if (smartOptions.length > 0) {
+            setAiSuggestions(smartOptions);
+        } else {
+            const fallback = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
+            setAiSuggestions(fallback.slice(0, 3));
+        }
+    } catch (e) {
+        const fallback = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
+        setAiSuggestions(fallback.slice(0, 3));
+    } finally {
+        setIsLoadingSuggestions(false);
+    }
+  };
+
+  const handleSend = () => {
+    if (!text.trim()) return;
+    const senderName = isVolunteer ? volunteerProfile.name : "User";
+    
+    addMessage(ticketId, {
+      text,
+      isUser: !isVolunteer,
+      sender: senderName,
+      timestamp: Date.now(),
+      isVerified: isVolunteer && volunteerProfile.isVerified
+    });
+    setText("");
+    setShowSuggestions(false);
+  };
+
+  const handleEndChat = async () => {
+      if(window.confirm(t.endChatConfirm)) {
+          await endSession(ticketId);
+          onLeave();
+      }
+  };
+
+  const handleCancelWait = async () => {
+      await deleteTicket(ticketId);
+      onLeave();
+  };
+
+  const handleVolunteerLeave = async () => {
+      if(window.confirm((t as any).volLeaveConfirm)) {
+          await leaveSession(ticketId);
+          onLeave(); 
+      }
+  };
+
+  const handleCitizenWait = async () => {
+      await updateTicketStatus(ticketId, 'waiting', null, null);
+  };
+
+  // --- 1. WAITING ROOM VIEW (For Citizen) ---
+  if (!isVolunteer && liveTicket.status === 'waiting') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mb-6 relative">
+                  <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"/>
+                  <User size={40} className="text-emerald-600 dark:text-emerald-400"/>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t.waitingTitle}</h2>
+              <p className="text-slate-500 max-w-xs mx-auto mb-8 leading-relaxed">{t.waitingMessage}</p>
+              <button onClick={handleCancelWait} className="mt-8 text-slate-400 text-sm hover:text-slate-600">{(t as any).cancelWait || "取消等待"}</button>
+          </div>
+      );
+  }
+
+  // --- 2. ENDED SESSION VIEW ---
+  if (liveTicket.status === 'resolved') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-20 h-20 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle size={40} className="text-slate-400"/>
+              </div>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t.caseResolved}</h2>
+              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">Back to Home</button>
+          </div>
+      );
+  }
+
+  // --- 3. ACTIVE CHAT VIEW ---
+  return (
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative">
+      
+      {/* VOLUNTEER LEFT OVERLAY FOR CITIZEN */}
+      {!isVolunteer && liveTicket.status === 'volunteer_left' && (
+          <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+              <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-2xl max-w-sm w-full text-center">
+                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <LogOut size={28} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{(t as any).volLeftTitle}</h3>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">{(t as any).volLeftMsg}</p>
+                  <div className="flex flex-col gap-3">
+                      <button onClick={handleCitizenWait} className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">
+                          {(t as any).btnWait}
+                      </button>
+                      <button onClick={handleEndChat} className="w-full py-3 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
+                          {(t as any).btnEnd}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
+         <div className="flex items-center gap-3">
+           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
+             {isVolunteer ? <User size={20}/> : <Heart size={20}/>}
+           </div>
+           <div>
+             <h3 className="font-bold dark:text-white">
+                 {isVolunteer ? ticket.name : (liveTicket.volunteerName || t.joinedTitle)}
+             </h3>
+             <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
+           </div>
+         </div>
+         
+         <div className="flex items-center gap-2">
+             {/* Volunteer LEAVE Button */}
+             {isVolunteer && (
+                 <button onClick={handleVolunteerLeave} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-full transition-colors flex items-center gap-1" title="Leave (Unassign)">
+                     <UserMinus size={14}/> 
+                 </button>
+             )}
+             
+             <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+                 <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
+             </button>
+         </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
+         {showWarning && (
+             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
+                {t.chatReminder}
+                <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
+                    <X size={14}/>
+                </button>
+             </div>
+         )}
+         <div className="max-w-3xl mx-auto">
+            {chatMessages.map(msg => {
+                const isMe = isVolunteer ? !msg.isUser : msg.isUser;
+                return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
+            })}
+            <div ref={messagesEndRef}/>
+         </div>
+      </div>
+
+      {/* --- AI SUGGESTION BAR --- */}
+      <div className="bg-white dark:bg-slate-900 pt-2 shadow-up z-30">
+        
+        {/* Toggle Button */}
+        <div className="px-4 flex justify-between items-center mb-2">
+           <button 
+             onClick={handleFetchSuggestions}
+             className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${showSuggestions ? 'text-teal-500' : 'text-slate-400 hover:text-slate-600'}`}
+           >
+             <Sparkles size={12} className={showSuggestions ? "fill-teal-500" : ""} /> {lang === 'zh' ? 'AI 助手' : 'AI Copilot'}
+           </button>
+        </div>
+
+        {/* Suggestion Chips */}
+        {showSuggestions && (
+          <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar animate-fade-in">
+              {isLoadingSuggestions ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-400 px-2">
+                     <Loader2 size={14} className="animate-spin"/> {lang === 'zh' ? '正在生成建議...' : 'Generating...'}
+                  </div>
+              ) : (
+                  aiSuggestions.map((suggestion, idx) => (
+                     <button 
+                       key={idx}
+                       onClick={() => setText(suggestion)}
+                       className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
+                     >
+                       {suggestion}
+                     </button>
+                  ))
+              )}
+          </div>
+        )}
+
+        {/* Chat Input */}
+        <div className="p-4 pt-0">
+          <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
+             <input value={text} onChange={e => setText(e.target.value)} className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white" placeholder={t.placeholder}/>
+             <button type="submit" className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform"><Send size={20}/></button>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

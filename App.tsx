@@ -42,12 +42,12 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
       return (
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertOctagon size={48} className="text-rose-500 mb-4" />
-          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤</h1>
+          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤 / Application Error</h1>
           <p className="text-sm text-slate-500 mb-4 text-center">
-            {this.state.error?.message || "未知錯誤"}
-            <br/>請重新整理頁面。
+            {this.state.error?.message || "未知錯誤 / Unknown Error"}
+            <br/>請重新整理頁面。 / Please reload the page.
           </p>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理 / Reload</button>
         </div>
       );
     }
@@ -372,6 +372,165 @@ const CONTENT = {
     },
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
+    }
+  },
+  en: {
+    appTitle: "MindTree",
+    appSubtitle: "Your Safe Haven • Support for HK",
+    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
+    intro: {
+      welcome: "Welcome to MindTree",
+      desc: "A safe, private, and confidential space for mental support.\nWe are here for you, rain or shine.",
+      slide1Title: "AI & Human Collaboration",
+      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
+      slide2Title: "Absolute Privacy",
+      slide2Desc: "Using end-to-end encryption concepts, only the Treehole knows your secrets.",
+      startBtn: "Start Journey"
+    },
+    landing: {
+      servicesTitle: "Select Service",
+      breathTitle: "Breathing Exercise",
+      breathDesc: "Pro Guide • 60s Relax",
+      startBreath: "Start",
+      aiCard: { title: "AI Treehole", desc: "24/7 Intelligent Listening • Instant Reply" },
+      humanCard: { title: "Human Counseling", desc: "Volunteers & Social Workers • Warm Support" },
+      volunteerCard: { title: "Join Volunteers", desc: "Be someone's secret treehole" },
+      feedback: "Feedback"
+    },
+    landingNotice: {
+      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
+      rules: "Please be respectful. In case of emergency, please call 999."
+    },
+    aiRole: {
+      title: "AI Treehole",
+      welcome: "Hi, I'm MindTree. I know things might be tough lately. Want to talk about it?",
+      placeholder: "Type your thoughts here...",
+      disclaimer: "AI content is for reference only. Verify important info."
+    },
+    humanRole: {
+      title: "Human Counselor",
+      waitingTitle: "Matching Volunteer...",
+      waitingMessage: "We are contacting online volunteers, please wait a moment...",
+      joinedTitle: "Counselor Joined",
+      systemJoin: "System: Counselor has joined",
+      headerVerified: "Verified Social Worker",
+      headerPeer: "Peer Volunteer",
+      report: "Report User",
+      reportSuccess: "User reported. Admins will review the chat logs.",
+      caseResolved: "Chat ended. Data destroyed.",
+      placeholder: "Type a message...",
+      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited. Do not share sensitive personal info (e.g., full name, address, ID).",
+      scanBlock: "Message blocked: AI detected inappropriate content.",
+      endChatConfirm: "End chat and delete logs?",
+      cancelWait: "Cancel Waiting"
+    },
+    memo: {
+      cheerUp: "Community Voices",
+      label: "Leave a Note",
+      title: "Leave a Message",
+      desc: "Your message will appear 'instantly' in the floating bubbles on the home page. Spread positivity.",
+      placeholder: "Write your blessing or feelings...",
+      btn: "Post",
+      success: "Posted successfully!",
+      scanning: "AI is reviewing content...",
+      unsafe: "Failed to post: Content contains inappropriate or meaningless words.",
+      guidance: "Please keep it positive and kind."
+    },
+    volunteer: {
+      login: "Volunteer Login",
+      authTitle: "Volunteer Portal",
+      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.",
+      nameLabel: "Name",
+      namePlaceholder: "e.g., Chan Tai Man",
+      joinBtn: "Enter Platform",
+      proJoinTitle: "Professional Access",
+      codePlaceholder: "Access Code (Optional)",
+      verifyBtn: "Enter Platform",
+      errorMsg: "Invalid Code",
+      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
+      guidelinesTitle: "Support Guidelines",
+      guidelinesDesc: "3 Simple Steps to be a Better Listener",
+      rule1Title: "Step 1: Listen",
+      rule1Desc: "Give them space to express. Don't interrupt or rush to give advice. Use 'Mm-hmm', 'I see' to show you are listening.",
+      rule2Title: "Step 2: Empathize",
+      rule2Desc: "Validate their feelings. Try saying 'It sounds like you are feeling helpless', 'That must be tough'. Avoid 'Look on the bright side'.",
+      rule3Title: "Step 3: Assess",
+      rule3Desc: "Stay alert. If they mention suicide or self-harm, stay calm and do not handle it alone. Suggest professional help (999) and report to admin.",
+      acknowledgeBtn: "I Understand & Agree",
+      portalTitle: "Dashboard",
+      welcome: "Welcome back",
+      exit: "Logout",
+      activeRequests: "Pending Cases",
+      noRequests: "No new cases currently",
+      accept: "Accept",
+      topic: "Issue",
+      priority: { critical: "Critical", high: "High", medium: "Medium", low: "Low" },
+      tabRequests: "Requests",
+      tabFeedback: "Admin Area",
+      noFeedbacks: "No feedback yet",
+      exportCSV: "Export CSV"
+    },
+    intake: {
+      title: "Intake Form",
+      desc: "Let us know your needs",
+      q1: "Name (Anonymous)",
+      q1_placeholder: "Nickname",
+      q_age: "Age Group",
+      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
+      q_gender: "Gender",
+      q_gender_opts: ["Male", "Female", "Other"],
+      q3: "Distress Level (1-5)",
+      q4: "Main Issue",
+      q4_opt1: "Anxiety / Panic",
+      q4_opt2: "Low Mood / Depression",
+      q4_opt3: "Family / Housing",
+      q4_opt4: "Suicidal Thoughts (Urgent)",
+      q5: "Note (Optional)",
+      q5_placeholder: "Brief description...",
+      submit: "Start Matching",
+      calm: "Calm",
+      crisis: "Crisis"
+    },
+    links: {
+      btn: "Resources",
+      title: "Community Resources",
+      desc: "Mental support, blood donation info, and useful data.",
+      close: "Close",
+      catMental: "Mental Support",
+      catBlood: "Blood Donation",
+      catInfo: "Useful Info"
+    },
+    feedback: {
+      title: "Feedback",
+      desc: "Your feedback matters. Tell us how to improve.",
+      placeholder: "Type your feedback...",
+      submit: "Send",
+      thanks: "Thank you! We will review it shortly."
+    },
+    breath: {
+      inhale: "Inhale",
+      hold: "Hold",
+      exhale: "Exhale",
+      relax: "Relax your mind",
+      musicOn: "Music On",
+      musicOff: "Mute",
+      playErr: "Click to play music"
+    },
+    footer: {
+      legal: "Disclaimer: This platform is run by volunteers and provides peer emotional support only. It is not a professional medical institution or emergency service. We are not responsible for any consequences of using this service. In case of emergency, call 999 immediately."
+    },
+    actions: {
+      back: "Back",
+      cancel: "Cancel",
+      endChat: "End",
+      leaveChat: "Leave"
+    },
+    dialogs: {
+      volLeaveMsg: "Return case to queue?",
+      citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited."
     }
   }
 };
@@ -1681,7 +1840,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
                   <CheckCircle size={40} className="text-slate-400"/>
               </div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t.caseResolved}</h2>
-              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">返回首頁</button>
+              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">Back to Home</button>
           </div>
       );
   }
@@ -1740,21 +1899,21 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
         {/* Suggestion Chips */}
         {showSuggestions && (
           <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar animate-fade-in">
-             {isLoadingSuggestions ? (
-                 <div className="flex items-center gap-2 text-xs text-slate-400 px-2">
-                    <Loader2 size={14} className="animate-spin"/> {lang === 'zh' ? '正在生成建議...' : 'Generating...'}
-                 </div>
-             ) : (
-                 aiSuggestions.map((suggestion, idx) => (
-                    <button 
-                      key={idx}
-                      onClick={() => setText(suggestion)}
-                      className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
-                    >
-                      {suggestion}
-                    </button>
-                 ))
-             )}
+              {isLoadingSuggestions ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-400 px-2">
+                     <Loader2 size={14} className="animate-spin"/> {lang === 'zh' ? '正在生成建議...' : 'Generating...'}
+                  </div>
+              ) : (
+                  aiSuggestions.map((suggestion, idx) => (
+                     <button 
+                       key={idx}
+                       onClick={() => setText(suggestion)}
+                       className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
+                     >
+                       {suggestion}
+                     </button>
+                  ))
+              )}
           </div>
         )}
 

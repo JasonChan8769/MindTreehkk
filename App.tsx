@@ -226,7 +226,8 @@ const CONTENT = {
       placeholder: "輸入訊息...",
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
-      endChatConfirm: "確定結束並刪除紀錄？"
+      endChatConfirm: "確定結束並刪除紀錄？",
+      cancelWait: "取消等待"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -383,7 +384,8 @@ const CONTENT = {
       placeholder: "Type message...",
       chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID).",
       scanBlock: "Message Blocked: AI detected inappropriate or offensive content.",
-      endChatConfirm: "End chat and delete history?"
+      endChatConfirm: "End chat and delete history?",
+      cancelWait: "Cancel Waiting"
     },
     memo: {
       cheerUp: "Community Board",
@@ -1598,7 +1600,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  const { messages, addMessage, volunteerProfile, tickets, endSession } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, updateTicketStatus } = useAppContext();
   const [text, setText] = useState("");
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
@@ -1629,6 +1631,12 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       }
   };
 
+  const handleCancelWait = async () => {
+      // Mark as resolved so it disappears from volunteer dashboard
+      await updateTicketStatus(ticketId, 'resolved');
+      onLeave();
+  };
+
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (
@@ -1643,7 +1651,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
                   <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tips</div>
                   <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2"><Music size={16}/> 試下深呼吸練習放鬆心情</div>
               </div>
-              <button onClick={onLeave} className="mt-8 text-slate-400 text-sm hover:text-slate-600">取消等待</button>
+              <button onClick={handleCancelWait} className="mt-8 text-slate-400 text-sm hover:text-slate-600">{(t as any).cancelWait || "取消等待"}</button>
           </div>
       );
   }
@@ -1686,7 +1694,15 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
             {t.chatReminder}
          </div>
          <div className="max-w-3xl mx-auto">
-            {chatMessages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            {chatMessages.map(msg => {
+                // ALIGNMENT LOGIC:
+                // If I am Volunteer (isVolunteer=true): My msgs are `isUser=false`. So `isMe` = !msg.isUser
+                // If I am Citizen (isVolunteer=false): My msgs are `isUser=true`. So `isMe` = msg.isUser
+                const isMe = isVolunteer ? !msg.isUser : msg.isUser;
+                
+                // We pass `isMe` into the `isUser` prop of ChatBubble to control alignment (Right=Me, Left=Them)
+                return <ChatBubble key={msg.id} {...msg} isUser={isMe} />;
+            })}
             <div ref={messagesEndRef}/>
          </div>
       </div>

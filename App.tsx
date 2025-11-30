@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RotateCcw
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RotateCcw, Wand2
 } from 'lucide-react';
 
 // Firebase Imports
@@ -108,7 +108,7 @@ export interface Ticket {
   tags: string[];
   volunteerId?: string;
   volunteerName?: string;
-  volunteerHasLeft?: boolean; // New field to track if volunteer left
+  volunteerHasLeft?: boolean; 
 }
 
 export interface Feedback {
@@ -231,7 +231,9 @@ const CONTENT = {
       volunteerLeftDesc: "輔導員已結束對話。你可以選擇重新排隊，或完全離開。",
       requeue: "重新排隊 (下一位)",
       exit: "離開 (刪除個案)",
-      systemVolunteerLeft: "系統訊息：輔導員已離開對話。"
+      systemVolunteerLeft: "系統訊息：輔導員已離開對話。",
+      aiAssist: "AI 提示",
+      loadingSuggestions: "正在生成建議...",
     },
     memo: {
       cheerUp: "社區心聲",
@@ -249,7 +251,7 @@ const CONTENT = {
       login: "義工登入",
       authTitle: "義工/管理員入口", 
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼", // HIDDEN HINT
+      nameLabel: "稱呼",
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -341,169 +343,6 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
-  },
-  en: {
-    appTitle: "MindTree",
-    appSubtitle: "Mental Support for Everyone • Your Shelter",
-    nav: { home: "Home", chat: "AI Chat", human: "Support", resources: "Links" },
-    intro: {
-      welcome: "Welcome to MindTree",
-      desc: "A premium, private sanctuary for your mind.\nWe are here to listen, support, and heal.",
-      slide1Title: "AI & Human Synergy",
-      slide1Desc: "Advanced AI listening available 24/7, backed by professional volunteers.",
-      slide2Title: "Private & Secure",
-      slide2Desc: "Your thoughts are safe here. End-to-end privacy focused.",
-      startBtn: "Begin Journey"
-    },
-    landing: {
-      servicesTitle: "Services",
-      breathTitle: "Mindful Breathing",
-      breathDesc: "Professional • 60s Calm",
-      startBreath: "Start",
-      aiCard: { title: "AI Listener", desc: "Smart & Private • 24/7" },
-      humanCard: { title: "Human Support", desc: "Volunteers • Empathy" },
-      volunteerCard: { title: "Join Volunteer Team", desc: "Become a Secret Listener" },
-      feedback: "Feedback"
-    },
-    landingNotice: {
-      disclaimer: "Disclaimer: Not emergency medical services.",
-      rules: "Respectful interactions only. Dial 999 for emergencies."
-    },
-    aiRole: {
-      title: "AI Listener",
-      welcome: "Hi, I'm MindTree. I'm here to listen without judgment. What's on your mind?",
-      placeholder: "Type here...",
-      disclaimer: "AI can make mistakes. Verify info."
-    },
-    humanRole: {
-      title: "Counselor",
-      waitingTitle: "Matching Volunteer...",
-      waitingMessage: "We are connecting you to a volunteer...",
-      joinedTitle: "Counselor Joined",
-      systemJoin: "System: Counselor joined",
-      headerVerified: "Verified Counselor",
-      headerPeer: "Peer Volunteer",
-      report: "Report User",
-      reportSuccess: "User reported. Admins will review logs.",
-      caseResolved: "Session ended. Data deleted.",
-      placeholder: "Type message...",
-      chatReminder: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID).",
-      scanBlock: "Message Blocked: AI detected inappropriate or offensive content.",
-      endChatConfirm: "End chat and delete history?",
-      cancelWait: "Cancel Waiting",
-      volunteerLeftTitle: "Volunteer Left",
-      volunteerLeftDesc: "The volunteer has left the chat. You can wait for the next one or leave.",
-      requeue: "Wait for Next",
-      exit: "Leave & Delete",
-      systemVolunteerLeft: "System: Volunteer has left the chat."
-    },
-    memo: {
-      cheerUp: "Community Board",
-      label: "Post a Note",
-      title: "Leave a Note",
-      desc: "Your message will float on the home page IMMEDIATELY. Please share positivity.",
-      placeholder: "Share your positivity...",
-      btn: "Post",
-      success: "Posted! Floating now.",
-      scanning: "AI Safety Check...",
-      unsafe: "Blocked: Inappropriate content detected."
-    },
-    volunteer: {
-      login: "Volunteer Access",
-      authTitle: "Volunteer Application", 
-      disclaimer: "Thank you for your service. Please verify you are ready to listen.", 
-      nameLabel: "Name", // HIDDEN HINT
-      namePlaceholder: "e.g., Alex",
-      joinBtn: "Enter Volunteer Platform",
-      proJoinTitle: "Professional Login",
-      codePlaceholder: "Access Code",
-      verifyBtn: "Submit Application", 
-      errorMsg: "Invalid Code",
-      reminder: "Reminder: Please remain empathetic and respectful at all times. We are building a safe, inclusive space. Please listen with your heart.",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Steps to be a good listener",
-      rule1Title: "Step 1: Active Listening",
-      rule1Desc: "Listen more, advise less.",
-      rule2Title: "Self Awareness",
-      rule2Desc: "Monitor your own well-being.",
-      rule3Title: "Emergency",
-      rule3Desc: "Report self-harm risks immediately.",
-      acknowledgeBtn: "I Agree",
-      portalTitle: "Console",
-      welcome: "Welcome",
-      exit: "Exit",
-      activeRequests: "Requests",
-      noRequests: "No active requests",
-      accept: "Accept",
-      topic: "Issue",
-      priority: { critical: "Critical", high: "High", medium: "Med", low: "Low" },
-      tabRequests: "Requests",
-      tabFeedback: "Admin Area",
-      noFeedbacks: "No feedback yet",
-      exportCSV: "Export CSV"
-    },
-    intake: {
-      title: "Intake",
-      desc: "Help us understand you",
-      q1: "Name (Anon)",
-      q1_placeholder: "Nickname",
-      q_age: "Age",
-      q_age_opts: ["<18", "18-30", "31-50", "51-70", "70+"],
-      q_gender: "Gender",
-      q_gender_opts: ["M", "F", "Other"],
-      q3: "Distress (1-5)",
-      q4: "Main Issue",
-      q4_opt1: "Anxiety / Panic",
-      q4_opt2: "Depression",
-      q4_opt3: "Family/Housing",
-      q4_opt4: "Suicidal (Urgent)",
-      q5: "Note",
-      q5_placeholder: "Details...",
-      submit: "Connect",
-      calm: "Calm",
-      crisis: "Crisis"
-    },
-    links: {
-      btn: "Resources",
-      title: "Resources",
-      desc: "Help, Donation & Volunteering",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Information"
-    },
-    feedback: {
-      title: "Feedback",
-      desc: "Your feedback is important to us.",
-      placeholder: "How can we improve?",
-      submit: "Send",
-      thanks: "Thank you! Sent to database."
-    },
-    breath: {
-      inhale: "Inhale",
-      hold: "Hold",
-      exhale: "Exhale",
-      relax: "Relax Your Mind",
-      musicOn: "Music On",
-      musicOff: "Muted",
-      playErr: "Tap to Play"
-    },
-    footer: {
-      legal: "Disclaimer: This platform is volunteer-run and provides peer emotional support only. It is NOT a substitute for professional medical advice or emergency services. We are not liable for any consequences arising from the use of this service. In case of emergency, dial 999 immediately. Use at your own risk."
-    },
-    actions: {
-      back: "Back",
-      cancel: "Cancel",
-      endChat: "End",
-      leaveChat: "Leave"
-    },
-    dialogs: {
-      volLeaveMsg: "Return case to queue?",
-      citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Important: Please be respectful. Illegal acts, harassment, and privacy violations are strictly prohibited. For your safety, do not share sensitive personal details (e.g., full name, address, ID)."
-    }
   }
 };
 
@@ -574,14 +413,40 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
   }
 };
 
-const SYSTEM_PROMPTS = {
-  zh: `你係「MindTree 樹洞」，一個有溫度、有思想嘅數碼同伴。用廣東話口語。禁止機械式回應。`,
-  en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
+const generateChatSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: Language): Promise<string[]> => {
+  try {
+    const contextPrompt = role === 'citizen'
+      ? "You are assisting a user who is seeking mental support in Cantonese. They might be struggling to express themselves. Provide 3 short, first-person phrases they can use to start expressing their feelings or situation. Keep it simple, natural, and in Traditional Chinese (Cantonese)."
+      : "You are assisting a volunteer counselor in Cantonese. Provide 3 short, empathetic, active-listening responses or gentle guiding questions they can use to support the user. Keep it professional, warm, and in Traditional Chinese (Cantonese).";
+
+    // Format recent history for context
+    const historyText = history.slice(-5).map(m => `${m.sender}: ${m.text}`).join('\n');
+
+    const finalPrompt = `${contextPrompt}\n\nConversation Context:\n${historyText}\n\nOutput ONLY 3 sentences separated by '|'. No numbering. Example: 我覺得好辛苦|你慢慢講，我聽緊|還有其他野困擾你嗎`;
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: finalPrompt }] }],
+        generationConfig: { temperature: 0.7 }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error("API Error");
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    // Split by pipe and clean up
+    return rawText.split('|').map(s => s.trim()).filter(s => s.length > 0).slice(0, 3);
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
 };
 
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   try {
-    const systemInstruction = SYSTEM_PROMPTS[lang];
+    const systemInstruction = `You are MindTree, a thoughtful digital companion. Speak naturally in ${lang === 'zh' ? 'Cantonese' : 'English'}.`;
     const recentHistory = history.slice(-10).map(msg => ({
       role: msg.isUser ? "user" : "model",
       parts: [{ text: msg.text }]
@@ -1680,13 +1545,15 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket, volunteerLeaveSession } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
   const chatMessages = messages.filter(m => m.ticketId === ticketId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status]);
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, suggestions]);
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1700,6 +1567,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       isVerified: isVolunteer && volunteerProfile.isVerified
     });
     setText("");
+    setSuggestions([]); // Clear suggestions after sending
   };
 
   const handleEndChat = async () => {
@@ -1723,13 +1591,14 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
       onLeave();
   };
 
-  const handleCitizenRequeue = async () => {
-      // Reset ticket to waiting state
-      // We need to access updateTicketStatus from context, but simpler to just use delete & create new? 
-      // Actually, better to update existing ticket to keep history if needed, but context says "Wait for Next".
-      // Let's reset the existing ticket status to 'waiting'
-      // We need a function for this. Since `volunteerLeaveSession` is available, let's use `updateTicketStatus`
-      // But HumanChat props don't have it. Let's get it from context.
+  const handleGetSuggestions = async () => {
+    setLoadingSuggestions(true);
+    setSuggestions([]);
+    // Role logic: Citizen (user) vs Volunteer
+    const role = isVolunteer ? 'volunteer' : 'citizen';
+    const newSuggestions = await generateChatSuggestions(chatMessages, role, lang);
+    setSuggestions(newSuggestions);
+    setLoadingSuggestions(false);
   };
 
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
@@ -1784,9 +1653,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
          </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950 pb-24">
+      <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950 pb-32">
          {showWarning && (
-             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
+             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative animate-fade-in">
                 {t.chatReminder}
                 <button onClick={() => setShowWarning(false)} className="absolute top-2 right-2 text-yellow-400 hover:text-yellow-600">
                     <X size={14}/>
@@ -1816,17 +1685,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
                   </div>
                   <div className="flex flex-col gap-3">
                       <button 
-                        // We need access to updateTicketStatus to requeue. 
-                        // Since we can't easily pass it down without prop drilling, let's use a dirty hack or just rely on delete/re-create.
-                        // Actually, let's just trigger a "soft exit" which effectively is same as cancel but keeps user on screen?
-                        // No, let's allow them to "Wait".
-                        // We will use a context method we added: updateTicketStatus
-                        onClick={async () => {
-                             // This is a bit tricky since we don't have direct access to `updateTicketStatus` in this scope easily without destructuring it from context at top.
-                             // Wait, we DO have it from context!
-                             // See below.
-                        }}
-                        // Wait, I need to expose updateTicketStatus to HumanChat component first.
                         className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl"
                       >
                           <HumanChatRequeueButton ticketId={ticketId}/>
@@ -1843,20 +1701,50 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
           </div>
       )}
 
-      {/* Input Area - Disabled if volunteer left */}
-      <div className="bg-white dark:bg-slate-900 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md shadow-up">
-        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2">
+      {/* Input Area */}
+      <div className="bg-white dark:bg-slate-900 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md shadow-up flex flex-col gap-2">
+        {/* Suggestion Chips Area */}
+        {loadingSuggestions && (
+            <div className="flex items-center gap-2 text-xs text-slate-400 px-4 animate-pulse">
+                <Wand2 size={12}/> {(t as any).loadingSuggestions || "Thinking..."}
+            </div>
+        )}
+        {suggestions.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2 px-1 no-scrollbar">
+                {suggestions.map((sug, idx) => (
+                    <button 
+                        key={idx} 
+                        onClick={() => setText(sug)}
+                        className="whitespace-nowrap px-3 py-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold rounded-full border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-colors"
+                    >
+                        {sug}
+                    </button>
+                ))}
+            </div>
+        )}
+
+        <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="max-w-3xl mx-auto flex gap-2 w-full items-center">
+           <button 
+                type="button" 
+                onClick={handleGetSuggestions} 
+                disabled={loadingSuggestions || (!isVolunteer && liveTicket.volunteerHasLeft)}
+                className="w-10 h-10 shrink-0 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500 flex items-center justify-center hover:scale-105 transition-transform"
+                title={(t as any).aiAssist || "AI Suggestions"}
+           >
+               <Wand2 size={18} className={loadingSuggestions ? "animate-spin" : ""}/>
+           </button>
+
            <input 
              value={text} 
              onChange={e => setText(e.target.value)} 
              disabled={(!isVolunteer && liveTicket.volunteerHasLeft)}
-             className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white disabled:opacity-50" 
+             className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full px-6 h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-white disabled:opacity-50 min-w-0" 
              placeholder={(!isVolunteer && liveTicket.volunteerHasLeft) ? (t as any).systemVolunteerLeft : t.placeholder}
            />
            <button 
              type="submit" 
-             disabled={(!isVolunteer && liveTicket.volunteerHasLeft)}
-             className="w-12 h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
+             disabled={(!isVolunteer && liveTicket.volunteerHasLeft) || !text.trim()}
+             className="w-12 h-12 shrink-0 rounded-full bg-emerald-500 text-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:scale-100"
            >
                <Send size={20}/>
            </button>

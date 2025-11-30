@@ -570,12 +570,15 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   }));
 
   try {
-    const response = await fetch('/api/chat', {
+    // Attempt connection to your Vercel backend
+    const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: recentHistory,
-        systemInstruction: systemInstruction 
+        history: recentHistory, // Kept for backward compatibility
+        messages: recentHistory, // Added for Vercel AI SDK standards
+        systemInstruction: systemInstruction,
+        model: 'gemini-2.5-flash-preview-09-2025' // Explicitly requested model
       })
     });
 
@@ -588,8 +591,11 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
     console.warn("Vercel API failed, switching to Direct Fallback...", vercelError);
     
     try {
-        const apiKey = "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I"; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        // !!! IMPORTANT !!!
+        // Using empty string ("") here allows the preview environment to inject its own valid Proxy Key.
+        // DO NOT put your "AIza..." key here, or it will fail with 403 Forbidden (Leaked Key).
+        const apiKey = ""; 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
         
         const payload = {
             contents: [...recentHistory],

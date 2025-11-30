@@ -23,7 +23,7 @@ declare const __app_id: string;
 declare const __initial_auth_token: string;
 
 // --- GEMINI API KEY SETUP ---
-// ⚠️ 重要：請在此填入你的 Google Gemini API Key (Flash 2.5) 以啟用跨裝置 AI 功能
+// ⚠️ IMPORTANT: Paste your Google Gemini API Key (Flash 2.5) here
 const GEMINI_API_KEY = ""; 
 
 const apiKey = GEMINI_API_KEY; 
@@ -107,7 +107,6 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
-  // Added 'volunteer_left' status to handle the new logic
   status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
   time: string;
   createdAt: number;
@@ -144,7 +143,6 @@ export interface Memo {
 
 // --- 2. CONSTANTS & CONTENT ---
 
-// Expanded AI Quotes for more variety (Default bubbles)
 const AI_QUOTES = [
   "You are not alone.", "這裡有我。", 
   "Take a deep breath.", "深呼吸，慢慢黎。",
@@ -302,7 +300,7 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
-      volEndChatConfirm: "確定結束對話？求助者將會收到通知，並可選擇繼續等待。",
+      volEndChatConfirm: "確定結束對話？求助者將會收到通知。",
       cancelWait: "取消等待",
       // New Content for Volunteer Leaving
       volLeftTitle: "輔導員已離開",
@@ -315,7 +313,7 @@ const CONTENT = {
       cheerUp: "社區心聲",
       label: "留低一句",
       title: "留低一句說話",
-      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。(訊息保留 5 分鐘)",
+      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。",
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
@@ -1447,7 +1445,131 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
   );
 };
 
-// --- DEFINED HERE TO FIX REFERENCE ERROR ---
+// --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT (MODIFIED: Client-Side) ---
+const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: 'zh' | 'en'): Promise<string[]> => {
+  try {
+    if (!apiKey) {
+        console.warn("Gemini API Key missing. Skipping suggestions.");
+        return [];
+    }
+
+    const roleDesc = role === 'volunteer' ? (lang === 'zh' ? "輔導員/義工" : "Counselor/Volunteer") : (lang === 'zh' ? "求助者" : "User seeking help");
+    
+    // System prompt specifically for generating options
+    const systemInstruction = `
+      You are a helpful assistant for a mental health support chat app called 'MindTree'.
+      The current user is a ${roleDesc}.
+      Task: Read the chat history and provide exactly 3 distinct, empathetic, and natural response options that the user could send next.
+      Constraints:
+      1. Output format: A single string with 3 sentences separated by "|||".
+      2. Language: Strictly use ${lang === 'zh' ? "Cantonese (Traditional Chinese)" : "English"}.
+      3. Tone: Warm, supportive, non-judgmental. Short and concise.
+      4. Do NOT output numbering or labels like "Option 1". Just the text.
+    `;
+
+    const recentHistory = history.slice(-8).map(msg => ({
+      role: msg.isUser ? "user" : "model",
+      parts: [{ text: `${msg.sender}: ${msg.text}` }]
+    }));
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: recentHistory,
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: { temperature: 0.4 }
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        console.error("Gemini API Error:", data);
+        throw new Error("API Error");
+    }
+    
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    // Split by the delimiter ||| and clean up
+    const suggestions = rawText.split('|||').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+    
+    return suggestions.length > 0 ? suggestions.slice(0, 3) : [];
+  } catch (error) {
+    console.error("AI Suggestion Error (Client-Side):", error);
+    return []; // Return empty to fallback to static
+  }
+};
+
+const AIChat = ({ onBack }: { onBack: () => void }) => {
+  const { lang } = useAppContext();
+  const t = CONTENT[lang];
+  const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+  const [inputText, setInputText] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages, isTyping]);
+  
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!inputText.trim()) return;
+    const check = checkContentSafety(inputText);
+    if (!check.safe) { setNotification({ message: check.reason || "Safety Alert", type: 'error' }); return; }
+    
+    const userMsg: Message = { id: Date.now().toString(), text: inputText, isUser: true, sender: lang === 'zh' ? "我" : "Me", timestamp: Date.now() };
+    setMessages(prev => [...prev, userMsg]);
+    setInputText("");
+    setIsTyping(true);
+    
+    try {
+      const aiText = await generateAIResponse([...messages, userMsg], lang);
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: aiText, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { id: Date.now().toString(), text: "Connection error. Please try again.", isUser: false, sender: "System", timestamp: Date.now() }]);
+    } finally { setIsTyping(false); }
+  };
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md py-4 px-6 flex items-center justify-between shadow-sm z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+            <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors"><ArrowLeft size={20} /></button>
+            <div className="flex flex-col">
+                <div className="font-bold text-lg text-slate-800 dark:text-white flex items-center gap-2">{stripAITag(t.aiRole.title)} <BadgeCheck size={16} className="text-teal-500"/></div>
+                <div className="text-xs text-teal-600 dark:text-teal-400 font-medium">Online</div>
+            </div>
+        </div>
+      </header>
+      <div className="flex-1 overflow-y-auto p-6 scroll-smooth bg-slate-50 dark:bg-slate-950">
+        <div className="max-w-3xl mx-auto w-full pb-4">
+            {messages.map(msg => <ChatBubble key={msg.id} {...msg} />)}
+            {isTyping && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+        </div>
+      </div>
+      
+      {/* Suggested Prompts */}
+      {messages.length < 3 && !isTyping && (
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-950 flex gap-2 overflow-x-auto no-scrollbar">
+          {SUGGESTED_PROMPTS[lang].map(prompt => (
+            <button key={prompt} onClick={() => { setInputText(prompt); handleSend(); }} className="whitespace-nowrap px-4 py-2 rounded-full bg-white/60 dark:bg-slate-800/60 text-xs font-bold text-teal-600 dark:text-teal-400 hover:bg-white transition-colors shadow-sm backdrop-blur-sm">
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white/90 dark:bg-slate-900/90 p-4 sticky bottom-0 z-20 pb-8 backdrop-blur-md">
+        <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
+          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" value={inputText} onChange={e => setInputText(e.target.value)} placeholder={t.aiRole.placeholder} autoFocus />
+          <button type="submit" disabled={!inputText.trim() || isTyping} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const IntakeForm = ({ onComplete, onBack }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void }) => {
   const { lang } = useAppContext();
   const t = CONTENT[lang].intake;
@@ -1765,60 +1887,6 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
        </div>
     </div>
   );
-};
-
-// --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT (MODIFIED: Client-Side) ---
-const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: 'zh' | 'en'): Promise<string[]> => {
-  try {
-    if (!apiKey) {
-        console.warn("Gemini API Key missing. Skipping suggestions.");
-        return [];
-    }
-
-    const roleDesc = role === 'volunteer' ? (lang === 'zh' ? "輔導員/義工" : "Counselor/Volunteer") : (lang === 'zh' ? "求助者" : "User seeking help");
-    
-    // System prompt specifically for generating options
-    const systemInstruction = `
-      You are a helpful assistant for a mental health support chat app called 'MindTree'.
-      The current user is a ${roleDesc}.
-      Task: Read the chat history and provide exactly 3 distinct, empathetic, and natural response options that the user could send next.
-      Constraints:
-      1. Output format: A single string with 3 sentences separated by "|||".
-      2. Language: Strictly use ${lang === 'zh' ? "Cantonese (Traditional Chinese)" : "English"}.
-      3. Tone: Warm, supportive, non-judgmental. Short and concise.
-      4. Do NOT output numbering or labels like "Option 1". Just the text.
-    `;
-
-    const recentHistory = history.slice(-8).map(msg => ({
-      role: msg.isUser ? "user" : "model",
-      parts: [{ text: `${msg.sender}: ${msg.text}` }]
-    }));
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: recentHistory,
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { temperature: 0.4 }
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        console.error("Gemini API Error:", data);
-        throw new Error("API Error");
-    }
-    
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    // Split by the delimiter ||| and clean up
-    const suggestions = rawText.split('|||').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-    
-    return suggestions.length > 0 ? suggestions.slice(0, 3) : [];
-  } catch (error) {
-    console.error("AI Suggestion Error (Client-Side):", error);
-    return []; // Return empty to fallback to static
-  }
 };
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean }) => {

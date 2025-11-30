@@ -7,7 +7,8 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RotateCcw, Wand2
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RotateCcw, Wand2,
+  TreeDeciduous, Share, Menu, Laptop, Circle
 } from 'lucide-react';
 
 // Firebase Imports
@@ -23,7 +24,7 @@ declare const __app_id: string;
 declare const __initial_auth_token: string;
 
 // --- GEMINI API SETUP ---
-const apiKey = ""; // Environment injects this automatically.
+const apiKey = ""; // Environment injects this automatically. If running locally, paste your key here.
 
 const callGemini = async (prompt: string, systemInstruction?: string) => {
   try {
@@ -284,7 +285,7 @@ const CONTENT = {
       login: "義工登入",
       authTitle: "義工入口", 
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼",
+      nameLabel: "稱呼", 
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -928,8 +929,16 @@ const Notification = ({ message, type, onClose }: { message: string, type: 'erro
   );
 };
 
-// ... ChatBubble, BreathingExercise, FeedbackModal ...
-// (These components remain largely the same, included for completeness in final file)
+// Sub-component to handle Requeue logic cleanly
+const HumanChatRequeueButton = ({ ticketId }: { ticketId: string }) => {
+    const { updateTicketStatus } = useAppContext();
+    
+    const handleRequeue = async () => {
+        await updateTicketStatus(ticketId, 'waiting');
+    };
+
+    return <span onClick={handleRequeue} className="w-full h-full flex items-center justify-center">重新排隊 (下一位)</span>;
+};
 
 const TypingIndicator = () => (
   <div className="flex items-start gap-2 mb-4 animate-fade-in">
@@ -1328,8 +1337,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
         <div className="flex gap-3">
            {/* Download / Install Button */}
-           <button onClick={() => setShowTutorial(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20" title={t.landing.installTitle}>
-               <Download size={18} />
+           <button onClick={() => setShowTutorial(true)} className="flex items-center gap-1 px-3 py-2 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20 font-bold text-xs" title={t.landing.installTitle}>
+               <Download size={14} /> <span>安裝教學</span>
            </button>
            <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20" title={t.landing.feedback}><MessageSquare size={18} /></button>
            <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md border border-white/20"><Globe size={18} /></button>

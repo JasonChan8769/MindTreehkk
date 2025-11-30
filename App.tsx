@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link 
+  Link, AlertOctagon // ADDED MISSING IMPORT HERE
 } from 'lucide-react';
 
 // Firebase Imports
@@ -15,7 +15,6 @@ import {
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
-// These allow the app to read variables injected by Vite, Next.js, or the Vercel environment
 declare const process: any;
 declare const __firebase_config: string;
 
@@ -39,12 +38,12 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
       return (
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertOctagon size={48} className="text-rose-500 mb-4" />
-          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤</h1>
+          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤 (App Error)</h1>
           <p className="text-sm text-slate-500 mb-4 text-center">
-            {this.state.error?.message || "未知錯誤"}
-            <br/>請重新整理頁面。
+            {this.state.error?.message || "未知錯誤 (Unknown Error)"}
+            <br/>請重新整理頁面 (Please Refresh)。
           </p>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">Refresh</button>
         </div>
       );
     }
@@ -53,20 +52,16 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 // --- FIREBASE CONFIGURATION ---
-// 1. Try to parse the injected config (if available in this preview environment)
-// 2. If not, try to read standard Environment Variables (Next.js style) for Vercel deployment
-// 3. Fallback to the hardcoded IDs (safe public info) but ask for Key via Env Var
 const getFirebaseConfig = () => {
   try {
     if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
   } catch (e) {}
 
-  // Try standard environment variables (works on Vercel if you named them correctly)
-  // Removed import.meta check to avoid build errors in ES2015 targets
+  // Vercel / Standard Env Vars
   const apiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_FIREBASE_API_KEY);
 
   return {
-    apiKey: apiKey || "MISSING_API_KEY_CHECK_VERCEL_ENV", // Will show explicit error if missing
+    apiKey: apiKey || "MISSING_API_KEY_CHECK_VERCEL_ENV",
     authDomain: "mindtreehk.firebaseapp.com",
     projectId: "mindtreehk",
     storageBucket: "mindtreehk.firebasestorage.app",
@@ -82,17 +77,18 @@ const firebaseConfig = getFirebaseConfig();
 let app = null;
 let auth = null;
 let db = null;
-let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
+// Use a consistent App ID or fallback to a random one if undefined
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
 
 try {
-  // Only initialize if we have a somewhat valid looking key (not the placeholder)
+  // We only attempt to initialize if the key doesn't look like our error placeholder
   if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("MISSING")) {
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
-      console.log("Firebase initialized with config.");
+      console.log("Firebase initialized.");
   } else {
-      console.warn("Firebase API Key is missing. Please add NEXT_PUBLIC_FIREBASE_API_KEY to Vercel Environment Variables.");
+      console.warn("Firebase API Key is missing. Please set NEXT_PUBLIC_FIREBASE_API_KEY in Vercel.");
   }
 } catch (e) {
   console.error("Firebase initialization error:", e);
@@ -382,13 +378,172 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
+  },
+  en: {
+    appTitle: "MindTree",
+    appSubtitle: "Your Safe Haven • Support for All",
+    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
+    intro: {
+      welcome: "Welcome to MindTree",
+      desc: "A safe, private, and secure space for mental support.\nNo matter how you feel, we are here with you.",
+      slide1Title: "AI & Human Collaboration",
+      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
+      slide2Title: "Absolute Privacy",
+      slide2Desc: "End-to-end encryption concepts used. Only the treehole knows your secrets.",
+      startBtn: "Start Journey"
+    },
+    landing: {
+      servicesTitle: "Select Service",
+      breathTitle: "Breathing Exercise",
+      breathDesc: "Guided • 60s Relax",
+      startBreath: "Start",
+      aiCard: { title: "AI Treehole", desc: "24/7 Listening • Instant Reply" },
+      humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
+      volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
+      feedback: "Feedback"
+    },
+    landingNotice: {
+      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
+      rules: "Please be respectful. In case of emergency, call 999."
+    },
+    aiRole: {
+      title: "AI Treehole",
+      welcome: "Hello, I'm MindTree. I know things might be tough lately. Want to talk about it?",
+      placeholder: "Type your thoughts here...",
+      disclaimer: "AI content for reference only."
+    },
+    humanRole: {
+      title: "Counselor",
+      waitingTitle: "Matching you with a volunteer...",
+      waitingMessage: "We are contacting online volunteers, please wait a moment...",
+      joinedTitle: "Counselor Joined",
+      systemJoin: "System: Counselor has joined",
+      headerVerified: "Social Worker",
+      headerPeer: "Peer Volunteer",
+      report: "Report User",
+      reportSuccess: "User reported. Admins will review logs.",
+      caseResolved: "Chat ended. Data destroyed.",
+      placeholder: "Type a message...",
+      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info (Full Name, Address, Phone, ID).",
+      scanBlock: "Message blocked: AI detected inappropriate content.",
+      endChatConfirm: "End chat and delete history?",
+      cancelWait: "Cancel Waiting"
+    },
+    memo: {
+      cheerUp: "Community Voices",
+      label: "Leave a Note",
+      title: "Leave a Positive Note",
+      desc: "Your message will float on the home screen instantly. Spread positivity. (Messages last 5 mins). No hate/spam/trolling.",
+      placeholder: "Write your blessing or feeling...",
+      btn: "Post",
+      success: "Posted successfully!",
+      scanning: "AI is reviewing content...",
+      unsafe: "Failed: Content may contain inappropriate language.",
+      guidance: "Please stay positive and kind."
+    },
+    volunteer: {
+      login: "Volunteer Login",
+      authTitle: "Volunteer Portal",
+      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.", 
+      nameLabel: "Display Name",
+      namePlaceholder: "e.g. Alex",
+      joinBtn: "Enter Platform",
+      proJoinTitle: "Professional Access",
+      codePlaceholder: "Access Code",
+      verifyBtn: "Enter Platform", 
+      errorMsg: "Invalid Code",
+      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
+      guidelinesTitle: "Support Guidelines",
+      guidelinesDesc: "3 Steps to be a better listener",
+      rule1Title: "Step 1: Listen",
+      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
+      rule2Title: "Step 2: Empathize",
+      rule2Desc: "Validate feelings. Say 'That sounds tough', 'I hear you'. Avoid 'Just get over it'.",
+      rule3Title: "Step 3: Assess Safety",
+      rule3Desc: "Stay alert. If self-harm/suicide is mentioned, stay calm. Recommend professional help (999) and report to admin immediately.",
+      acknowledgeBtn: "I Understand & Agree",
+      portalTitle: "Dashboard",
+      welcome: "Welcome back",
+      exit: "Logout",
+      activeRequests: "Active Cases",
+      noRequests: "No new cases",
+      accept: "Accept",
+      topic: "Issue",
+      priority: { critical: "Urgent", high: "High", medium: "Med", low: "Low" },
+      tabRequests: "Requests",
+      tabFeedback: "Feedback",
+      noFeedbacks: "No feedback yet",
+      exportCSV: "Export CSV"
+    },
+    intake: {
+      title: "Intake Form",
+      desc: "Help us understand your needs",
+      q1: "Nickname (Anonymous)",
+      q1_placeholder: "Nickname",
+      q_age: "Age Group",
+      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
+      q_gender: "Gender",
+      q_gender_opts: ["Male", "Female", "Other"],
+      q3: "Distress Level (1-5)",
+      q4: "Main Issue",
+      q4_opt1: "Anxiety / Panic",
+      q4_opt2: "Low Mood / Depression",
+      q4_opt3: "Family / Housing",
+      q4_opt4: "Self-harm Thoughts (Urgent)",
+      q5: "Details (Optional)",
+      q5_placeholder: "Brief description...",
+      submit: "Start Matching",
+      calm: "Calm",
+      crisis: "Crisis"
+    },
+    links: {
+      btn: "Resources",
+      title: "Community Resources",
+      desc: "Mental support, blood donation, and useful info.",
+      close: "Close",
+      catMental: "Mental Support",
+      catBlood: "Blood Donation",
+      catInfo: "Useful Info"
+    },
+    feedback: {
+      title: "Feedback",
+      desc: "Your feedback matters to us.",
+      placeholder: "Type your feedback...",
+      submit: "Send",
+      thanks: "Thank you! We will look into it."
+    },
+    breath: {
+      inhale: "Inhale",
+      hold: "Hold",
+      exhale: "Exhale",
+      relax: "Relax",
+      musicOn: "Music On",
+      musicOff: "Mute",
+      playErr: "Tap to Play Music"
+    },
+    footer: {
+      legal: "Disclaimer: Run by volunteers for peer support only. Not a medical service. In emergencies, call 999."
+    },
+    actions: {
+      back: "Back",
+      cancel: "Cancel",
+      endChat: "End",
+      leaveChat: "Leave"
+    },
+    dialogs: {
+      volLeaveMsg: "Return case to queue?",
+      citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info."
+    }
   }
 };
 
-// --- 3. SERVICES (UPDATED WITH VERCEL + FALLBACK) ---
+// --- 3. SERVICES ---
 
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾", "dlkh", "on9"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
     
@@ -400,13 +555,59 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
+// STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
+    // 1. Basic Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
-    return { safe: true, reason: null };
+
+    const systemInstruction = `
+    You are a STRICT Content Moderator for a mental health support app called 'MindTree'.
+    YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING.
+    STRICTLY FORBIDDEN: Hate, sexual, self-harm, ads, trolling, negative venting.
+    RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
+    `;
+
+    // 2. Connect to Vercel (Primary)
+    // NOTE: If Vercel returns 500, it means the server (backend) crashed or key is invalid ON THE SERVER.
+    const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: `Review this message: "${text}"` }
+            ],
+            model: 'gemini-2.5-flash-preview-09-2025'
+        })
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        let aiRes = "";
+        
+        // Handle various response structures
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            aiRes = data.candidates[0].content.parts[0].text.trim();
+        } else if (data.text) {
+            aiRes = data.text.trim();
+        } else if (typeof data === 'string') {
+            aiRes = data.trim();
+        }
+        
+        if (aiRes.includes("PASS")) return { safe: true, reason: null };
+        return { safe: false, reason: aiRes || "AI 審查未通過" };
+    } else {
+        console.error("Vercel Scan Error:", response.status);
+        // Fallback: If server is down, we default to safe local check only to avoid blocking valid users during outage
+        return { safe: true, reason: null };
+    }
+
   } catch (e) {
-    return { safe: true, reason: null };
+    console.error("Scan Connection Error", e);
+    // Network error -> Allow local check pass
+    return { safe: true, reason: null }; 
   }
 };
 
@@ -417,25 +618,30 @@ const SYSTEM_PROMPTS = {
 
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   const systemInstruction = SYSTEM_PROMPTS[lang];
-  const recentHistory = history.slice(-10).map(msg => ({
-    role: msg.isUser ? "user" : "model",
-    parts: [{ text: msg.text }]
-  }));
+  const recentHistory = history.slice(-10);
+
+  const messagesPayload = [
+    { role: 'system', content: systemInstruction },
+    ...recentHistory.map(msg => ({
+      role: msg.isUser ? "user" : "assistant",
+      content: msg.text
+    }))
+  ];
 
   try {
+    // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        history: recentHistory,
-        systemInstruction: systemInstruction,
-        model: 'gemini-1.5-flash'
+        messages: messagesPayload,
+        model: 'gemini-2.5-flash-preview-09-2025' 
       })
     });
 
     if (response.ok) {
         const data = await response.json();
-        // Check for various response formats
+        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
         } else if (data.text) {
@@ -448,8 +654,8 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
     
     console.error(`Vercel API failed with status: ${response.status}`);
     return lang === 'zh' 
-        ? "（伺服器內部錯誤 (500)。請確保 Vercel 後台已設定 GOOGLE_GENERATIVE_AI_API_KEY。）" 
-        : "(Server Error 500. Please check Vercel Environment Variables.)";
+        ? "（伺服器內部錯誤 (500)。請檢查 Vercel 後台日誌。）" 
+        : "(Server Error 500. Please check Vercel logs.)";
 
   } catch (error) {
     console.error("Vercel AI Error:", error);
@@ -489,6 +695,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
+  // 1. Auth
   useEffect(() => {
     const initAuth = async () => {
         if (auth) {
@@ -496,10 +703,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 await signInAnonymously(auth);
             } catch (e) {
                 console.error("Auth failed:", e);
-                setUser({ uid: 'demo-user' });
             }
-        } else {
-            setUser({ uid: 'demo-user' });
         }
     };
     initAuth();
@@ -508,64 +712,66 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, []);
 
+  // 2. Sync Tickets
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
-        loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
-        setTickets(loadedTickets);
-    }, (err) => console.log("Ticket sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
+            loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
+            setTickets(loadedTickets);
+        }, (err) => console.log("Ticket sync error:", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
+  // 3. Sync Messages
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-        loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(loadedMessages);
-    }, (err) => console.log("Message sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+            loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
+            setMessages(loadedMessages);
+        }, (err) => console.log("Message sync error:", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
+  // 4. Sync Memos
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
-        const now = Date.now();
-        const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
-        validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        setPublicMemos(validMemos); 
-    }, (err) => console.log("Memo sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
+            const now = Date.now();
+            const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
+            validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            setPublicMemos(validMemos); 
+        }, (err) => console.log("Memo sync error:", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
+  // 5. Sync Feedbacks
   useEffect(() => {
     if (!user || !db) return;
-    const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
-        loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
-        setFeedbacks(loadedFeedbacks);
-    }, (err) => console.log("Feedback sync error:", err));
-    return () => unsubscribe();
+    try {
+        const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
+            loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
+            setFeedbacks(loadedFeedbacks);
+        }, (err) => console.log("Feedback sync error:", err));
+        return () => unsubscribe();
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    if (!db) {
-       const localId = "local-" + Date.now();
-       const newTicket: Ticket = {
-         id: localId, name, issue, priority, tags,
-         status: 'waiting',
-         time: new Date().toLocaleTimeString(),
-         createdAt: Date.now()
-       };
-       setTickets(prev => [newTicket, ...prev]);
-       return localId;
-    }
+    if (!db) return "local-error";
     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
         name, issue, priority, tags, 
         status: 'waiting', 
@@ -576,10 +782,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
-     if (!db) {
-       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-       return;
-     }
+     if (!db) return;
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
          ...(volId && { volunteerId: volId }),
@@ -588,19 +791,14 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const deleteTicket = async (id: string) => {
-      if(!db) {
-          setTickets(prev => prev.filter(t => t.id !== id));
-          return;
-      }
+      if(!db) return;
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
   };
 
   const endSession = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'resolved');
-    if (!db) {
-       setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
-       return;
-    }
+    if (!db) return;
+    
     const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
     const batch = writeBatch(db);
     msgsToDelete.forEach(msg => {
@@ -611,11 +809,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
-     if (!db) {
-       const newMsg = { id: Date.now().toString(), ...message };
-       setMessages(prev => [...prev, newMsg]);
-       return;
-     }
+     if (!db) return;
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
   };
 
@@ -634,20 +828,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             scale: 0.9 + Math.random() * 0.3
         }
      };
-     if (!db) {
-       const newMemo = { id: Date.now(), ...newMemoData } as Memo;
-       setPublicMemos(prev => [newMemo, ...prev]);
-       return;
-     }
+     if (!db) return;
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
   const submitFeedback = async (text: string) => {
-      if(!db) {
-          const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
-          setFeedbacks(prev => [newFb, ...prev]);
-          return;
-      }
+      if(!db) return;
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
   };
 

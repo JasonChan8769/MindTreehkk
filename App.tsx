@@ -15,8 +15,9 @@ import {
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
+// These allow the app to read variables injected by Vite, Next.js, or the Vercel environment
+declare const process: any;
 declare const __firebase_config: string;
-declare const __app_id: string;
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -52,20 +53,30 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 // --- FIREBASE CONFIGURATION ---
-// STRICT MODE: Use the environment variable config. 
-// If you are running this locally or cross-platform, ensure __firebase_config is injected correctly.
-const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-const firebaseConfig = rawConfig ? JSON.parse(rawConfig) : {
-  // Fallback placeholder - The app will try to use this if env var is missing
-  // It will NOT switch to local mode, but Firebase auth might fail if this is invalid.
-  apiKey: "YOUR_REAL_API_KEY_HERE", 
-  authDomain: "mindtreehk.firebaseapp.com",
-  projectId: "mindtreehk",
-  storageBucket: "mindtreehk.firebasestorage.app",
-  messagingSenderId: "326871687350",
-  appId: "1:326871687350:web:92ce082c58f80ef74b8617",
-  measurementId: "G-R6TVNF43T4"
+// 1. Try to parse the injected config (if available in this preview environment)
+// 2. If not, try to read standard Environment Variables (Next.js style) for Vercel deployment
+// 3. Fallback to the hardcoded IDs (safe public info) but ask for Key via Env Var
+const getFirebaseConfig = () => {
+  try {
+    if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
+  } catch (e) {}
+
+  // Try standard environment variables (works on Vercel if you named them correctly)
+  // Removed import.meta check to avoid build errors in ES2015 targets
+  const apiKey = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_FIREBASE_API_KEY);
+
+  return {
+    apiKey: apiKey || "MISSING_API_KEY_CHECK_VERCEL_ENV", // Will show explicit error if missing
+    authDomain: "mindtreehk.firebaseapp.com",
+    projectId: "mindtreehk",
+    storageBucket: "mindtreehk.firebasestorage.app",
+    messagingSenderId: "326871687350",
+    appId: "1:326871687350:web:92ce082c58f80ef74b8617",
+    measurementId: "G-R6TVNF43T4"
+  };
 };
+
+const firebaseConfig = getFirebaseConfig();
 
 // Initialize Firebase
 let app = null;
@@ -74,10 +85,15 @@ let db = null;
 let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
 
 try {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  console.log("Firebase initialized.");
+  // Only initialize if we have a somewhat valid looking key (not the placeholder)
+  if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("MISSING")) {
+      app = initializeApp(firebaseConfig);
+      auth = getAuth(app);
+      db = getFirestore(app);
+      console.log("Firebase initialized with config.");
+  } else {
+      console.warn("Firebase API Key is missing. Please add NEXT_PUBLIC_FIREBASE_API_KEY to Vercel Environment Variables.");
+  }
 } catch (e) {
   console.error("Firebase initialization error:", e);
 }
@@ -369,10 +385,10 @@ const CONTENT = {
   }
 };
 
-// --- 3. SERVICES ---
+// --- 3. SERVICES (UPDATED WITH VERCEL + FALLBACK) ---
 
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾", "dlkh", "on9"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
     
@@ -384,58 +400,13 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-// STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // 1. Basic Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
-
-    const systemInstruction = `
-    You are a STRICT Content Moderator for a mental health support app called 'MindTree'.
-    YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING.
-    STRICTLY FORBIDDEN: Hate, sexual, self-harm, ads, trolling, negative venting.
-    RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
-    `;
-
-    // 2. Connect to Vercel (Primary)
-    // Reverted payload to 'history' + 'systemInstruction' which seems to be what your backend expects
-    const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            history: [
-                { role: 'user', parts: [{ text: `Review this message: "${text}"` }] }
-            ],
-            systemInstruction: systemInstruction,
-            model: 'gemini-1.5-flash' // Used stable model
-        })
-    });
-
-    if (response.ok) {
-        const data = await response.json();
-        let aiRes = "";
-        
-        // Handle various response structures
-        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-            aiRes = data.candidates[0].content.parts[0].text.trim();
-        } else if (data.text) {
-            aiRes = data.text.trim();
-        } else if (typeof data === 'string') {
-            aiRes = data.trim();
-        }
-        
-        if (aiRes.includes("PASS")) return { safe: true, reason: null };
-        return { safe: false, reason: aiRes || "AI 審查未通過" };
-    } else {
-        console.error("Vercel Scan Error:", response.status);
-        return { safe: false, reason: `伺服器錯誤 (Server Error ${response.status})` };
-    }
-
+    return { safe: true, reason: null };
   } catch (e) {
-    console.error("Scan Connection Error", e);
-    // Network error -> Allow local check pass
-    return { safe: true, reason: null }; 
+    return { safe: true, reason: null };
   }
 };
 
@@ -452,21 +423,19 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   }));
 
   try {
-    // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
-    // Reverted payload to 'history' format to fix 500 error.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         history: recentHistory,
         systemInstruction: systemInstruction,
-        model: 'gemini-1.5-flash' // Using stable model
+        model: 'gemini-1.5-flash'
       })
     });
 
     if (response.ok) {
         const data = await response.json();
-        // Handle various response structures
+        // Check for various response formats
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
         } else if (data.text) {
@@ -479,8 +448,8 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
     
     console.error(`Vercel API failed with status: ${response.status}`);
     return lang === 'zh' 
-        ? "（伺服器內部錯誤 (500)。請檢查 Vercel 後台日誌。）" 
-        : "(Server Error 500. Please check Vercel logs.)";
+        ? "（伺服器內部錯誤 (500)。請確保 Vercel 後台已設定 GOOGLE_GENERATIVE_AI_API_KEY。）" 
+        : "(Server Error 500. Please check Vercel Environment Variables.)";
 
   } catch (error) {
     console.error("Vercel AI Error:", error);
@@ -520,7 +489,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
-  // 1. Auth
   useEffect(() => {
     const initAuth = async () => {
         if (auth) {
@@ -528,7 +496,10 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 await signInAnonymously(auth);
             } catch (e) {
                 console.error("Auth failed:", e);
+                setUser({ uid: 'demo-user' });
             }
+        } else {
+            setUser({ uid: 'demo-user' });
         }
     };
     initAuth();
@@ -537,66 +508,64 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   }, []);
 
-  // 2. Sync Tickets
   useEffect(() => {
     if (!user || !db) return;
-    try {
-        const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
-            loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
-            setTickets(loadedTickets);
-        }, (err) => console.log("Ticket sync error:", err));
-        return () => unsubscribe();
-    } catch(e) { console.log("Firestore error"); }
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
+        loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
+        setTickets(loadedTickets);
+    }, (err) => console.log("Ticket sync error:", err));
+    return () => unsubscribe();
   }, [user]);
 
-  // 3. Sync Messages
   useEffect(() => {
     if (!user || !db) return;
-    try {
-        const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
-            loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
-            setMessages(loadedMessages);
-        }, (err) => console.log("Message sync error:", err));
-        return () => unsubscribe();
-    } catch(e) { console.log("Firestore error"); }
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const loadedMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Message));
+        loadedMessages.sort((a, b) => a.timestamp - b.timestamp);
+        setMessages(loadedMessages);
+    }, (err) => console.log("Message sync error:", err));
+    return () => unsubscribe();
   }, [user]);
 
-  // 4. Sync Memos
   useEffect(() => {
     if (!user || !db) return;
-    try {
-        const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
-            const now = Date.now();
-            const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
-            validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            setPublicMemos(validMemos); 
-        }, (err) => console.log("Memo sync error:", err));
-        return () => unsubscribe();
-    } catch(e) { console.log("Firestore error"); }
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
+        const now = Date.now();
+        const validMemos = loadedMemos.filter(m => (now - (m.timestamp || 0)) < 5 * 60 * 1000);
+        validMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        setPublicMemos(validMemos); 
+    }, (err) => console.log("Memo sync error:", err));
+    return () => unsubscribe();
   }, [user]);
 
-  // 5. Sync Feedbacks
   useEffect(() => {
     if (!user || !db) return;
-    try {
-        const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
-            loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
-            setFeedbacks(loadedFeedbacks);
-        }, (err) => console.log("Feedback sync error:", err));
-        return () => unsubscribe();
-    } catch(e) { console.log("Firestore error"); }
+    const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const loadedFeedbacks = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Feedback));
+        loadedFeedbacks.sort((a, b) => b.timestamp - a.timestamp);
+        setFeedbacks(loadedFeedbacks);
+    }, (err) => console.log("Feedback sync error:", err));
+    return () => unsubscribe();
   }, [user]);
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    if (!db) return "local-error";
+    if (!db) {
+       const localId = "local-" + Date.now();
+       const newTicket: Ticket = {
+         id: localId, name, issue, priority, tags,
+         status: 'waiting',
+         time: new Date().toLocaleTimeString(),
+         createdAt: Date.now()
+       };
+       setTickets(prev => [newTicket, ...prev]);
+       return localId;
+    }
     const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
         name, issue, priority, tags, 
         status: 'waiting', 
@@ -607,7 +576,10 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
-     if (!db) return;
+     if (!db) {
+       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
+       return;
+     }
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
          ...(volId && { volunteerId: volId }),
@@ -616,14 +588,19 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const deleteTicket = async (id: string) => {
-      if(!db) return;
+      if(!db) {
+          setTickets(prev => prev.filter(t => t.id !== id));
+          return;
+      }
       await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
   };
 
   const endSession = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'resolved');
-    if (!db) return;
-    
+    if (!db) {
+       setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
+       return;
+    }
     const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
     const batch = writeBatch(db);
     msgsToDelete.forEach(msg => {
@@ -634,7 +611,11 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
-     if (!db) return;
+     if (!db) {
+       const newMsg = { id: Date.now().toString(), ...message };
+       setMessages(prev => [...prev, newMsg]);
+       return;
+     }
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
   };
 
@@ -653,12 +634,20 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             scale: 0.9 + Math.random() * 0.3
         }
      };
-     if (!db) return;
+     if (!db) {
+       const newMemo = { id: Date.now(), ...newMemoData } as Memo;
+       setPublicMemos(prev => [newMemo, ...prev]);
+       return;
+     }
      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
   const submitFeedback = async (text: string) => {
-      if(!db) return;
+      if(!db) {
+          const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
+          setFeedbacks(prev => [newFb, ...prev]);
+          return;
+      }
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
   };
 

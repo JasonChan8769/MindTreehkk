@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link, AlertOctagon // Fixed: Ensure AlertOctagon is imported
+  Link, AlertOctagon 
 } from 'lucide-react';
 
 // Firebase Imports
@@ -58,19 +58,52 @@ const getFirebaseConfig = () => {
     if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
   } catch (e) {}
 
+  // 2. Try parsing VITE_FIREBASE_CONFIG (From your Screenshot)
+  // This is the critical fix for your Vercel/Vite setup
+  let envConfigString = null;
+  
+  // Try accessing via process.env (standard Vercel/Node)
+  if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
+      envConfigString = process.env.VITE_FIREBASE_CONFIG;
+  }
+  
+  // Try accessing via import.meta.env (standard Vite)
+  // We use a try-catch block to prevent build errors in environments that don't support import.meta
   try {
-    // 2. Try parsing VITE_FIREBASE_CONFIG (From your Screenshot)
-    // Vercel exposes standard env vars via process.env
-    if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
-        console.log("Using VITE_FIREBASE_CONFIG from env");
-        return JSON.parse(process.env.VITE_FIREBASE_CONFIG);
-    }
+      // @ts-ignore
+      if (!envConfigString && import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_CONFIG) {
+          // @ts-ignore
+          envConfigString = import.meta.env.VITE_FIREBASE_CONFIG;
+      }
   } catch (e) {
-    console.error("Failed to parse VITE_FIREBASE_CONFIG", e);
+      console.log("import.meta not available");
+  }
+
+  if (envConfigString) {
+      try {
+          // Check if it's a JSON string or already an object
+          if (typeof envConfigString === 'string' && envConfigString.trim().startsWith('{')) {
+              console.log("Parsing VITE_FIREBASE_CONFIG JSON");
+              return JSON.parse(envConfigString);
+          }
+          return envConfigString; // It might be an object already in some build pipelines
+      } catch (e) {
+          console.error("Failed to parse VITE_FIREBASE_CONFIG JSON", e);
+      }
   }
 
   // 3. Try individual keys (Fallback)
-  const apiKey = (typeof process !== 'undefined' && (process.env?.NEXT_PUBLIC_FIREBASE_API_KEY || process.env?.VITE_FIREBASE_API_KEY));
+  let apiKey = null;
+  if (typeof process !== 'undefined') {
+      apiKey = process.env?.NEXT_PUBLIC_FIREBASE_API_KEY || process.env?.VITE_FIREBASE_API_KEY;
+  }
+  try {
+      // @ts-ignore
+      if (!apiKey && import.meta && import.meta.env) {
+           // @ts-ignore
+           apiKey = import.meta.env.VITE_FIREBASE_API_KEY || import.meta.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+      }
+  } catch(e){}
 
   if (apiKey) {
       return {
@@ -104,9 +137,9 @@ try {
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
-      console.log("Firebase initialized successfully.");
+      console.log("Firebase initialized successfully with config.");
   } else {
-      console.warn("Firebase Config missing. Please check Vercel Environment Variables (VITE_FIREBASE_CONFIG).");
+      console.warn("Firebase Config missing. Please check Vercel Environment Variable: VITE_FIREBASE_CONFIG (JSON) or VITE_FIREBASE_API_KEY.");
   }
 } catch (e) {
   console.error("Firebase initialization error:", e);
@@ -428,7 +461,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     `;
 
     // 2. Connect to Vercel (Primary)
-    // Reverting to 'history' format instead of 'messages' as it seemed to be what your backend expected originally
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -456,8 +488,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
-        // Fallback: If server is down, we default to safe local check only
-        return { safe: true, reason: null };
+        return { safe: false, reason: `伺服器錯誤 (Server Error ${response.status})` };
     }
 
   } catch (e) {
@@ -480,7 +511,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 
   try {
     // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
-    // Reverted payload to 'history' format to fix 500 error.
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

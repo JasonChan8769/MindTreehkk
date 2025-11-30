@@ -13,7 +13,7 @@ import {
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy, limit
+  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
@@ -42,7 +42,10 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertOctagon size={48} className="text-red-500 mb-4" />
           <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-          <p className="text-sm text-slate-500 mb-4 text-center">Please refresh the page. <br/>請重新整理頁面。</p>
+          <p className="text-sm text-slate-500 mb-4 text-center">
+            {this.state.error?.message || "Unknown Error"}
+            <br/>請重新整理頁面。
+          </p>
           <button onClick={() => window.location.reload()} className="px-4 py-2 bg-teal-600 text-white rounded-lg">Refresh</button>
         </div>
       );
@@ -225,8 +228,8 @@ const CONTENT = {
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
-      scanning: "AI 正在審查內容...",
-      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。",
+      scanning: "AI 正在嚴格審查內容...",
+      unsafe: "未能發佈：內容可能包含不當用語或無意義內容。",
       guidance: "請保持正面、友善。"
     },
     volunteer: {
@@ -240,15 +243,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "服務守則",
-      guidelinesDesc: "專業 • 同理 • 保密",
-      rule1Title: "專注聆聽",
-      rule1Desc: "不急於批判或建議，給予空間。",
-      rule2Title: "自我覺察",
-      rule2Desc: "留意自身情緒，適時休息。",
-      rule3Title: "危機處理",
-      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
-      acknowledgeBtn: "我同意",
+      guidelinesTitle: "心理支援指南",
+      guidelinesDesc: "簡單三步，成為更好的聆聽者",
+      rule1Title: "第一步：專注聆聽 (Listen)",
+      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
+      rule2Title: "第二步：同理回應 (Empathize)",
+      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」、「這沒什麼大不了」。",
+      rule3Title: "第三步：安全評估 (Assess)",
+      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
+      acknowledgeBtn: "我明白並同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -690,22 +693,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addPublicMemo = async (text: string) => {
-     if (!db) {
-       const newMemo: Memo = {
-        id: Date.now(),
-        text: text,
-        timestamp: Date.now(),
-        style: {
-            left: `${Math.random() * 80 + 10}%`,
-            animationDuration: `${25 + Math.random() * 15}s`,
-            animationDelay: '0s',
-            scale: 0.9 + Math.random() * 0.3
-        }
-       };
-       setPublicMemos(prev => [newMemo, ...prev]);
-       return;
-     }
-     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), {
+     const newMemoData = {
         text,
         timestamp: Date.now(),
         style: {
@@ -714,7 +702,14 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             animationDelay: '0s',
             scale: 0.9 + Math.random() * 0.3
         }
-     });
+     };
+
+     if (!db) {
+       const newMemo = { id: Date.now(), ...newMemoData } as Memo;
+       setPublicMemos(prev => [newMemo, ...prev]);
+       return;
+     }
+     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
   return (
@@ -995,9 +990,12 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
 
+  // Update Theme Color for iOS Status Bar
   useEffect(() => {
+    // Attempt to set theme color to match the nature background
+    // (Teal-50 or Slate-900)
     const metaThemeColor = document.querySelector("meta[name=theme-color]");
-    const color = theme === 'light' ? '#ecfdf5' : '#0f172a';
+    const color = theme === 'light' ? '#ecfdf5' : '#0f172a'; // Tailwind emerald-50 or slate-900
     if (metaThemeColor) {
         metaThemeColor.setAttribute("content", color);
     } else {
@@ -1008,6 +1006,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [theme]);
 
+  // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
     const selectedQuotes = shuffledQuotes.slice(0, 12);
@@ -1065,11 +1064,16 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
+      
+      {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
+      
+      {/* Decorative Background Elements (Forest Theme) */}
       <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
       <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
       <div className="absolute top-[20%] right-[10%] text-yellow-100/40 dark:text-yellow-900/10 pointer-events-none opacity-60"><SunDim size={150} /></div>
 
+      {/* Floating Elements (Memos) */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {floatingBubbles.map((memo) => (
@@ -1080,6 +1084,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
       </div>
 
+      {/* Header */}
       <div className="w-full flex justify-between items-center p-6 z-20 shrink-0">
         <div className="flex flex-col">
            <h1 className="text-3xl font-serif font-black text-teal-900 dark:text-white tracking-tight flex items-center gap-2"><div className="bg-emerald-500 text-white p-2 rounded-xl"><Sprout size={24} fill="currentColor"/></div> {t.appTitle}</h1>
@@ -1092,10 +1097,13 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         </div>
       </div>
       
+      {/* Scrollable Content */}
       <div className="flex-1 w-full overflow-y-auto z-10 px-6 pb-24 no-scrollbar">
         <div className="max-w-md mx-auto">
+            
             <h2 className="text-teal-800 dark:text-white font-bold text-lg mb-4 flex items-center gap-2"><Trees size={18} className="text-emerald-500"/> {t.landing.servicesTitle}</h2>
             <div className="grid grid-cols-1 gap-4 mb-8">
+               {/* AI Card */}
                <button onClick={() => onSelectRole('citizen-ai')} className="bg-white/60 dark:bg-slate-800/60 p-6 rounded-[2rem] shadow-lg shadow-teal-500/5 backdrop-blur-xl flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 dark:bg-teal-900/10 rounded-bl-[100%] z-0" />
                   <div className="w-16 h-16 rounded-2xl bg-teal-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-teal-500/30 z-10"><Bot size={32} /></div>
@@ -1106,6 +1114,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                   <div className="ml-auto text-slate-300 z-10"><ChevronRight size={24}/></div>
                </button>
 
+               {/* Human Card */}
                <button onClick={() => onSelectRole('citizen-human')} className="bg-white/60 dark:bg-slate-800/60 p-6 rounded-[2rem] shadow-lg shadow-emerald-500/5 backdrop-blur-xl flex items-center gap-5 hover:shadow-xl hover:scale-[1.02] transition-all group text-left relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 dark:bg-emerald-900/10 rounded-bl-[100%] z-0" />
                   <div className="w-16 h-16 rounded-2xl bg-emerald-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/30 z-10"><Heart size={32} /></div>
@@ -1117,6 +1126,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                </button>
             </div>
 
+            {/* Breathing Exercise Card */}
             <div className="mb-8">
                <button onClick={() => setShowBreath(true)} className="w-full bg-gradient-to-r from-teal-400 to-emerald-500 text-white p-6 rounded-[2rem] shadow-xl shadow-teal-500/30 flex items-center justify-between group hover:scale-[1.02] transition-transform relative overflow-hidden">
                   <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/20 rounded-full blur-2xl" />
@@ -1128,6 +1138,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
                </button>
             </div>
 
+            {/* Volunteer Card - Enhanced Style */}
             <button onClick={() => onSelectRole('volunteer-login')} className="w-full bg-gradient-to-r from-emerald-600 to-teal-700 p-1 rounded-[2rem] shadow-lg shadow-emerald-500/20 hover:shadow-xl transition-all group mb-8">
                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-[1.8rem] p-5 flex items-center gap-5 h-full w-full">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-110 transition-transform"><HandHeart size={24} /></div>
@@ -1220,6 +1231,7 @@ const MainLayout = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
   
+  // Immediately set local ticket to avoid White Page while waiting for DB sync
   const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
       const ticketId = await createTicket(n, i, p, t); 
       const tempTicket: Ticket = {
@@ -1246,6 +1258,7 @@ const MainLayout = () => {
               {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
+              {/* Pass whole ticket object to avoid async lookup failure */}
               {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
           </div>
       </div>

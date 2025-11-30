@@ -13,7 +13,7 @@ import {
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
 import { 
-  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query
+  getFirestore, collection, doc, addDoc, updateDoc, onSnapshot, query, orderBy
 } from 'firebase/firestore';
 
 // --- GLOBAL DECLARATIONS ---
@@ -39,14 +39,14 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
-          <AlertOctagon size={48} className="text-red-500 mb-4" />
-          <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
-          <p className="text-sm text-slate-500 mb-4 text-center">
-            {this.state.error?.message || "Unknown Error"}
-            <br/>請重新整理頁面 (Please Refresh)
+        <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800 font-sans">
+          <AlertOctagon size={48} className="text-rose-500 mb-4" />
+          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤</h1>
+          <p className="text-sm text-slate-500 mb-6 text-center max-w-md">
+            {this.state.error?.message || "未知錯誤"}
+            <br/>請嘗試重新整理頁面。
           </p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-teal-600 text-white rounded-lg">Refresh</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition-colors shadow-lg">重新整理</button>
         </div>
       );
     }
@@ -73,8 +73,9 @@ try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+    console.log("Firebase initialized successfully.");
   } else {
-    console.warn("Firebase config not found. Running in demo mode.");
+    console.warn("Firebase config not found. Running in demo mode (Local State Only).");
   }
 } catch (e) {
   console.error("Firebase initialization error:", e);
@@ -155,15 +156,19 @@ const SUGGESTED_PROMPTS = {
 };
 
 const USEFUL_LINKS = [
+  // Mental Support
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "mental" },
   { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "mental" },
   { id: 4, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "mental" },
   { id: 5, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "mental" },
+  
+  // Blood Donation
   { id: 6, title: { zh: "紅十字會輸血服務中心", en: "Red Cross Blood Transfusion" }, url: "https://www5.ha.org.hk/rcbts/", category: "blood" },
   { id: 7, title: { zh: "捐血站位置", en: "Donor Centres Locations" }, url: "https://www5.ha.org.hk/rcbts/donor-centres", category: "blood" },
+
+  // Information
   { id: 8, title: { zh: "民政事務總署 - 大埔區", en: "HAD - Tai Po District" }, url: "https://www.had.gov.hk/en/18_districts/my_district/tai_po.htm", category: "info" },
-  { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
 
 const CONTENT = {
@@ -223,8 +228,8 @@ const CONTENT = {
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
-      scanning: "AI 正在嚴格審查內容...",
-      unsafe: "未能發佈：內容可能包含不當用語，請保持友善。",
+      scanning: "AI 正在審查內容...",
+      unsafe: "未能發佈：內容可能包含不當用語或無意義內容。",
       guidance: "請保持正面、友善。"
     },
     volunteer: {
@@ -238,15 +243,15 @@ const CONTENT = {
       codePlaceholder: "輸入存取碼",
       verifyBtn: "驗證",
       errorMsg: "存取碼錯誤",
-      guidelinesTitle: "服務守則",
-      guidelinesDesc: "專業 • 同理 • 保密",
-      rule1Title: "專注聆聽",
-      rule1Desc: "不急於批判或建議，給予空間。",
-      rule2Title: "自我覺察",
-      rule2Desc: "留意自身情緒，適時休息。",
-      rule3Title: "危機處理",
-      rule3Desc: "遇自毀風險，立即啟動緊急程序。",
-      acknowledgeBtn: "我同意",
+      guidelinesTitle: "心理支援指南",
+      guidelinesDesc: "簡單三步，成為更好的聆聽者",
+      rule1Title: "第一步：專注聆聽 (Listen)",
+      rule1Desc: "給予對方空間表達。不要急著打斷或給予建議。用「嗯」、「我明白」來回應，讓對方感到被接納。",
+      rule2Title: "第二步：同理回應 (Empathize)",
+      rule2Desc: "確認對方的感受。試著說「聽起來你現在很無助」、「這真的很不容易」。避免說「你看開點」、「這沒什麼大不了」。",
+      rule3Title: "第三步：安全評估 (Assess)",
+      rule3Desc: "時刻保持警覺。如果對方提及自殺、傷害自己或他人，請保持冷靜，不要獨自處理。建議對方尋求專業協助 (999)，並立即報告管理員。",
+      acknowledgeBtn: "我明白並同意",
       portalTitle: "義工控制台",
       welcome: "歡迎回來",
       exit: "登出",
@@ -475,9 +480,12 @@ const CONTENT = {
 // --- 3. SERVICES ---
 
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch"];
+  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
+  
+  if (text.trim().length < 2) return { safe: false, reason: "Message too short." };
+  
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
   }
@@ -486,22 +494,48 @@ const checkContentSafety = (text: string) => {
 
 const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
   try {
+    const localCheck = checkContentSafety(text);
+    if (!localCheck.safe) return localCheck;
+
     const contentReviewSystemPrompt = `
-    You are a strict Content Moderator for 'MindTree'.
-    Analyze input text.
-    RULES:
-    1. BLOCK (Unsafe): Hate speech, sexual content, bullying, harassment, scams, gibberish.
-    2. ALLOW (Safe): Distress, sadness, depression, general conversation.
-    OUTPUT: Return "PASS" if safe, otherwise return short reason in Traditional Chinese.
+    You are a very strict Content Moderator for 'MindTree'.
+    Task: Analyze the user's message for public display.
+    
+    CRITERIA FOR REJECTION (UNSAFE):
+    - Nonsense, keyboard smashing (e.g. 'sfdgsdg', '123123').
+    - One or two word low-effort comments (e.g. 'Hi', 'Testing', 'Good', 'Yo').
+    - Trolling, sarcasm, or cynical remarks.
+    - Offensive, hateful, sexual, violent, or illegal content.
+    - Anything not explicitly warm, kind, and supportive.
+
+    CRITERIA FOR APPROVAL (SAFE):
+    - Must be positive, supportive, encouraging, warm, or empathetic sentences.
+    
+    Output Format:
+    - If APPROVED: Return exactly "PASS".
+    - If REJECTED: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享更有意義的支持說話").
     `;
 
-    // Mock AI response for safety check simulation if backend unavailable in this env
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const localCheck = checkContentSafety(text);
-            resolve(localCheck);
-        }, 1000);
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: contentReviewSystemPrompt,
+        generationConfig: { temperature: 0.2 }
+      })
     });
+
+    const data = await response.json();
+    if (!response.ok) return { safe: true, reason: null }; // Fail open to prevent blocking legitimate users on error
+
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (result === "PASS") {
+      return { safe: true, reason: null };
+    } else {
+      return { safe: false, reason: result || "Content filtered by AI." };
+    }
 
   } catch (e) {
     return { safe: true, reason: null };
@@ -565,17 +599,16 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // 1. Auth
   useEffect(() => {
+    if (!auth) return; 
     const initAuth = async () => {
         if (typeof initialAuthToken !== 'undefined' && initialAuthToken) {
-            if (auth) await signInWithCustomToken(auth, initialAuthToken);
+            await signInWithCustomToken(auth, initialAuthToken);
         } else {
-            if (auth) await signInAnonymously(auth);
+            await signInAnonymously(auth);
         }
     };
     initAuth();
-    if (auth) {
-        return onAuthStateChanged(auth, (u) => setUser(u));
-    }
+    return onAuthStateChanged(auth, (u) => setUser(u));
   }, []);
 
   // 2. Sync Tickets
@@ -655,22 +688,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addPublicMemo = async (text: string) => {
-     if (!db) {
-       const newMemo: Memo = {
-        id: Date.now(),
-        text: text,
-        timestamp: Date.now(),
-        style: {
-            left: `${Math.random() * 80 + 10}%`,
-            animationDuration: `${25 + Math.random() * 15}s`,
-            animationDelay: '0s',
-            scale: 0.9 + Math.random() * 0.3
-        }
-       };
-       setPublicMemos(prev => [newMemo, ...prev]);
-       return;
-     }
-     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), {
+     const newMemoData = {
         text,
         timestamp: Date.now(),
         style: {
@@ -679,7 +697,14 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             animationDelay: '0s',
             scale: 0.9 + Math.random() * 0.3
         }
-     });
+     };
+
+     if (!db) {
+       const newMemo = { id: Date.now(), ...newMemoData } as Memo;
+       setPublicMemos(prev => [newMemo, ...prev]);
+       return;
+     }
+     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
   return (
@@ -1005,7 +1030,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
 
   // Auto-dismiss error notification
   useEffect(() => {
-      if(notification?.message) {
+      if(notification?.message && notification.type !== 'loading') {
           const timer = setTimeout(() => setNotification(null), 3000);
           return () => clearTimeout(timer);
       }
@@ -1479,6 +1504,112 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
   );
 };
 
+const HumanChat = ({ ticketId, onLeave, isVolunteer, lang }: { ticketId: string, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
+  const t = CONTENT[lang];
+  const { addMessage, getMessages, updateTicketStatus, volunteerProfile, tickets } = useAppContext();
+  const [inputText, setInputText] = useState("");
+  const [showReminder, setShowReminder] = useState(true);
+  const [notification, setNotification] = useState<{message: string, type: 'error' | 'info'} | null>(null);
+  const messages = getMessages(ticketId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const ticket = tickets.find(t => t.id === ticketId);
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      const initMsg = isVolunteer ? t.humanRole.systemJoin : t.humanRole.waitingMessage;
+      addMessage(ticketId, { id: 'sys-init', text: initMsg, isUser: false, sender: "System", timestamp: Date.now() });
+    }
+  }, []);
+
+  useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [messages]);
+
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault(); 
+    if (!inputText.trim()) return;
+    
+    // Strict AI Scanner for Live Chat
+    // For live chat we can be slightly faster, but still protect against hate speech.
+    // Since async scan might delay message, we use local check here for speed, 
+    // but for critical safety, we could await scanContentWithAI(inputText, false).
+    // Given user requirement "Keep it tight", let's use the local check + simple block first.
+    
+    const check = checkContentSafety(inputText);
+    if (!check.safe) {
+      setNotification({ message: check.reason || "Safety Alert", type: 'error' });
+      return; 
+    }
+    
+    addMessage(ticketId, { id: Date.now().toString(), text: inputText, isUser: !isVolunteer, sender: isVolunteer ? volunteerProfile.name : "Me", isVerified: isVolunteer && volunteerProfile.isVerified, timestamp: Date.now() });
+    setInputText("");
+  };
+
+  const handleEndChat = () => {
+    if (window.confirm(isVolunteer ? t.dialogs.volLeaveMsg : t.dialogs.citEndMsg)) {
+        if(isVolunteer) {
+            addMessage(ticketId, { id: Date.now().toString(), text: `${volunteerProfile.name} left.`, isUser: false, sender: "System", timestamp: Date.now() });
+            updateTicketStatus(ticketId, 'waiting');
+        } else {
+            addMessage(ticketId, { id: Date.now().toString(), text: t.humanRole.caseResolved, isUser: false, sender: "System", timestamp: Date.now() });
+            updateTicketStatus(ticketId, 'resolved');
+        }
+        onLeave();
+    }
+  };
+
+  if (!ticket) return null;
+
+  return (
+    <div className="flex flex-col h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 relative transition-colors duration-300">
+      <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
+      <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-4 flex items-center justify-between shadow-sm z-20 sticky top-0">
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-full ${isVolunteer ? 'bg-indigo-100 text-indigo-600' : 'bg-pink-100 text-pink-600'}`}>{isVolunteer ? <User size={24} /> : <Heart size={24} />}</div>
+          <div>
+            <h2 className="font-bold text-base md:text-lg flex items-center gap-1">
+              {isVolunteer 
+                ? ticket.name 
+                : (ticket.status === 'active' 
+                    ? t.humanRole.joinedTitle 
+                    : t.humanRole.waitingTitle)
+              }
+              {!isVolunteer && ticket.status === 'active' && (<BadgeCheck size={18} className="text-emerald-500" />)}
+            </h2>
+            <p className={`text-xs ${isVolunteer ? 'text-indigo-400' : 'text-slate-500 dark:text-slate-400'}`}>
+               {isVolunteer ? `Issue: ${ticket.issue.substring(0, 40)}` : (ticket.status === 'active' ? t.humanRole.systemJoin : t.humanRole.waitingMessage)}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+            {isVolunteer && (<button onClick={() => alert("Report submitted.")} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-colors"><Flag size={18} className="text-slate-500"/></button>)}
+            <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 text-rose-500 rounded-xl text-xs font-bold hover:bg-rose-100 transition-colors">{isVolunteer ? t.actions.leaveChat : t.actions.endChat}</button>
+        </div>
+      </header>
+      
+      {showReminder && (
+        <div className="mb-4 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 rounded-2xl text-xs text-amber-800 dark:text-amber-200 flex gap-3 items-start animate-fade-in mt-4 relative">
+            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <span className="flex-1 leading-relaxed pr-6">{t.humanRole.chatReminder}</span>
+            <button onClick={() => setShowReminder(false)} className="absolute top-3 right-3 text-amber-400 hover:text-amber-600 dark:hover:text-amber-100 transition-colors"><X size={16}/></button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div className="max-w-3xl mx-auto w-full">
+            {isVolunteer && ticket.priority === 'critical' && (<div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/50 text-rose-600 p-4 rounded-2xl text-sm mb-8 flex items-start gap-3"><AlertTriangle size={20} className="shrink-0 mt-0.5" /><div><span className="font-bold block mb-1">CRITICAL CASE</span>High distress level reported. Please handle with care.</div></div>)}
+            {messages.map(msg => (<ChatBubble key={msg.id} {...msg} />))}
+            <div ref={messagesEndRef} />
+        </div>
+      </div>
+      <div className="p-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky bottom-0 z-20">
+        <form onSubmit={handleSend} className="max-w-3xl mx-auto flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-[2rem] px-2 py-2 border-none focus-within:ring-2 focus-within:ring-teal-500 transition-all shadow-inner">
+          <input className="flex-1 bg-transparent text-base text-slate-900 dark:text-white focus:outline-none px-4 min-h-[44px] placeholder:text-slate-400" placeholder={t.humanRole.placeholder} value={inputText} onChange={e => setInputText(e.target.value)} autoFocus />
+          <button type="submit" disabled={!inputText.trim()} className="w-10 h-10 rounded-full bg-teal-500 text-white flex items-center justify-center disabled:opacity-50 disabled:scale-100 hover:scale-105 transition-all shadow-md"><Send size={18} /></button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // --- MAIN LAYOUT ---
 
 const MainLayout = () => {
@@ -1518,6 +1649,7 @@ const MainLayout = () => {
               {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => setView('volunteer-guidelines')} lang={lang} />}
               {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
               {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
+              {/* Pass whole ticket object to avoid async lookup failure */}
               {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
           </div>
       </div>

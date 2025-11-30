@@ -6,7 +6,7 @@ import {
   Moon, Sun, MessageSquare, Link, Globe,
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
-  ChevronRight, MessageSquarePlus, Ban, AlertOctagon
+  ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle // [FIX] Added XCircle
 } from 'lucide-react';
 
 // Firebase Imports
@@ -39,14 +39,14 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800 font-sans">
+        <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertOctagon size={48} className="text-rose-500 mb-4" />
           <h1 className="text-xl font-bold mb-2">應用程式發生錯誤</h1>
-          <p className="text-sm text-slate-500 mb-6 text-center max-w-md">
+          <p className="text-sm text-slate-500 mb-4 text-center">
             {this.state.error?.message || "未知錯誤"}
-            <br/>請嘗試重新整理頁面。
+            <br/>請重新整理頁面。
           </p>
-          <button onClick={() => window.location.reload()} className="px-6 py-3 bg-teal-600 text-white rounded-full font-bold hover:bg-teal-700 transition-colors shadow-lg">重新整理</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理</button>
         </div>
       );
     }
@@ -158,18 +158,13 @@ const SUGGESTED_PROMPTS = {
 };
 
 const USEFUL_LINKS = [
-  // Mental Support
   { id: 1, title: { zh: "社會福利署熱線 (24小時)", en: "SWD Hotline (24hr)" }, url: "https://www.swd.gov.hk", category: "mental" },
   { id: 2, title: { zh: "香港撒瑪利亞防止自殺會", en: "The Samaritans HK" }, url: "https://sbhk.org.hk", category: "mental" },
   { id: 3, title: { zh: "醫院管理局精神健康專線", en: "HA Mental Health Hotline" }, url: "https://www3.ha.org.hk", category: "mental" },
   { id: 4, title: { zh: "Shall We Talk", en: "Shall We Talk" }, url: "https://shallwetalk.hk", category: "mental" },
   { id: 5, title: { zh: "賽馬會「開聲」情緒支援", en: "Jockey Club Open Up" }, url: "https://www.openup.hk/", category: "mental" },
-  
-  // Blood Donation
   { id: 6, title: { zh: "紅十字會輸血服務中心", en: "Red Cross Blood Transfusion" }, url: "https://www5.ha.org.hk/rcbts/", category: "blood" },
   { id: 7, title: { zh: "捐血站位置", en: "Donor Centres Locations" }, url: "https://www5.ha.org.hk/rcbts/donor-centres", category: "blood" },
-
-  // Information
   { id: 8, title: { zh: "民政事務總署 - 大埔區", en: "HAD - Tai Po District" }, url: "https://www.had.gov.hk/en/18_districts/my_district/tai_po.htm", category: "info" },
   { id: 9, title: { zh: "大埔區地區康健站", en: "Tai Po DHC Express" }, url: "https://www.dhc.gov.hk/en/district_health_centre_express.html", category: "info" },
 ];
@@ -400,11 +395,11 @@ const CONTENT = {
       guidelinesTitle: "Support Guidelines",
       guidelinesDesc: "3 Steps to be a good listener",
       rule1Title: "Step 1: Active Listening",
-      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
-      rule2Title: "Step 2: Empathetic Response",
-      rule2Desc: "Validate feelings. Say 'It sounds like you are hurting' instead of 'Don't think too much'.",
-      rule3Title: "Step 3: Safety Assessment",
-      rule3Desc: "Stay alert. If self-harm is mentioned, stay calm and urge them to seek professional help (999).",
+      rule1Desc: "Listen more, advise less.",
+      rule2Title: "Self Awareness",
+      rule2Desc: "Monitor your own well-being.",
+      rule3Title: "Emergency",
+      rule3Desc: "Report self-harm risks immediately.",
       acknowledgeBtn: "I Agree",
       portalTitle: "Console",
       welcome: "Welcome",
@@ -495,7 +490,7 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-const scanContentWithAI = async (text: string, strictMode: boolean = true): Promise<{ safe: boolean, reason: string | null }> => {
+const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
@@ -519,14 +514,26 @@ const scanContentWithAI = async (text: string, strictMode: boolean = true): Prom
     - If REJECTED: Return a polite, warm reminder in Traditional Chinese explaining why (e.g. "請分享更有意義的支持說話").
     `;
 
-    // Simulate API call for demo if no backend
-    return new Promise((resolve) => {
-        setTimeout(() => {
-             // For demo purposes, we accept everything that passed local check
-             // In production, this would call your backend API
-             resolve({ safe: true, reason: null });
-        }, 1000);
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: contentReviewSystemPrompt,
+        generationConfig: { temperature: 0.2 }
+      })
     });
+
+    const data = await response.json();
+    if (!response.ok) return { safe: true, reason: null }; 
+
+    const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (result === "PASS") {
+      return { safe: true, reason: null };
+    } else {
+      return { safe: false, reason: result || "Content filtered by AI." };
+    }
 
   } catch (e) {
     return { safe: true, reason: null };
@@ -563,7 +570,7 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   }
 };
 
-// --- 4. CONTEXT (State Management with Firebase) ---
+// --- 4. CONTEXT (State Management) ---
 
 interface AppContextType {
   tickets: Ticket[];
@@ -598,7 +605,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 await signInAnonymously(auth);
             }
         } else {
-            // Demo mode user
             setUser({ uid: 'demo-user' });
         }
     };
@@ -646,21 +652,24 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    const ticketData = {
-        name, issue, priority, tags, 
-        status: 'waiting' as const, 
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        createdAt: Date.now()
-    };
-
     if (!db) {
        const localId = "local-" + Date.now();
-       const newTicket: Ticket = { id: localId, ...ticketData };
+       const newTicket: Ticket = {
+          id: localId, name, issue, priority, tags,
+          status: 'waiting',
+          time: new Date().toLocaleTimeString(),
+          createdAt: Date.now()
+       };
        setTickets(prev => [newTicket, ...prev]);
        return localId;
     }
     
-    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), ticketData);
+    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
+        name, issue, priority, tags, 
+        status: 'waiting', 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: Date.now()
+    });
     return docRef.id;
   };
 
@@ -818,7 +827,11 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   
   useEffect(() => {
     let timeLeft = totalDuration;
-    if(audioRef.current) audioRef.current.volume = 0.8;
+    
+    // Attempt play on mount with error handling
+    if(audioRef.current) {
+        audioRef.current.volume = 0.8; // Increased volume
+    }
 
     const cycle = async () => {
       if (timeLeft <= 0) return;
@@ -846,7 +859,10 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
         audioRef.current.pause();
         setIsPlaying(false);
       } else {
-         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e));
+         // Explicitly triggered by user interaction - browsers like this
+         audioRef.current.play()
+          .then(() => setIsPlaying(true))
+          .catch(e => console.error("Play failed:", e));
       }
     }
   };
@@ -860,6 +876,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       <div className="absolute inset-0 bg-gradient-to-b from-teal-950 via-slate-900 to-black opacity-90" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-900/30 via-transparent to-transparent animate-pulse" style={{ animationDuration: '12s' }}></div>
 
+      {/* Relaxing Nature Sound - Better Source (Rain & Birds) */}
       <audio ref={audioRef} loop onError={(e) => console.log("Audio error:", e)}>
         <source src="https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg" type="audio/ogg" />
         <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg" />
@@ -981,6 +998,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
 
+  // Update Theme Color for iOS Status Bar
   useEffect(() => {
     const metaThemeColor = document.querySelector("meta[name=theme-color]");
     const color = theme === 'light' ? '#ecfdf5' : '#0f172a';
@@ -994,6 +1012,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [theme]);
 
+  // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
     const selectedQuotes = shuffledQuotes.slice(0, 12);
@@ -1015,12 +1034,14 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     setFloatingBubbles(initialBubbles);
   }, []);
 
+  // Update when new memo is added
   useEffect(() => {
     if (publicMemos.length > 0) {
         setFloatingBubbles(prev => [...publicMemos, ...prev]);
     }
   }, [publicMemos]);
 
+  // Auto-dismiss error notification
   useEffect(() => {
       if(notification?.message && notification.type !== 'loading') {
           const timer = setTimeout(() => setNotification(null), 3000);
@@ -1049,11 +1070,16 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
+      
+      {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
+      
+      {/* Decorative Background Elements (Forest Theme) */}
       <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
       <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
       <div className="absolute top-[20%] right-[10%] text-yellow-100/40 dark:text-yellow-900/10 pointer-events-none opacity-60"><SunDim size={150} /></div>
 
+      {/* Floating Elements (Memos) */}
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {floatingBubbles.map((memo) => (

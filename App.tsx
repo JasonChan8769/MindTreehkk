@@ -107,7 +107,6 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
-  // Added 'volunteer_left' status to handle the new logic
   status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
   time: string;
   createdAt: number;
@@ -144,6 +143,7 @@ export interface Memo {
 
 // --- 2. CONSTANTS & CONTENT ---
 
+// Expanded AI Quotes for more variety
 const AI_QUOTES = [
   "You are not alone.", "這裡有我。", 
   "Take a deep breath.", "深呼吸，慢慢黎。",
@@ -160,10 +160,34 @@ const AI_QUOTES = [
   "Sending you strength.", "俾啲力量你。",
   "Just breathe.", "靜心呼吸。",
   "There is hope.", "總會有希望。",
-  "Be kind to yourself.", "對自己好啲。"
+  "Be kind to yourself.", "對自己好啲。",
+  "Rest if you must.", "休息係為了走更長的路。",
+  "Small steps also count.", "小步前進都係進步。",
+  "Embrace your feelings.", "擁抱自己嘅情緒。",
+  "Tomorrow is a new day.", "聽日又係新嘅開始。",
+  "Your feelings are valid.", "你嘅感受係真實嘅。",
+  "Let it go.", "放手啦，放過自己。",
+  "Peace starts within.", "平靜由心開始。",
+  "Trust the process.", "相信過程。",
+  "You are loved.", "你是被愛的。",
+  "Stay strong.", "頂住。",
+  "Look up at the sky.", "望下個天。",
+  "Listen to the rain.", "聽下雨聲。",
+  "It's okay to pause.", "停一停，無所謂。",
+  "Gentle reminder: drink water.", "飲啖水先。",
+  "Self-care isn't selfish.", "愛自己唔係自私。",
+  "You are enough.", "你已經做得好好。",
+  "Don't give up.", "唔好放棄。",
+  "Every storm runs out of rain.", "風雨總會過去。",
+  "Find joy in little things.", "尋找微小的快樂。",
+  "Keep going.", "繼續行落去。",
+  "Breathe in peace.", "吸入平靜。",
+  "Breathe out stress.", "呼出壓力。",
+  "Be your own best friend.", "做自己最好嘅朋友。",
+  "Growth takes time.", "成長需要時間。"
 ];
 
-const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋"];
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🌊", "🌙", "⭐", "🍀", "🌺"];
 
 const SUGGESTED_PROMPTS = {
   zh: ["我覺得好不安...", "我想搵人傾計", "最近訓得唔好", "對於未來好迷惘"],
@@ -270,6 +294,7 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
+      volEndChatConfirm: "確定結束對話？求助者將會收到通知。",
       cancelWait: "取消等待",
       // New Content for Volunteer Leaving
       volLeftTitle: "輔導員已離開",
@@ -283,7 +308,7 @@ const CONTENT = {
       cheerUp: "社區心聲",
       label: "留低一句",
       title: "留低一句說話",
-      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。",
+      desc: "你的訊息將會「即時」顯示在首頁的漂浮氣泡中。請發放正能量，支持身邊人。(訊息保留 5 分鐘)",
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
@@ -441,6 +466,7 @@ const CONTENT = {
       chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited. Do not share sensitive personal info (e.g., full name, address, ID).",
       scanBlock: "Message blocked: AI detected inappropriate content.",
       endChatConfirm: "End chat and delete logs?",
+      volEndChatConfirm: "End chat? The user will be notified.",
       cancelWait: "Cancel Waiting",
       // New Content for Volunteer Leaving
       volLeftTitle: "Counselor Left",
@@ -454,7 +480,7 @@ const CONTENT = {
       cheerUp: "Community Voices",
       label: "Leave a Note",
       title: "Leave a Message",
-      desc: "Your message will appear 'instantly' in the floating bubbles on the home page. Spread positivity.",
+      desc: "Your message will appear 'instantly' in the floating bubbles on the home page. Spread positivity. (Lasts 5 mins)",
       placeholder: "Write your blessing or feelings...",
       btn: "Post",
       success: "Posted successfully!",
@@ -753,12 +779,18 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // 4. Sync Memos
+  // 4. Sync Memos (Filtered by Time - 5 minutes)
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
+        const now = Date.now();
+        const fiveMinutes = 5 * 60 * 1000;
+        
+        const loadedMemos = snapshot.docs
+            .map(d => ({ id: d.id, ...d.data() } as unknown as Memo))
+            .filter(m => (now - m.timestamp) < fiveMinutes); // Only keep recent memos
+
         loadedMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         setPublicMemos(loadedMemos.slice(0, 15)); 
     }, (err) => console.log("Memo sync error:", err));
@@ -1204,10 +1236,10 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
     }
   }, [theme]);
 
-  // Init with quotes
+  // Init with quotes (More varied)
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
-    const selectedQuotes = shuffledQuotes.slice(0, 12);
+    const selectedQuotes = shuffledQuotes.slice(0, 15);
     const initialBubbles = selectedQuotes.map((quote, index) => {
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
@@ -1784,7 +1816,7 @@ const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 
 };
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean }) => {
-  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, deleteTicket, updateTicketStatus, lang } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, updateTicketStatus, deleteTicket, lang } = useAppContext();
   const t = CONTENT[lang].humanRole;
   
   const [text, setText] = useState("");
@@ -1849,6 +1881,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
   };
 
   const handleEndChat = async () => {
+      // For Citizen: Really end it
       if(window.confirm(t.endChatConfirm)) {
           await endSession(ticketId);
           onLeave();
@@ -1860,11 +1893,11 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
       onLeave();
   };
 
-  // --- NEW: Handle Volunteer Leaving ---
-  const handleVolunteerLeave = async () => {
-      if(window.confirm((t as any).volLeaveConfirm)) {
+  // --- MODIFIED: Handle Volunteer Leaving/Ending ---
+  const handleVolunteerEndChat = async () => {
+      // Instead of ending directly, we set status to 'volunteer_left'
+      if(window.confirm((t as any).volEndChatConfirm || "End chat? The user will be notified.")) {
           await leaveSession(ticketId);
-          // Don't call onLeave() here for Citizen, but for Volunteer yes
           onLeave(); 
       }
   };
@@ -1942,14 +1975,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
          </div>
          
          <div className="flex items-center gap-2">
-             {/* Volunteer LEAVE Button */}
-             {isVolunteer && (
-                 <button onClick={handleVolunteerLeave} className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-full transition-colors flex items-center gap-1" title="Leave (Unassign)">
-                     <UserMinus size={14}/> 
-                 </button>
-             )}
-             
-             <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+             <button onClick={isVolunteer ? handleVolunteerEndChat : handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
                  <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
              </button>
          </div>

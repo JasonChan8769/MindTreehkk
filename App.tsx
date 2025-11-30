@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link // Added missing Link import
+  Link 
 } from 'lucide-react';
 
 // Firebase Imports
@@ -53,8 +53,11 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 // --- FIREBASE CONFIGURATION ---
-const firebaseConfig = {
-  apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
+// SECURITY NOTE: We removed the hardcoded key. 
+// This should use the environment injected config or a safe public firebase config.
+// Do NOT put your Gemini API Key here.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+  apiKey: "YOUR_PUBLIC_FIREBASE_API_KEY", // Placeholder: Replace with your PUBLIC Firebase Key if running locally
   authDomain: "mindtreehk.firebaseapp.com",
   projectId: "mindtreehk",
   storageBucket: "mindtreehk.firebasestorage.app",
@@ -73,7 +76,7 @@ try {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  console.log("Firebase initialized with MindTree config.");
+  console.log("Firebase initialized.");
 } catch (e) {
   console.error("Firebase initialization error:", e);
 }
@@ -134,7 +137,6 @@ export interface Memo {
 
 // --- 2. CONSTANTS & CONTENT ---
 
-// Massively expanded for variety and positive energy
 const AI_QUOTES = [
   // English Encouragement
   "You are not alone.", "Take a deep breath.", "It's okay not to be okay.", "We are here for you.",
@@ -378,169 +380,10 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
-  },
-  en: {
-    appTitle: "MindTree",
-    appSubtitle: "Your Safe Haven • Support for All",
-    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
-    intro: {
-      welcome: "Welcome to MindTree",
-      desc: "A safe, private, and secure space for mental support.\nNo matter how you feel, we are here with you.",
-      slide1Title: "AI & Human Collaboration",
-      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
-      slide2Title: "Absolute Privacy",
-      slide2Desc: "End-to-end encryption concepts used. Only the treehole knows your secrets.",
-      startBtn: "Start Journey"
-    },
-    landing: {
-      servicesTitle: "Select Service",
-      breathTitle: "Breathing Exercise",
-      breathDesc: "Guided • 60s Relax",
-      startBreath: "Start",
-      aiCard: { title: "AI Treehole", desc: "24/7 Listening • Instant Reply" },
-      humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
-      volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
-      feedback: "Feedback"
-    },
-    landingNotice: {
-      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
-      rules: "Please be respectful. In case of emergency, call 999."
-    },
-    aiRole: {
-      title: "AI Treehole",
-      welcome: "Hello, I'm MindTree. I know things might be tough lately. Want to talk about it?",
-      placeholder: "Type your thoughts here...",
-      disclaimer: "AI content for reference only."
-    },
-    humanRole: {
-      title: "Counselor",
-      waitingTitle: "Matching you with a volunteer...",
-      waitingMessage: "We are contacting online volunteers, please wait a moment...",
-      joinedTitle: "Counselor Joined",
-      systemJoin: "System: Counselor has joined",
-      headerVerified: "Social Worker",
-      headerPeer: "Peer Volunteer",
-      report: "Report User",
-      reportSuccess: "User reported. Admins will review logs.",
-      caseResolved: "Chat ended. Data destroyed.",
-      placeholder: "Type a message...",
-      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info (Full Name, Address, Phone, ID).",
-      scanBlock: "Message blocked: AI detected inappropriate content.",
-      endChatConfirm: "End chat and delete history?",
-      cancelWait: "Cancel Waiting"
-    },
-    memo: {
-      cheerUp: "Community Voices",
-      label: "Leave a Note",
-      title: "Leave a Positive Note",
-      desc: "Your message will float on the home screen instantly. Spread positivity. (Messages last 5 mins). No hate/spam/trolling.",
-      placeholder: "Write your blessing or feeling...",
-      btn: "Post",
-      success: "Posted successfully!",
-      scanning: "AI is reviewing content...",
-      unsafe: "Failed: Content may contain inappropriate language.",
-      guidance: "Please stay positive and kind."
-    },
-    volunteer: {
-      login: "Volunteer Login",
-      authTitle: "Volunteer Portal",
-      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.", 
-      nameLabel: "Display Name",
-      namePlaceholder: "e.g. Alex",
-      joinBtn: "Enter Platform",
-      proJoinTitle: "Professional Access",
-      codePlaceholder: "Access Code",
-      verifyBtn: "Enter Platform", 
-      errorMsg: "Invalid Code",
-      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Steps to be a better listener",
-      rule1Title: "Step 1: Listen",
-      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
-      rule2Title: "Step 2: Empathize",
-      rule2Desc: "Validate feelings. Say 'That sounds tough', 'I hear you'. Avoid 'Just get over it'.",
-      rule3Title: "Step 3: Assess Safety",
-      rule3Desc: "Stay alert. If self-harm/suicide is mentioned, stay calm. Recommend professional help (999) and report to admin immediately.",
-      acknowledgeBtn: "I Understand & Agree",
-      portalTitle: "Dashboard",
-      welcome: "Welcome back",
-      exit: "Logout",
-      activeRequests: "Active Cases",
-      noRequests: "No new cases",
-      accept: "Accept",
-      topic: "Issue",
-      priority: { critical: "Urgent", high: "High", medium: "Med", low: "Low" },
-      tabRequests: "Requests",
-      tabFeedback: "Feedback",
-      noFeedbacks: "No feedback yet",
-      exportCSV: "Export CSV"
-    },
-    intake: {
-      title: "Intake Form",
-      desc: "Help us understand your needs",
-      q1: "Nickname (Anonymous)",
-      q1_placeholder: "Nickname",
-      q_age: "Age Group",
-      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
-      q_gender: "Gender",
-      q_gender_opts: ["Male", "Female", "Other"],
-      q3: "Distress Level (1-5)",
-      q4: "Main Issue",
-      q4_opt1: "Anxiety / Panic",
-      q4_opt2: "Low Mood / Depression",
-      q4_opt3: "Family / Housing",
-      q4_opt4: "Self-harm Thoughts (Urgent)",
-      q5: "Details (Optional)",
-      q5_placeholder: "Brief description...",
-      submit: "Start Matching",
-      calm: "Calm",
-      crisis: "Crisis"
-    },
-    links: {
-      btn: "Resources",
-      title: "Community Resources",
-      desc: "Mental support, blood donation, and useful info.",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Useful Info"
-    },
-    feedback: {
-      title: "Feedback",
-      desc: "Your feedback matters to us.",
-      placeholder: "Type your feedback...",
-      submit: "Send",
-      thanks: "Thank you! We will look into it."
-    },
-    breath: {
-      inhale: "Inhale",
-      hold: "Hold",
-      exhale: "Exhale",
-      relax: "Relax",
-      musicOn: "Music On",
-      musicOff: "Mute",
-      playErr: "Tap to Play Music"
-    },
-    footer: {
-      legal: "Disclaimer: Run by volunteers for peer support only. Not a medical service. In emergencies, call 999."
-    },
-    actions: {
-      back: "Back",
-      cancel: "Cancel",
-      endChat: "End",
-      leaveChat: "Leave"
-    },
-    dialogs: {
-      volLeaveMsg: "Return case to queue?",
-      citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info."
-    }
   }
 };
 
-// --- 3. SERVICES (UPDATED WITH VERCEL + FALLBACK) ---
+// --- 3. SERVICES ---
 
 const checkContentSafety = (text: string) => {
   const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾", "dlkh", "on9"];
@@ -555,7 +398,7 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
-// STRICT AI CONTENT MODERATOR
+// STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     // 1. Basic Local Check first
@@ -587,64 +430,49 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     - If unsafe: Return a short, polite reason in Traditional Chinese (e.g. "內容未能通過審查，請保持正面。").
     `;
 
-    const vercelMessages = [
-      { role: 'system', content: systemInstruction },
-      { role: 'user', content: `Review this message: "${text}"` }
-    ];
+    // 3. Connect to Vercel (Primary & Only Source)
+    // NOTE: If this fails with 500, please check your Vercel logs. 
+    // The previous error suggests the Vercel backend might be crashing on the payload format.
+    // I am using the standard format here.
+    const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: `Review this message: "${text}"` }
+            ],
+            model: 'gemini-2.5-flash-preview-09-2025'
+        })
+    });
 
-    // 3. Connect to Vercel (Primary)
-    try {
-        const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                messages: vercelMessages,
-                model: 'gemini-2.5-flash-preview-09-2025'
-            })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            let aiRes = "";
-            if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
-                aiRes = data.candidates[0].content.parts[0].text.trim();
-            } else if (data.text) {
-                aiRes = data.text.trim();
-            } else if (typeof data === 'string') {
-                aiRes = data.trim();
-            }
-            
-            if (aiRes.includes("PASS")) return { safe: true, reason: null };
-            return { safe: false, reason: aiRes || "AI 審查未通過" };
-        }
-        throw new Error("Vercel Scan Failed");
-    } catch (vercelError) {
-        console.warn("Vercel Scan Failed, trying proxy...", vercelError);
-        // 4. Fallback to Env Proxy
-        const apiKey = ""; // Use Env Proxy
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: systemInstruction + "\nMessage: " + text }] }]
-            })
-        });
-        
+    if (response.ok) {
         const data = await response.json();
-        const aiRes = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        let aiRes = "";
         
-        if (aiRes && aiRes.includes("PASS")) return { safe: true, reason: null };
-        return { safe: false, reason: aiRes || "內容審查未能通過 (Proxy)" };
+        // Handle various response structures
+        if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+            aiRes = data.candidates[0].content.parts[0].text.trim();
+        } else if (data.text) {
+            aiRes = data.text.trim();
+        } else if (typeof data === 'string') {
+            aiRes = data.trim();
+        }
+        
+        if (aiRes.includes("PASS")) return { safe: true, reason: null };
+        return { safe: false, reason: aiRes || "AI 審查未通過" };
+    } else {
+        console.error("Vercel Scan Error:", response.status);
+        // If Vercel is down (500), we fallback to local check only to avoid blocking user completely?
+        // User asked for Strict Scanner. If backend is down, we probably shouldn't allow posting unsafe things.
+        // However, to be user friendly, if local check passed, we might let it through or show error.
+        // Let's show connection error so they know scanner is down.
+        return { safe: false, reason: "伺服器連接錯誤，無法驗證內容 (Server Error)" };
     }
 
   } catch (e) {
-    console.error("Scan Error", e);
-    // Fail safe: if AI fails, allow but maybe flag internally. For now, strict fail.
-    // Actually, to avoid frustration if API is down, we might default allow if local check passes, 
-    // BUT user asked for strict scanner. Let's allow if local check passed as a last resort.
-    return { safe: true, reason: null }; 
+    console.error("Scan Connection Error", e);
+    return { safe: false, reason: "網絡錯誤，請稍後再試 (Network Error)" }; 
   }
 };
 
@@ -657,7 +485,8 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   const systemInstruction = SYSTEM_PROMPTS[lang];
   const recentHistory = history.slice(-10);
 
-  const vercelMessages = [
+  // Construct standard OpenAI-like messages array for Vercel AI SDK
+  const messagesPayload = [
     { role: 'system', content: systemInstruction },
     ...recentHistory.map(msg => ({
       role: msg.isUser ? "user" : "assistant",
@@ -666,57 +495,37 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   ];
 
   try {
+    // SECURITY UPDATE: Only connect to Vercel. No client-side fallback.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messages: vercelMessages,
-        model: 'gemini-2.5-flash-preview-09-2025'
+        messages: messagesPayload,
+        model: 'gemini-2.5-flash-preview-09-2025' 
       })
     });
 
     if (response.ok) {
         const data = await response.json();
+        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
         } else if (data.text) {
             return data.text;
-        } else if (data.content) {
-            return data.content;
         } else if (typeof data === 'string') {
             return data;
         }
         return "Thinking...";
     }
     
-    throw new Error(`Vercel API failed with status: ${response.status}`);
+    // If Vercel fails (e.g. 500), throw to catch block
+    throw new Error(`Server returned ${response.status}`);
 
-  } catch (vercelError) {
-    console.error("Vercel Connection Failed:", vercelError);
-    
-    try {
-        const apiKey = ""; 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-        
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ role: "user", parts: [{ text: "System: " + systemInstruction + "\nUser History: " + JSON.stringify(recentHistory) }] }]
-            })
-        });
-
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        
-        if (text) return text;
-        else throw new Error("Gemini API No Data");
-
-    } catch (fallbackError) {
-        return lang === 'zh' 
-            ? "（連接唔到伺服器，請稍後再試 / Server Connection Error）" 
-            : "(Connection failed. Please try again later.)";
-    }
+  } catch (error) {
+    console.error("Vercel AI Error:", error);
+    return lang === 'zh' 
+        ? "（連接伺服器失敗，請檢查 Vercel 設定 / Server Error）" 
+        : "(Connection failed. Please check backend settings.)";
   }
 };
 

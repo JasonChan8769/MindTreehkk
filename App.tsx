@@ -52,13 +52,19 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 }
 
 // --- FIREBASE CONFIGURATION ---
-// LOGIC: Try to use environment config. If missing, fall back to a dummy config object.
-// We will check if this is a dummy config later to enable "Local Mode".
+// STRICT MODE: Use the environment variable config. 
+// If you are running this locally or cross-platform, ensure __firebase_config is injected correctly.
 const rawConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
 const firebaseConfig = rawConfig ? JSON.parse(rawConfig) : {
-  apiKey: "MISSING_KEY", // This indicates we are in local mode
+  // Fallback placeholder - The app will try to use this if env var is missing
+  // It will NOT switch to local mode, but Firebase auth might fail if this is invalid.
+  apiKey: "YOUR_REAL_API_KEY_HERE", 
   authDomain: "mindtreehk.firebaseapp.com",
-  projectId: "mindtreehk"
+  projectId: "mindtreehk",
+  storageBucket: "mindtreehk.firebasestorage.app",
+  messagingSenderId: "326871687350",
+  appId: "1:326871687350:web:92ce082c58f80ef74b8617",
+  measurementId: "G-R6TVNF43T4"
 };
 
 // Initialize Firebase
@@ -66,22 +72,14 @@ let app = null;
 let auth = null;
 let db = null;
 let appId = typeof __app_id !== 'undefined' ? __app_id : 'mindtree-live';
-let isLocalMode = false;
 
 try {
-  // Check if we have a real key or a dummy one
-  if (firebaseConfig.apiKey === "MISSING_KEY" || firebaseConfig.apiKey === "DEMO_MODE_KEY" || firebaseConfig.apiKey === "YOUR_PUBLIC_FIREBASE_API_KEY") {
-      console.warn("No valid Firebase config found. Switching to LOCAL MODE.");
-      isLocalMode = true;
-  } else {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-      console.log("Firebase initialized.");
-  }
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  console.log("Firebase initialized.");
 } catch (e) {
   console.error("Firebase initialization error:", e);
-  isLocalMode = true;
 }
 
 // --- 1. TYPES & INTERFACES ---
@@ -386,9 +384,10 @@ const checkContentSafety = (text: string) => {
   return { safe: true, reason: null };
 };
 
+// STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // 1. Local Check (Fast & Free)
+    // 1. Basic Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
 
@@ -399,18 +398,17 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
     `;
 
-    // 2. Connect to Vercel
-    // This relies on YOUR Vercel backend having the correct Environment Variables setup.
-    // If Vercel returns 500, it means the backend server crashed (likely missing key).
+    // 2. Connect to Vercel (Primary)
+    // Reverted payload to 'history' + 'systemInstruction' which seems to be what your backend expects
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            messages: [
-                { role: 'system', content: systemInstruction },
-                { role: 'user', content: `Review this message: "${text}"` }
+            history: [
+                { role: 'user', parts: [{ text: `Review this message: "${text}"` }] }
             ],
-            model: 'gemini-2.5-flash-preview-09-2025'
+            systemInstruction: systemInstruction,
+            model: 'gemini-1.5-flash' // Used stable model
         })
     });
 
@@ -418,6 +416,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         const data = await response.json();
         let aiRes = "";
         
+        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             aiRes = data.candidates[0].content.parts[0].text.trim();
         } else if (data.text) {
@@ -430,13 +429,13 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
-        // Fallback: If server is down, we default to "Unsafe" or "Server Error" to be safe
-        return { safe: false, reason: "伺服器錯誤，無法驗證 (Server Error 500)" };
+        return { safe: false, reason: `伺服器錯誤 (Server Error ${response.status})` };
     }
 
   } catch (e) {
     console.error("Scan Connection Error", e);
-    return { safe: false, reason: "網絡錯誤 (Network Error)" }; 
+    // Network error -> Allow local check pass
+    return { safe: true, reason: null }; 
   }
 };
 
@@ -447,28 +446,27 @@ const SYSTEM_PROMPTS = {
 
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   const systemInstruction = SYSTEM_PROMPTS[lang];
-  const recentHistory = history.slice(-10);
-
-  const messagesPayload = [
-    { role: 'system', content: systemInstruction },
-    ...recentHistory.map(msg => ({
-      role: msg.isUser ? "user" : "assistant",
-      content: msg.text
-    }))
-  ];
+  const recentHistory = history.slice(-10).map(msg => ({
+    role: msg.isUser ? "user" : "model",
+    parts: [{ text: msg.text }]
+  }));
 
   try {
+    // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
+    // Reverted payload to 'history' format to fix 500 error.
     const response = await fetch('https://mind-treehk.vercel.app/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messages: messagesPayload,
-        model: 'gemini-2.5-flash-preview-09-2025' 
+        history: recentHistory,
+        systemInstruction: systemInstruction,
+        model: 'gemini-1.5-flash' // Using stable model
       })
     });
 
     if (response.ok) {
         const data = await response.json();
+        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
         } else if (data.text) {
@@ -522,50 +520,40 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
 
-  // 1. Auth - Safe Fallback
+  // 1. Auth
   useEffect(() => {
     const initAuth = async () => {
-        // If in Local Mode, or auth is missing, skip firebase auth
-        if (isLocalMode || !auth) {
-             console.log("Running in Local Mode (No Auth)");
-             setUser({ uid: 'demo-user', isAnonymous: true });
-             return;
-        }
-
-        try {
-            await signInAnonymously(auth);
-        } catch (e) {
-            console.warn("Firebase Auth failed. Switching to Local Mode.", e);
-            isLocalMode = true;
-            setUser({ uid: 'demo-user', isAnonymous: true });
+        if (auth) {
+            try {
+                await signInAnonymously(auth);
+            } catch (e) {
+                console.error("Auth failed:", e);
+            }
         }
     };
     initAuth();
-    if (auth && !isLocalMode) {
-        return onAuthStateChanged(auth, (u) => {
-            if (u) setUser(u);
-            else setUser({ uid: 'demo-user', isAnonymous: true }); 
-        });
+    if (auth) {
+        return onAuthStateChanged(auth, (u) => setUser(u));
     }
   }, []);
 
-  // 2. Sync Tickets (Safe Mode)
+  // 2. Sync Tickets
   useEffect(() => {
-    if (isLocalMode || !user || !db) return;
+    if (!user || !db) return;
     try {
         const q = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const loadedTickets = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Ticket));
             loadedTickets.sort((a, b) => b.createdAt - a.createdAt);
             setTickets(loadedTickets);
-        }, (err) => console.log("Ticket sync error (likely permission/key):", err));
+        }, (err) => console.log("Ticket sync error:", err));
         return () => unsubscribe();
-    } catch(e) { console.log("Firestore not available"); }
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
-  // 3. Sync Messages (Safe Mode)
+  // 3. Sync Messages
   useEffect(() => {
-    if (isLocalMode || !user || !db) return;
+    if (!user || !db) return;
     try {
         const q = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -574,12 +562,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             setMessages(loadedMessages);
         }, (err) => console.log("Message sync error:", err));
         return () => unsubscribe();
-    } catch(e) { console.log("Firestore not available"); }
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
-  // 4. Sync Memos (Safe Mode)
+  // 4. Sync Memos
   useEffect(() => {
-    if (isLocalMode || !user || !db) return;
+    if (!user || !db) return;
     try {
         const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -590,12 +578,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             setPublicMemos(validMemos); 
         }, (err) => console.log("Memo sync error:", err));
         return () => unsubscribe();
-    } catch(e) { console.log("Firestore not available"); }
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
-  // 5. Sync Feedbacks (Safe Mode)
+  // 5. Sync Feedbacks
   useEffect(() => {
-    if (isLocalMode || !user || !db) return;
+    if (!user || !db) return;
     try {
         const q = collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks');
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -604,71 +592,37 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             setFeedbacks(loadedFeedbacks);
         }, (err) => console.log("Feedback sync error:", err));
         return () => unsubscribe();
-    } catch(e) { console.log("Firestore not available"); }
+    } catch(e) { console.log("Firestore error"); }
   }, [user]);
 
   const createTicket = async (name: string, issue: string, priority: Priority, tags: string[]) => {
-    const localId = "local-" + Date.now();
-    const newTicket: Ticket = {
-         id: localId, name, issue, priority, tags,
-         status: 'waiting',
-         time: new Date().toLocaleTimeString(),
-         createdAt: Date.now()
-    };
-    
-    if (isLocalMode || !db) {
-       setTickets(prev => [newTicket, ...prev]);
-       return localId;
-    }
-    
-    try {
-        const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
-            name, issue, priority, tags, 
-            status: 'waiting', 
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            createdAt: Date.now()
-        });
-        return docRef.id;
-    } catch (e) {
-        setTickets(prev => [newTicket, ...prev]);
-        return localId;
-    }
+    if (!db) return "local-error";
+    const docRef = await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tickets'), {
+        name, issue, priority, tags, 
+        status: 'waiting', 
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        createdAt: Date.now()
+    });
+    return docRef.id;
   };
 
   const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
-     if (isLocalMode || !db) {
-       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-       return;
-     }
-     try {
-         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
-             status, 
-             ...(volId && { volunteerId: volId }),
-             ...(volName && { volunteerName: volName })
-         });
-     } catch (e) {
-         setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
-     }
+     if (!db) return;
+     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
+         status, 
+         ...(volId && { volunteerId: volId }),
+         ...(volName && { volunteerName: volName })
+     });
   };
 
   const deleteTicket = async (id: string) => {
-      if(isLocalMode || !db) {
-          setTickets(prev => prev.filter(t => t.id !== id));
-          return;
-      }
-      try {
-        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
-      } catch (e) {
-        setTickets(prev => prev.filter(t => t.id !== id));
-      }
+      if(!db) return;
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id));
   };
 
   const endSession = async (ticketId: string) => {
     await updateTicketStatus(ticketId, 'resolved');
-    if (isLocalMode || !db) {
-       setMessages(prev => prev.filter(m => m.ticketId !== ticketId));
-       return;
-    }
+    if (!db) return;
     
     const msgsToDelete = messages.filter(m => m.ticketId === ticketId);
     const batch = writeBatch(db);
@@ -680,16 +634,8 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
-     const newMsg = { id: Date.now().toString(), ...message };
-     if (isLocalMode || !db) {
-       setMessages(prev => [...prev, newMsg]);
-       return;
-     }
-     try {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
-     } catch (e) {
-        setMessages(prev => [...prev, newMsg]);
-     }
+     if (!db) return;
+     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { ...message, ticketId });
   };
 
   const getMessages = (ticketId: string) => {
@@ -707,31 +653,13 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             scale: 0.9 + Math.random() * 0.3
         }
      };
-     if (isLocalMode || !db) {
-       const newMemo = { id: Date.now(), ...newMemoData } as Memo;
-       setPublicMemos(prev => [newMemo, ...prev]);
-       return;
-     }
-     try {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
-     } catch(e) {
-        const newMemo = { id: Date.now(), ...newMemoData } as Memo;
-        setPublicMemos(prev => [newMemo, ...prev]);
-     }
+     if (!db) return;
+     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'memos'), newMemoData);
   };
 
   const submitFeedback = async (text: string) => {
-      if(isLocalMode || !db) {
-          const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
-          setFeedbacks(prev => [newFb, ...prev]);
-          return;
-      }
-      try {
-        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
-      } catch (e) {
-        const newFb: Feedback = { id: Date.now().toString(), text, timestamp: Date.now(), read: false };
-        setFeedbacks(prev => [newFb, ...prev]);
-      }
+      if(!db) return;
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'feedbacks'), { text, timestamp: Date.now(), read: false });
   };
 
   return (

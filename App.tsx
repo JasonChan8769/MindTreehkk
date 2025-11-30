@@ -7,7 +7,7 @@ import {
   Play, Volume2, VolumeX, Sparkles, HandHeart, Smartphone,
   Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, Ban, AlertOctagon, XCircle, UserCheck,
-  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw, UserMinus, Filter
+  Loader2, Trash2, Inbox, Download, FileSpreadsheet, RefreshCw
 } from 'lucide-react';
 
 // Firebase Imports
@@ -21,12 +21,6 @@ import {
 declare const __firebase_config: string;
 declare const __app_id: string;
 declare const __initial_auth_token: string;
-
-// --- GEMINI API KEY SETUP ---
-// ⚠️ IMPORTANT: Paste your Google Gemini API Key (Flash 2.5) here
-const GEMINI_API_KEY = ""; 
-
-const apiKey = GEMINI_API_KEY; 
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -48,12 +42,12 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
       return (
         <div className="flex flex-col items-center justify-center h-screen p-6 bg-slate-50 text-slate-800">
           <AlertOctagon size={48} className="text-rose-500 mb-4" />
-          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤 / Application Error</h1>
+          <h1 className="text-xl font-bold mb-2">應用程式發生錯誤</h1>
           <p className="text-sm text-slate-500 mb-4 text-center">
-            {this.state.error?.message || "未知錯誤 / Unknown Error"}
-            <br/>請重新整理頁面。 / Please reload the page.
+            {this.state.error?.message || "未知錯誤"}
+            <br/>請重新整理頁面。
           </p>
-          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理 / Reload</button>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-teal-600 text-white rounded-lg shadow-md">重新整理</button>
         </div>
       );
     }
@@ -61,7 +55,7 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
   }
 }
 
-// --- FIREBASE CONFIGURATION (UNCHANGED) ---
+// --- FIREBASE CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyB0abQmyf4vALgQ3XNM_we5B0JCfrteZ4I",
   authDomain: "mindtreehk.firebaseapp.com",
@@ -107,12 +101,12 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
-  status: 'waiting' | 'active' | 'resolved' | 'volunteer_left';
+  status: 'waiting' | 'active' | 'resolved';
   time: string;
   createdAt: number;
   tags: string[];
-  volunteerId?: string | null;
-  volunteerName?: string | null;
+  volunteerId?: string;
+  volunteerName?: string;
 }
 
 export interface Feedback {
@@ -159,41 +153,10 @@ const AI_QUOTES = [
   "Sending you strength.", "俾啲力量你。",
   "Just breathe.", "靜心呼吸。",
   "There is hope.", "總會有希望。",
-  "Be kind to yourself.", "對自己好啲。",
-  "Rest if you must.", "休息係為了走更長的路。",
-  "Small steps also count.", "小步前進都係進步。",
-  "Embrace your feelings.", "擁抱自己嘅情緒。",
-  "Tomorrow is a new day.", "聽日又係新嘅開始。",
-  "Your feelings are valid.", "你嘅感受係真實嘅。",
-  "Let it go.", "放手啦，放過自己。",
-  "Peace starts within.", "平靜由心開始。",
-  "Trust the process.", "相信過程。",
-  "You are loved.", "你是被愛的。",
-  "Stay strong.", "頂住。",
-  "Look up at the sky.", "望下個天。",
-  "Listen to the rain.", "聽下雨聲。",
-  "It's okay to pause.", "停一停，無所謂。",
-  "Gentle reminder: drink water.", "飲啖水先。",
-  "Self-care isn't selfish.", "愛自己唔係自私。",
-  "You are enough.", "你已經做得好好。",
-  "Don't give up.", "唔好放棄。",
-  "Every storm runs out of rain.", "風雨總會過去。",
-  "Find joy in little things.", "尋找微小的快樂。",
-  "Keep going.", "繼續行落去。",
-  "Breathe in peace.", "吸入平靜。",
-  "Breathe out stress.", "呼出壓力。",
-  "Be your own best friend.", "做自己最好嘅朋友。",
-  "Growth takes time.", "成長需要時間。",
-  "Life is tough, but so are you.", "生活好難，但你更堅強。",
-  "Sending you a virtual hug.", "送你一個擁抱。",
-  "Be patient with yourself.", "對自己有耐性啲。",
-  "Stars can't shine without darkness.", "無黑暗就無星光。",
-  "It's just a bad day, not a bad life.", "只係今日唔順，唔係成世。",
-  "You are doing great.", "你做得好好架喇。",
-  "Believe in yourself.", "相信你自己。"
+  "Be kind to yourself.", "對自己好啲。"
 ];
 
-const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋", "🌻", "🌈", "🌊", "🌙", "⭐", "🍀", "🌺", "🍵", "🕯️"];
+const COMFORT_SYMBOLS = ["🌿", "🕊️", "✨", "🤍", "🌱", "☂️", "🌤️", "🌕", "🍃", "💫", "🦋"];
 
 const SUGGESTED_PROMPTS = {
   zh: ["我覺得好不安...", "我想搵人傾計", "最近訓得唔好", "對於未來好迷惘"],
@@ -300,14 +263,7 @@ const CONTENT = {
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
-      volEndChatConfirm: "確定結束對話？求助者將會收到通知。",
-      cancelWait: "取消等待",
-      // New Content for Volunteer Leaving
-      volLeftTitle: "輔導員已離開",
-      volLeftMsg: "輔導員已離開對話。你可以選擇繼續等待下一位輔導員，或是結束對話。",
-      btnWait: "繼續等待 (返回隊列)",
-      btnEnd: "結束對話",
-      leaveSuccess: "你已離開對話。"
+      cancelWait: "取消等待"
     },
     memo: {
       cheerUp: "社區心聲",
@@ -323,9 +279,9 @@ const CONTENT = {
     },
     volunteer: {
       login: "義工登入",
-      authTitle: "義工入口", 
+      authTitle: "義工入口", // REMOVED "/管理員" to keep it secret
       disclaimer: "感謝你的無私奉獻。加入前請確認你已準備好聆聽。", 
-      nameLabel: "稱呼", 
+      nameLabel: "稱呼", // REMOVED "6221Like" hint to keep it secret
       namePlaceholder: "例如：陳大文",
       joinBtn: "進入義工平台",
       proJoinTitle: "專業人員通道",
@@ -345,14 +301,9 @@ const CONTENT = {
       portalTitle: "控制台",
       welcome: "歡迎回來",
       exit: "登出",
-      activeRequests: "個案列表",
-      noRequests: "暫時沒有相關個案",
+      activeRequests: "待處理個案",
+      noRequests: "暫時沒有新個案",
       accept: "接聽",
-      statusConsulting: "諮詢中",
-      statusWaiting: "等待中",
-      filterAll: "所有個案",
-      filterWaiting: "待處理",
-      filterActive: "進行中",
       topic: "主訴",
       priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
       tabRequests: "求助個案",
@@ -422,177 +373,6 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
-  },
-  en: {
-    appTitle: "MindTree",
-    appSubtitle: "Your Safe Haven • Support for HK",
-    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
-    intro: {
-      welcome: "Welcome to MindTree",
-      desc: "A safe, private, and confidential space for mental support.\nWe are here for you, rain or shine.",
-      slide1Title: "AI & Human Collaboration",
-      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
-      slide2Title: "Absolute Privacy",
-      slide2Desc: "Using end-to-end encryption concepts, only the Treehole knows your secrets.",
-      startBtn: "Start Journey"
-    },
-    landing: {
-      servicesTitle: "Select Service",
-      breathTitle: "Breathing Exercise",
-      breathDesc: "Pro Guide • 60s Relax",
-      startBreath: "Start",
-      aiCard: { title: "AI Treehole", desc: "24/7 Intelligent Listening • Instant Reply" },
-      humanCard: { title: "Human Counseling", desc: "Volunteers & Social Workers • Warm Support" },
-      volunteerCard: { title: "Join Volunteers", desc: "Be someone's secret treehole" },
-      feedback: "Feedback"
-    },
-    landingNotice: {
-      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
-      rules: "Please be respectful. In case of emergency, please call 999."
-    },
-    aiRole: {
-      title: "AI Treehole",
-      welcome: "Hi, I'm MindTree. I know things might be tough lately. Want to talk about it?",
-      placeholder: "Type your thoughts here...",
-      disclaimer: "AI content is for reference only. Verify important info."
-    },
-    humanRole: {
-      title: "Human Counselor",
-      waitingTitle: "Matching Volunteer...",
-      waitingMessage: "We are contacting online volunteers, please wait a moment...",
-      joinedTitle: "Counselor Joined",
-      systemJoin: "System: Counselor has joined",
-      headerVerified: "Verified Social Worker",
-      headerPeer: "Peer Volunteer",
-      report: "Report User",
-      reportSuccess: "User reported. Admins will review the chat logs.",
-      caseResolved: "Chat ended. Data destroyed.",
-      placeholder: "Type a message...",
-      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited. Do not share sensitive personal info (e.g., full name, address, ID).",
-      scanBlock: "Message blocked: AI detected inappropriate content.",
-      endChatConfirm: "End chat and delete logs?",
-      volEndChatConfirm: "End chat? The user will be notified.",
-      cancelWait: "Cancel Waiting",
-      // New Content for Volunteer Leaving
-      volLeftTitle: "Counselor Left",
-      volLeftMsg: "The counselor has left the session. You can wait for the next counselor or end the chat.",
-      btnWait: "Wait (Return to Queue)",
-      btnEnd: "End Chat",
-      leaveSuccess: "You have left the session."
-    },
-    memo: {
-      cheerUp: "Community Voices",
-      label: "Leave a Note",
-      title: "Leave a Message",
-      desc: "Your message will appear 'instantly' in the floating bubbles on the home page. Spread positivity. (Lasts 5 mins)",
-      placeholder: "Write your blessing or feelings...",
-      btn: "Post",
-      success: "Posted successfully!",
-      scanning: "AI is reviewing content...",
-      unsafe: "Failed to post: Content contains inappropriate or meaningless words.",
-      guidance: "Please keep it positive and kind."
-    },
-    volunteer: {
-      login: "Volunteer Login",
-      authTitle: "Volunteer Portal",
-      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.",
-      nameLabel: "Name",
-      namePlaceholder: "e.g., Chan Tai Man",
-      joinBtn: "Enter Platform",
-      proJoinTitle: "Professional Access",
-      codePlaceholder: "Access Code (Optional)",
-      verifyBtn: "Enter Platform",
-      errorMsg: "Invalid Code",
-      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
-      guidelinesTitle: "Support Guidelines",
-      guidelinesDesc: "3 Simple Steps to be a Better Listener",
-      rule1Title: "Step 1: Listen",
-      rule1Desc: "Give them space to express. Don't interrupt or rush to give advice. Use 'Mm-hmm', 'I see' to show you are listening.",
-      rule2Title: "Step 2: Empathize",
-      rule2Desc: "Validate their feelings. Try saying 'It sounds like you are feeling helpless', 'That must be tough'. Avoid 'Look on the bright side'.",
-      rule3Title: "Step 3: Assess",
-      rule3Desc: "Stay alert. If they mention suicide or self-harm, stay calm and do not handle it alone. Suggest professional help (999) and report to admin.",
-      acknowledgeBtn: "I Understand & Agree",
-      portalTitle: "Dashboard",
-      welcome: "Welcome back",
-      exit: "Logout",
-      activeRequests: "Case List",
-      noRequests: "No cases found for this filter",
-      accept: "Accept",
-      statusConsulting: "Consulting",
-      statusWaiting: "Waiting",
-      filterAll: "All",
-      filterWaiting: "Waiting",
-      filterActive: "Active",
-      topic: "Issue",
-      priority: { critical: "Critical", high: "High", medium: "Medium", low: "Low" },
-      tabRequests: "Requests",
-      tabFeedback: "Admin Area",
-      noFeedbacks: "No feedback yet",
-      exportCSV: "Export CSV"
-    },
-    intake: {
-      title: "Intake Form",
-      desc: "Let us know your needs",
-      q1: "Name (Anonymous)",
-      q1_placeholder: "Nickname",
-      q_age: "Age Group",
-      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
-      q_gender: "Gender",
-      q_gender_opts: ["Male", "Female", "Other"],
-      q3: "Distress Level (1-5)",
-      q4: "Main Issue",
-      q4_opt1: "Anxiety / Panic",
-      q4_opt2: "Low Mood / Depression",
-      q4_opt3: "Family / Housing",
-      q4_opt4: "Suicidal Thoughts (Urgent)",
-      q5: "Note (Optional)",
-      q5_placeholder: "Brief description...",
-      submit: "Start Matching",
-      calm: "Calm",
-      crisis: "Crisis"
-    },
-    links: {
-      btn: "Resources",
-      title: "Community Resources",
-      desc: "Mental support, blood donation info, and useful data.",
-      close: "Close",
-      catMental: "Mental Support",
-      catBlood: "Blood Donation",
-      catInfo: "Useful Info"
-    },
-    feedback: {
-      title: "Feedback",
-      desc: "Your feedback matters. Tell us how to improve.",
-      placeholder: "Type your feedback...",
-      submit: "Send",
-      thanks: "Thank you! We will review it shortly."
-    },
-    breath: {
-      inhale: "Inhale",
-      hold: "Hold",
-      exhale: "Exhale",
-      relax: "Relax your mind",
-      musicOn: "Music On",
-      musicOff: "Mute",
-      playErr: "Click to play music"
-    },
-    footer: {
-      legal: "Disclaimer: This platform is run by volunteers and provides peer emotional support only. It is not a professional medical institution or emergency service. We are not responsible for any consequences of using this service. In case of emergency, call 999 immediately."
-    },
-    actions: {
-      back: "Back",
-      cancel: "Cancel",
-      endChat: "End",
-      leaveChat: "Leave"
-    },
-    dialogs: {
-      volLeaveMsg: "Return case to queue?",
-      citEndMsg: "End this session?"
-    },
-    chatWarning: {
-      text: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are strictly prohibited."
-    }
   }
 };
 
@@ -602,33 +382,30 @@ const checkContentSafety = (text: string) => {
   const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾"];
   const lower = text.toLowerCase();
   const hasBadWord = badWords.some(word => lower.includes(word));
-    
+   
   if (text.trim().length < 2) return { safe: false, reason: "Message too short." };
-    
+   
   if (hasBadWord) {
     return { safe: false, reason: "Content contains inappropriate words." };
   }
   return { safe: true, reason: null };
 };
 
-// MODIFIED: DIRECT API CALL (Client-Side)
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
 
-    if (!apiKey) return { safe: true, reason: null }; // Pass if no API key
-
     const contentReviewSystemPrompt = `
     You are a lenient Content Moderator for 'MindTree'.
     Task: Filter ONLY strictly harmful content.
-      
+     
     PERMITTED CONTENT (RETURN "PASS"):
     - Positive, encouraging messages.
     - Neutral greetings (e.g., "Hi", "Testing", "Good morning").
     - Short messages are OKAY.
     - Anything that is NOT hateful or abusive.
-      
+     
     BANNED CONTENT (REJECT):
     - Insults, hate speech, bullying.
     - Encouraging self-harm or violence.
@@ -640,12 +417,12 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     - If UNSAFE: Return a polite, warm reminder in Traditional Chinese.
     `;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: text }] }],
-        systemInstruction: { parts: [{ text: contentReviewSystemPrompt }] },
+        history: [{ role: "user", parts: [{ text: text }] }],
+        systemInstruction: contentReviewSystemPrompt,
         generationConfig: { temperature: 0.2 }
       })
     });
@@ -654,7 +431,7 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     if (!response.ok) return { safe: true, reason: null }; 
 
     const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      
+     
     if (result === "PASS") {
       return { safe: true, reason: null };
     } else {
@@ -671,23 +448,20 @@ const SYSTEM_PROMPTS = {
   en: `You are MindTree, a thoughtful digital companion. Speak naturally.`
 };
 
-// MODIFIED: DIRECT API CALL (Client-Side)
 const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promise<string> => {
   try {
-    if (!apiKey) throw new Error("No API Key");
-
     const systemInstruction = SYSTEM_PROMPTS[lang];
     const recentHistory = history.slice(-10).map(msg => ({
       role: msg.isUser ? "user" : "model",
       parts: [{ text: msg.text }]
     }));
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: recentHistory,
-        systemInstruction: { parts: [{ text: systemInstruction }] }
+        history: recentHistory,
+        systemInstruction: systemInstruction 
       })
     });
 
@@ -704,10 +478,9 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 interface AppContextType {
   tickets: Ticket[];
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
-  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved' | 'volunteer_left', volId?: string | null, volName?: string | null) => void;
+  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
   deleteTicket: (id: string) => Promise<void>;
   endSession: (ticketId: string) => Promise<void>;
-  leaveSession: (ticketId: string) => Promise<void>; // New Function
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
   getMessages: (ticketId: string) => Message[];
@@ -718,9 +491,6 @@ interface AppContextType {
   feedbacks: Feedback[];
   submitFeedback: (text: string) => Promise<void>;
   user: any;
-  // NEW: Language managed globally to fix button issue
-  lang: Language;
-  toggleLang: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -732,10 +502,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [volunteerProfile, setVolunteerProfile] = useState<VolunteerProfile>({ name: "", role: "peer", isVerified: false });
   const [publicMemos, setPublicMemos] = useState<Memo[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
-  
-  // NEW: Global Language State
-  const [lang, setLang] = useState<Language>('zh');
-  const toggleLang = () => setLang(l => l === 'zh' ? 'en' : 'zh');
 
   // 1. Auth
   useEffect(() => {
@@ -783,18 +549,12 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return () => unsubscribe();
   }, [user]);
 
-  // 4. Sync Memos (Filtered by Time - 5 minutes)
+  // 4. Sync Memos
   useEffect(() => {
     if (!user || !db) return;
     const q = collection(db, 'artifacts', appId, 'public', 'data', 'memos');
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const now = Date.now();
-        const fiveMinutes = 5 * 60 * 1000;
-        
-        const loadedMemos = snapshot.docs
-            .map(d => ({ id: d.id, ...d.data() } as unknown as Memo))
-            .filter(m => (now - m.timestamp) < fiveMinutes); // Only keep recent memos
-
+        const loadedMemos = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as unknown as Memo));
         loadedMemos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
         setPublicMemos(loadedMemos.slice(0, 15)); 
     }, (err) => console.log("Memo sync error:", err));
@@ -836,17 +596,16 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return docRef.id;
   };
 
-  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved' | 'volunteer_left', volId?: string | null, volName?: string | null) => {
+  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
      if (!db) {
-       setTickets(prev => prev.map(t => t.id === id ? { ...t, status, volunteerId: volId || t.volunteerId, volunteerName: volName || t.volunteerName } : t));
+       setTickets(prev => prev.map(t => t.id === id ? { ...t, status } : t));
        return;
      }
-     
-     const updateData: any = { status };
-     if (volId !== undefined) updateData.volunteerId = volId;
-     if (volName !== undefined) updateData.volunteerName = volName;
-
-     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), updateData);
+     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
+         status, 
+         ...(volId && { volunteerId: volId }),
+         ...(volName && { volunteerName: volName })
+     });
   };
 
   const deleteTicket = async (id: string) => {
@@ -879,23 +638,6 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     } catch(e) {
         console.error("Deletion error:", e);
     }
-  };
-
-  // New function for volunteer leaving
-  const leaveSession = async (ticketId: string) => {
-      // 1. Update status to 'volunteer_left' BUT do NOT remove assignment yet.
-      // This allows the prompt to appear for the citizen.
-      // The assignment will be cleared ONLY if citizen chooses to "Wait".
-      await updateTicketStatus(ticketId, 'volunteer_left', null, null);
-      
-      // 2. Add system message
-      const systemMsg = lang === 'zh' ? "系統訊息：輔導員已離開對話。" : "System: Volunteer has left the session.";
-      await addMessage(ticketId, {
-          text: systemMsg,
-          isUser: false,
-          sender: "System",
-          timestamp: Date.now()
-      });
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
@@ -946,7 +688,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, leaveSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user, lang, toggleLang }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
       {children}
     </AppContext.Provider>
   );
@@ -1040,8 +782,7 @@ const ChatBubble = ({ text, isUser, sender, isVerified, timestamp }: Message) =>
 
 // --- PRO BREATHING EXERCISE ---
 
-const BreathingExercise = ({ onClose }: { onClose: () => void }) => {
-  const { lang } = useAppContext();
+const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].breath;
   const [stage, setStage] = useState<'Inhale' | 'Hold' | 'Exhale'>('Inhale');
   const [stageText, setStageText] = useState(t.inhale);
@@ -1144,9 +885,9 @@ const BreathingExercise = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-const FeedbackModal = ({ onClose }: { onClose: () => void }) => {
-  const { lang, submitFeedback } = useAppContext();
+const FeedbackModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].feedback;
+  const { submitFeedback } = useAppContext();
   const [text, setText] = useState("");
   const [sent, setSent] = useState(false);
 
@@ -1179,8 +920,7 @@ const FeedbackModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-const IntroScreen = ({ onStart, theme, toggleTheme }: { onStart: () => void, theme: 'light' | 'dark', toggleTheme: () => void }) => {
-  const { lang, toggleLang } = useAppContext();
+const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStart: () => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void }) => {
   const t = CONTENT[lang].intro;
   const [step, setStep] = useState(0);
   const steps = [
@@ -1215,9 +955,9 @@ const IntroScreen = ({ onStart, theme, toggleTheme }: { onStart: () => void, the
   );
 };
 
-const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSelectRole: (role: string) => void, theme: 'light' | 'dark', toggleTheme: () => void, onShowIntro: () => void }) => {
-  const { lang, toggleLang, addPublicMemo, publicMemos } = useAppContext();
+const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onShowIntro }: { onSelectRole: (role: string) => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void, onShowIntro: () => void }) => {
   const t = CONTENT[lang];
+  const { addPublicMemo, publicMemos } = useAppContext();
   const [showMemoInput, setShowMemoInput] = useState(false);
   const [showResources, setShowResources] = useState(false);
   const [showBreath, setShowBreath] = useState(false);
@@ -1240,10 +980,10 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
     }
   }, [theme]);
 
-  // Init with quotes (More varied)
+  // Init with quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
-    const selectedQuotes = shuffledQuotes.slice(0, 15);
+    const selectedQuotes = shuffledQuotes.slice(0, 12);
     const initialBubbles = selectedQuotes.map((quote, index) => {
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
@@ -1296,8 +1036,8 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
   return (
     <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 flex flex-col relative overflow-hidden transition-colors duration-500 font-sans">
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
-      {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} />}
-      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
       
       {/* Nature Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
@@ -1445,62 +1185,7 @@ const LandingScreen = ({ onSelectRole, theme, toggleTheme, onShowIntro }: { onSe
   );
 };
 
-// --- NEW AI SUGGESTION LOGIC FOR HUMAN CHAT (MODIFIED: Client-Side) ---
-const generateSmartSuggestions = async (history: Message[], role: 'volunteer' | 'citizen', lang: 'zh' | 'en'): Promise<string[]> => {
-  try {
-    if (!apiKey) {
-        console.warn("Gemini API Key missing. Skipping suggestions.");
-        return [];
-    }
-
-    const roleDesc = role === 'volunteer' ? (lang === 'zh' ? "輔導員/義工" : "Counselor/Volunteer") : (lang === 'zh' ? "求助者" : "User seeking help");
-    
-    // System prompt specifically for generating options
-    const systemInstruction = `
-      You are a helpful assistant for a mental health support chat app called 'MindTree'.
-      The current user is a ${roleDesc}.
-      Task: Read the chat history and provide exactly 3 distinct, empathetic, and natural response options that the user could send next.
-      Constraints:
-      1. Output format: A single string with 3 sentences separated by "|||".
-      2. Language: Strictly use ${lang === 'zh' ? "Cantonese (Traditional Chinese)" : "English"}.
-      3. Tone: Warm, supportive, non-judgmental. Short and concise.
-      4. Do NOT output numbering or labels like "Option 1". Just the text.
-    `;
-
-    const recentHistory = history.slice(-8).map(msg => ({
-      role: msg.isUser ? "user" : "model",
-      parts: [{ text: `${msg.sender}: ${msg.text}` }]
-    }));
-
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: recentHistory,
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { temperature: 0.4 }
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-        console.error("Gemini API Error:", data);
-        throw new Error("API Error");
-    }
-    
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-    // Split by the delimiter ||| and clean up
-    const suggestions = rawText.split('|||').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-    
-    return suggestions.length > 0 ? suggestions.slice(0, 3) : [];
-  } catch (error) {
-    console.error("AI Suggestion Error (Client-Side):", error);
-    return []; // Return empty to fallback to static
-  }
-};
-
-const AIChat = ({ onBack }: { onBack: () => void }) => {
-  const { lang } = useAppContext();
+const AIChat = ({ onBack, lang }: { onBack: () => void, lang: Language }) => {
   const t = CONTENT[lang];
   const [messages, setMessages] = useState<Message[]>([{ id: "init", text: t.aiRole.welcome, isUser: false, sender: stripAITag(t.aiRole.title), timestamp: Date.now() }]);
   const [inputText, setInputText] = useState("");
@@ -1570,8 +1255,9 @@ const AIChat = ({ onBack }: { onBack: () => void }) => {
   );
 };
 
-const IntakeForm = ({ onComplete, onBack }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void }) => {
-  const { lang } = useAppContext();
+// --- MISSING COMPONENTS (Restored) ---
+
+const IntakeForm = ({ onComplete, onBack, lang }: { onComplete: (n: string, i: string, p: Priority, t: string[]) => void, onBack: () => void, lang: Language }) => {
   const t = CONTENT[lang].intake;
   const [name, setName] = useState("");
   const [age, setAge] = useState(t.q_age_opts[1]);
@@ -1640,8 +1326,8 @@ const IntakeForm = ({ onComplete, onBack }: { onComplete: (n: string, i: string,
           </div>
 
           <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
-              <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
+             <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">{t.q5}</label>
+             <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.q5_placeholder} className="w-full p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none h-24 resize-none dark:text-white"/>
           </div>
 
           <button onClick={handleSubmit} disabled={isSubmitting} className="w-full py-4 bg-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-teal-500/30 hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
@@ -1653,9 +1339,9 @@ const IntakeForm = ({ onComplete, onBack }: { onComplete: (n: string, i: string,
   );
 };
 
-const VolunteerAuth = ({ onBack, onLoginSuccess }: { onBack: () => void, onLoginSuccess: () => void }) => {
-  const { setVolunteerProfile, lang } = useAppContext();
+const VolunteerAuth = ({ onBack, onLoginSuccess, lang }: { onBack: () => void, onLoginSuccess: () => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
+  const { setVolunteerProfile } = useAppContext();
   const [name, setName] = useState("");
 
   const handleApply = () => {
@@ -1701,8 +1387,7 @@ const VolunteerAuth = ({ onBack, onLoginSuccess }: { onBack: () => void, onLogin
   );
 };
 
-const VolunteerGuidelines = ({ onConfirm, onBack }: { onConfirm: () => void, onBack: () => void }) => {
-  const { lang } = useAppContext();
+const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => void, onBack: () => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 p-6 overflow-y-auto">
@@ -1725,11 +1410,10 @@ const VolunteerGuidelines = ({ onConfirm, onBack }: { onConfirm: () => void, onB
   );
 };
 
-const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoinChat: (t: Ticket) => void }) => {
-  const { lang, tickets, volunteerProfile, feedbacks } = useAppContext();
+const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (t: Ticket) => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
+  const { tickets, volunteerProfile, feedbacks } = useAppContext();
   const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
-  const [filterMode, setFilterMode] = useState<'all' | 'waiting' | 'active'>('waiting'); // Default filter to waiting
   
   const isAdmin = volunteerProfile.role === 'admin';
 
@@ -1745,13 +1429,6 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
       link.click();
       document.body.removeChild(link);
   };
-
-  const filteredTickets = tickets.filter(t => {
-      if (filterMode === 'all') return t.status === 'waiting' || t.status === 'active';
-      if (filterMode === 'waiting') return t.status === 'waiting';
-      if (filterMode === 'active') return t.status === 'active';
-      return false;
-  });
 
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
@@ -1784,53 +1461,23 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
                   </button>
               </div>
           )}
-
-          {/* New Filter Buttons */}
-          {(activeTab === 'requests' || !isAdmin) && (
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                  <span className="text-xs font-bold text-slate-400 flex items-center gap-1 shrink-0"><Filter size={12}/> Filter:</span>
-                  <button onClick={() => setFilterMode('all')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'all' ? 'bg-slate-800 text-white border-slate-800' : 'bg-transparent text-slate-500 border-slate-200'}`}>
-                      {(t as any).filterAll || "All"}
-                  </button>
-                  <button onClick={() => setFilterMode('waiting')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'waiting' ? 'bg-blue-500 text-white border-blue-500' : 'bg-transparent text-slate-500 border-slate-200'}`}>
-                      {(t as any).filterWaiting || "Waiting"}
-                  </button>
-                  <button onClick={() => setFilterMode('active')} className={`px-3 py-1.5 rounded-full text-[10px] font-bold transition-all border ${filterMode === 'active' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-transparent text-slate-500 border-slate-200'}`}>
-                      {(t as any).filterActive || "Active"}
-                  </button>
-              </div>
-          )}
        </div>
        
        <div className="flex-1 overflow-y-auto p-6">
          {(activeTab === 'requests' || !isAdmin) ? (
              <>
-                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({filteredTickets.length})</h3>
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
                  
-                 {filteredTickets.length === 0 ? (
+                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
                    <div className="text-center py-20 opacity-50">
                      <Bot size={48} className="mx-auto mb-4 text-slate-300"/>
                      <p>{t.noRequests}</p>
                    </div>
                  ) : (
                    <div className="grid gap-4">
-                     {filteredTickets.map(ticket => (
-                       <div key={ticket.id} className={`p-6 rounded-2xl shadow-md border flex flex-col gap-4 relative overflow-hidden ${ticket.status === 'active' ? 'bg-slate-50 dark:bg-slate-900 border-emerald-100 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
-                         
-                         {/* Status Badge */}
-                         <div className="absolute top-0 right-0 p-3">
-                             {ticket.status === 'active' ? (
-                                 <span className="bg-emerald-100 text-emerald-600 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                                     <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"/> {(t as any).statusConsulting || "Consulting"}
-                                 </span>
-                             ) : (
-                                 <span className="bg-blue-50 text-blue-500 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                                     <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"/> {(t as any).statusWaiting || "Waiting"}
-                                 </span>
-                             )}
-                         </div>
-
-                         <div className="flex justify-between items-start mt-2">
+                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
+                       <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                         <div className="flex justify-between items-start">
                             <div className="flex gap-2">
                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
                                <span className="text-slate-400 text-xs">{ticket.time}</span>
@@ -1843,19 +1490,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
                          <div className="flex gap-2 mt-2">
                             {ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}
                          </div>
-                         
-                         {/* Join Button - Only for waiting tickets or if it's assigned to me */}
-                         {ticket.status === 'waiting' ? (
-                             <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2 hover:bg-emerald-700 transition-colors">{t.accept}</button>
-                         ) : (
-                             ticket.volunteerName === volunteerProfile.name ? (
-                                <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2 hover:bg-emerald-700 transition-colors">Resume Chat</button>
-                             ) : (
-                                <div className="mt-2 text-center text-xs text-slate-400 font-medium bg-slate-100 dark:bg-slate-800 py-3 rounded-xl">
-                                    Handled by {ticket.volunteerName || "Another Volunteer"}
-                                </div>
-                             )
-                         )}
+                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
                        </div>
                      ))}
                    </div>
@@ -1889,17 +1524,12 @@ const VolunteerDashboard = ({ onBack, onJoinChat }: { onBack: () => void, onJoin
   );
 };
 
-const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean }) => {
-  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, updateTicketStatus, deleteTicket, lang } = useAppContext();
+const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  
+  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
-  // NEW: State for AI Suggestions
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   
   // LIVE TICKET UPDATE: Find the real-time version of this ticket from context
   const liveTicket = tickets.find(t => t.id === ticketId) || ticket;
@@ -1908,36 +1538,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
 
   useEffect(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), [chatMessages, liveTicket.status, showSuggestions]);
 
-  // Handle Suggestion Generation
-  const handleFetchSuggestions = async () => {
-    if (showSuggestions && aiSuggestions.length > 0) {
-        setShowSuggestions(false);
-        return;
-    }
-
-    setShowSuggestions(true);
-    setIsLoadingSuggestions(true);
-    setAiSuggestions([]); // Clear previous
-
-    try {
-        const role = isVolunteer ? 'volunteer' : 'citizen';
-        const smartOptions = await generateSmartSuggestions(chatMessages, role, lang);
-        
-        if (smartOptions.length > 0) {
-            setAiSuggestions(smartOptions);
-        } else {
-            // Fallback to static if API fails
-            const fallback = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
-            setAiSuggestions(fallback.slice(0, 3));
-        }
-    } catch (e) {
-        // Fallback
-        const fallback = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
-        setAiSuggestions(fallback.slice(0, 3));
-    } finally {
-        setIsLoadingSuggestions(false);
-    }
-  };
+  // Use STATIC suggestions directly (Reliable, works on all devices like AI Chat)
+  // This removes the dependency on the API which might fail on some devices
+  const currentSuggestions = isVolunteer ? STATIC_SUGGESTIONS[lang].volunteer : STATIC_SUGGESTIONS[lang].citizen;
 
   const handleSend = () => {
     if (!text.trim()) return;
@@ -1955,7 +1558,6 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
   };
 
   const handleEndChat = async () => {
-      // For Citizen: Really end it
       if(window.confirm(t.endChatConfirm)) {
           await endSession(ticketId);
           onLeave();
@@ -1963,23 +1565,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
   };
 
   const handleCancelWait = async () => {
+      // PERMANENTLY DELETE TICKET TO CLEAN UP QUEUE
       await deleteTicket(ticketId);
       onLeave();
-  };
-
-  // --- MODIFIED: Handle Volunteer Leaving/Ending ---
-  const handleVolunteerEndChat = async () => {
-      // Instead of ending directly, we set status to 'volunteer_left'
-      if(window.confirm((t as any).volEndChatConfirm || "End chat? The user will be notified.")) {
-          await leaveSession(ticketId);
-          onLeave(); 
-      }
-  };
-
-  // --- NEW: Handle Citizen choice after Volunteer left ---
-  const handleCitizenWait = async () => {
-      // Logic: Set status back to 'waiting', and clear the assigned volunteer
-      await updateTicketStatus(ticketId, 'waiting', null, null);
   };
 
   // --- 1. WAITING ROOM VIEW (For Citizen) ---
@@ -1992,6 +1580,10 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
               </div>
               <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t.waitingTitle}</h2>
               <p className="text-slate-500 max-w-xs mx-auto mb-8 leading-relaxed">{t.waitingMessage}</p>
+              <div className="p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm text-left w-full max-w-sm">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Tips</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2"><Music size={16}/> 試下深呼吸練習放鬆心情</div>
+              </div>
               <button onClick={handleCancelWait} className="mt-8 text-slate-400 text-sm hover:text-slate-600">{(t as any).cancelWait || "取消等待"}</button>
           </div>
       );
@@ -2005,36 +1597,14 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
                   <CheckCircle size={40} className="text-slate-400"/>
               </div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">{t.caseResolved}</h2>
-              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">Back to Home</button>
+              <button onClick={onLeave} className="mt-6 px-8 py-3 bg-slate-800 text-white rounded-xl font-bold">返回首頁</button>
           </div>
       );
   }
 
   // --- 3. ACTIVE CHAT VIEW ---
   return (
-    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950 relative">
-      
-      {/* VOLUNTEER LEFT OVERLAY FOR CITIZEN */}
-      {!isVolunteer && liveTicket.status === 'volunteer_left' && (
-          <div className="absolute inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
-              <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-2xl max-w-sm w-full text-center">
-                  <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <LogOut size={28} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{(t as any).volLeftTitle}</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-8">{(t as any).volLeftMsg}</p>
-                  <div className="flex flex-col gap-3">
-                      <button onClick={handleCitizenWait} className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">
-                          {(t as any).btnWait}
-                      </button>
-                      <button onClick={handleEndChat} className="w-full py-3 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
-                          {(t as any).btnEnd}
-                      </button>
-                  </div>
-              </div>
-          </div>
-      )}
-
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-950">
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm flex justify-between items-center z-20">
          <div className="flex items-center gap-3">
            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isVolunteer ? 'bg-teal-100 text-teal-600' : 'bg-pink-100 text-pink-600'}`}>
@@ -2047,12 +1617,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
              <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
            </div>
          </div>
-         
-         <div className="flex items-center gap-2">
-             <button onClick={isVolunteer ? handleVolunteerEndChat : handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
-                 <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
-             </button>
-         </div>
+         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1">
+             <Trash2 size={14}/> {CONTENT[lang].actions.endChat}
+         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
@@ -2073,37 +1640,31 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
          </div>
       </div>
 
-      {/* --- AI SUGGESTION BAR --- */}
+      {/* --- STATIC SUGGESTION BAR (Works like AI Chat) --- */}
       <div className="bg-white dark:bg-slate-900 pt-2 shadow-up z-30">
         
         {/* Toggle Button */}
         <div className="px-4 flex justify-between items-center mb-2">
            <button 
-             onClick={handleFetchSuggestions}
+             onClick={() => setShowSuggestions(!showSuggestions)}
              className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 transition-colors ${showSuggestions ? 'text-teal-500' : 'text-slate-400 hover:text-slate-600'}`}
            >
-             <Sparkles size={12} className={showSuggestions ? "fill-teal-500" : ""} /> {lang === 'zh' ? 'AI 助手' : 'AI Copilot'}
+             <Sparkles size={12} className={showSuggestions ? "fill-teal-500" : ""} /> {lang === 'zh' ? 'AI 提示' : 'AI Suggestions'}
            </button>
         </div>
 
         {/* Suggestion Chips */}
         {showSuggestions && (
           <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar animate-fade-in">
-              {isLoadingSuggestions ? (
-                  <div className="flex items-center gap-2 text-xs text-slate-400 px-2">
-                     <Loader2 size={14} className="animate-spin"/> {lang === 'zh' ? '正在生成建議...' : 'Generating...'}
-                  </div>
-              ) : (
-                  aiSuggestions.map((suggestion, idx) => (
-                     <button 
-                       key={idx}
-                       onClick={() => setText(suggestion)}
-                       className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
-                     >
-                       {suggestion}
-                     </button>
-                  ))
-              )}
+             {currentSuggestions.map((suggestion, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setText(suggestion)}
+                  className="whitespace-nowrap px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-900/30 text-slate-600 dark:text-slate-300 text-xs rounded-full border border-slate-200 dark:border-slate-700 transition-colors"
+                >
+                  {suggestion}
+                </button>
+             ))}
           </div>
         )}
 
@@ -2123,6 +1684,7 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer }: { ticketId: strin
 
 const MainLayout = () => {
   const [view, setView] = useState<'intro' | 'landing' | 'ai-chat' | 'intake' | 'volunteer-auth' | 'volunteer-guidelines' | 'volunteer-dashboard' | 'human-chat'>('landing');
+  const [lang, setLang] = useState<Language>('zh');
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [role, setRole] = useState<'citizen' | 'volunteer' | null>(null);
   const [currentTicket, setCurrentTicket] = useState<Ticket | null>(null);
@@ -2131,6 +1693,7 @@ const MainLayout = () => {
   const toggleTheme = () => setTheme(prev => prev === 'light' ? 'dark' : 'light');
   const handleRoleSelect = (sel: string) => { if (sel === 'citizen-ai') { setRole('citizen'); setView('ai-chat'); } else if (sel === 'citizen-human') { setRole('citizen'); setView('intake'); } else if (sel === 'volunteer-login') { setView('volunteer-auth'); } };
   
+  // Immediately set local ticket to avoid White Page while waiting for DB sync
   const handleIntakeComplete = async (n: string, i: string, p: Priority, t: string[]) => { 
       const ticketId = await createTicket(n, i, p, t); 
       const tempTicket: Ticket = {
@@ -2150,14 +1713,15 @@ const MainLayout = () => {
     <ErrorBoundary>
       <div className={`w-full h-full min-h-screen ${theme === 'dark' ? 'dark' : ''}`}>
           <div className="w-full h-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white relative overflow-hidden font-sans">
-              {view === 'intro' && <IntroScreen onStart={() => setView('landing')} theme={theme} toggleTheme={toggleTheme} />}
-              {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
-              {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} />}
-              {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} />}
-              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => { setRole('volunteer'); setView('volunteer-guidelines'); }} />}
-              {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} />}
-              {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} />}
-              {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} />)}
+              {view === 'intro' && <IntroScreen onStart={() => setView('landing')} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} />}
+              {view === 'landing' && <LandingScreen onSelectRole={handleRoleSelect} lang={lang} toggleLang={() => setLang(l => l === 'zh' ? 'en' : 'zh')} theme={theme} toggleTheme={toggleTheme} onShowIntro={() => setView('intro')} />}
+              {view === 'ai-chat' && <AIChat onBack={() => setView('landing')} lang={lang} />}
+              {view === 'intake' && <IntakeForm onComplete={handleIntakeComplete} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-auth' && <VolunteerAuth onBack={() => setView('landing')} onLoginSuccess={() => { setRole('volunteer'); setView('volunteer-guidelines'); }} lang={lang} />}
+              {view === 'volunteer-guidelines' && <VolunteerGuidelines onConfirm={() => setView('volunteer-dashboard')} onBack={() => setView('landing')} lang={lang} />}
+              {view === 'volunteer-dashboard' && <VolunteerDashboard onBack={() => setView('landing')} onJoinChat={handleVolunteerJoin} lang={lang} />}
+              {/* Pass whole ticket object to avoid async lookup failure */}
+              {view === 'human-chat' && currentTicket && (<HumanChat ticketId={currentTicket.id} ticket={currentTicket} onLeave={() => setView(role === 'volunteer' ? 'volunteer-dashboard' : 'landing')} isVolunteer={role === 'volunteer'} lang={lang} />)}
           </div>
       </div>
     </ErrorBoundary>

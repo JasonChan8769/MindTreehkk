@@ -58,9 +58,8 @@ const getFirebaseConfig = () => {
     if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
   } catch (e) {}
 
-  // 2. Try parsing VITE_FIREBASE_CONFIG (From your Screenshot)
+  // 2. Try parsing VITE_FIREBASE_CONFIG
   let envConfigString = null;
-  
   if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
       envConfigString = process.env.VITE_FIREBASE_CONFIG;
   }
@@ -71,14 +70,11 @@ const getFirebaseConfig = () => {
           // @ts-ignore
           envConfigString = import.meta.env.VITE_FIREBASE_CONFIG;
       }
-  } catch (e) {
-      // Ignore import.meta errors
-  }
+  } catch (e) {}
 
   if (envConfigString) {
       try {
           if (typeof envConfigString === 'string' && envConfigString.trim().startsWith('{')) {
-              console.log("Parsing VITE_FIREBASE_CONFIG JSON");
               return JSON.parse(envConfigString);
           }
           return envConfigString; 
@@ -113,7 +109,7 @@ const getFirebaseConfig = () => {
   }
 
   return {
-    apiKey: "MISSING_KEY", // Will trigger warning
+    apiKey: "MISSING_KEY", 
     authDomain: "mindtreehk.firebaseapp.com",
     projectId: "mindtreehk"
   };
@@ -132,9 +128,9 @@ try {
       app = initializeApp(firebaseConfig);
       auth = getAuth(app);
       db = getFirestore(app);
-      console.log("Firebase initialized successfully with config.");
+      console.log("Firebase initialized successfully.");
   } else {
-      console.warn("Firebase Config missing. Please check Vercel Environment Variable: VITE_FIREBASE_CONFIG (JSON) or VITE_FIREBASE_API_KEY.");
+      console.warn("Firebase Config missing.");
   }
 } catch (e) {
   console.error("Firebase initialization error:", e);
@@ -319,7 +315,7 @@ const CONTENT = {
       cheerUp: "社區心聲",
       label: "留低一句",
       title: "留低一句鼓勵",
-      desc: "你的訊息將會「即時」顯示在首頁，為他人打氣（訊息保留5分鐘）。請發放正能量，禁止任何攻擊、色情或無意義內容。",
+      desc: "你的訊息將會「即時」顯示在首頁，為他人打氣。", // Updated as requested
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
@@ -423,6 +419,165 @@ const CONTENT = {
     chatWarning: {
       text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
     }
+  },
+  en: {
+    appTitle: "MindTree",
+    appSubtitle: "Your Safe Haven • Support for All",
+    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
+    intro: {
+      welcome: "Welcome to MindTree",
+      desc: "A safe, private, and secure space for mental support.\nNo matter how you feel, we are here with you.",
+      slide1Title: "AI & Human Collaboration",
+      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
+      slide2Title: "Absolute Privacy",
+      slide2Desc: "End-to-end encryption concepts used. Only the treehole knows your secrets.",
+      startBtn: "Start Journey"
+    },
+    landing: {
+      servicesTitle: "Select Service",
+      breathTitle: "Breathing Exercise",
+      breathDesc: "Guided • 60s Relax",
+      startBreath: "Start",
+      aiCard: { title: "AI Treehole", desc: "24/7 Listening • Instant Reply" },
+      humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
+      volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
+      feedback: "Feedback"
+    },
+    landingNotice: {
+      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
+      rules: "Please be respectful. In case of emergency, call 999."
+    },
+    aiRole: {
+      title: "AI Treehole",
+      welcome: "Hello, I'm MindTree. I know things might be tough lately. Want to talk about it?",
+      placeholder: "Type your thoughts here...",
+      disclaimer: "AI content for reference only."
+    },
+    humanRole: {
+      title: "Counselor",
+      waitingTitle: "Matching you with a volunteer...",
+      waitingMessage: "We are contacting online volunteers, please wait a moment...",
+      joinedTitle: "Counselor Joined",
+      systemJoin: "System: Counselor has joined",
+      headerVerified: "Social Worker",
+      headerPeer: "Peer Volunteer",
+      report: "Report User",
+      reportSuccess: "User reported. Admins will review logs.",
+      caseResolved: "Chat ended. Data destroyed.",
+      placeholder: "Type a message...",
+      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info (Full Name, Address, Phone, ID).",
+      scanBlock: "Message blocked: AI detected inappropriate content.",
+      endChatConfirm: "End chat and delete history?",
+      cancelWait: "Cancel Waiting"
+    },
+    memo: {
+      cheerUp: "Community Voices",
+      label: "Leave a Note",
+      title: "Leave a Positive Note",
+      desc: "Your message will float on the home screen instantly. Spread positivity. (Messages last 5 mins). No hate/spam/trolling.",
+      placeholder: "Write your blessing or feeling...",
+      btn: "Post",
+      success: "Posted successfully!",
+      scanning: "AI is reviewing content...",
+      unsafe: "Failed: Content may contain inappropriate language.",
+      guidance: "Please stay positive and kind."
+    },
+    volunteer: {
+      login: "Volunteer Login",
+      authTitle: "Volunteer Portal",
+      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.", 
+      nameLabel: "Display Name",
+      namePlaceholder: "e.g. Alex",
+      joinBtn: "Enter Platform",
+      proJoinTitle: "Professional Access",
+      codePlaceholder: "Access Code",
+      verifyBtn: "Enter Platform", 
+      errorMsg: "Invalid Code",
+      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
+      guidelinesTitle: "Support Guidelines",
+      guidelinesDesc: "3 Steps to be a better listener",
+      rule1Title: "Step 1: Listen",
+      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
+      rule2Title: "Step 2: Empathize",
+      rule2Desc: "Validate feelings. Say 'That sounds tough', 'I hear you'. Avoid 'Just get over it'.",
+      rule3Title: "Step 3: Assess Safety",
+      rule3Desc: "Stay alert. If self-harm/suicide is mentioned, stay calm. Recommend professional help (999) and report to admin immediately.",
+      acknowledgeBtn: "I Understand & Agree",
+      portalTitle: "Dashboard",
+      welcome: "Welcome back",
+      exit: "Logout",
+      activeRequests: "Active Cases",
+      noRequests: "No new cases",
+      accept: "Accept",
+      topic: "Issue",
+      priority: { critical: "Urgent", high: "High", medium: "Med", low: "Low" },
+      tabRequests: "Requests",
+      tabFeedback: "Feedback",
+      noFeedbacks: "No feedback yet",
+      exportCSV: "Export CSV"
+    },
+    intake: {
+      title: "Intake Form",
+      desc: "Help us understand your needs",
+      q1: "Nickname (Anonymous)",
+      q1_placeholder: "Nickname",
+      q_age: "Age Group",
+      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
+      q_gender: "Gender",
+      q_gender_opts: ["Male", "Female", "Other"],
+      q3: "Distress Level (1-5)",
+      q4: "Main Issue",
+      q4_opt1: "Anxiety / Panic",
+      q4_opt2: "Low Mood / Depression",
+      q4_opt3: "Family / Housing",
+      q4_opt4: "Self-harm Thoughts (Urgent)",
+      q5: "Details (Optional)",
+      q5_placeholder: "Brief description...",
+      submit: "Start Matching",
+      calm: "Calm",
+      crisis: "Crisis"
+    },
+    links: {
+      btn: "Resources",
+      title: "Community Resources",
+      desc: "Mental support, blood donation, and useful info.",
+      close: "Close",
+      catMental: "Mental Support",
+      catBlood: "Blood Donation",
+      catInfo: "Useful Info"
+    },
+    feedback: {
+      title: "Feedback",
+      desc: "Your feedback matters to us.",
+      placeholder: "Type your feedback...",
+      submit: "Send",
+      thanks: "Thank you! We will look into it."
+    },
+    breath: {
+      inhale: "Inhale",
+      hold: "Hold",
+      exhale: "Exhale",
+      relax: "Relax",
+      musicOn: "Music On",
+      musicOff: "Mute",
+      playErr: "Tap to Play Music"
+    },
+    footer: {
+      legal: "Disclaimer: Run by volunteers for peer support only. Not a medical service. In emergencies, call 999."
+    },
+    actions: {
+      back: "Back",
+      cancel: "Cancel",
+      endChat: "End",
+      leaveChat: "Leave"
+    },
+    dialogs: {
+      volLeaveMsg: "Return case to queue?",
+      citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info."
+    }
   }
 };
 
@@ -456,7 +611,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     `;
 
     // 2. Connect to Vercel (Primary)
-    // Fixed: Send systemInstruction separately, same as the working chat function
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

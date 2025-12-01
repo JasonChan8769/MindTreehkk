@@ -311,7 +311,8 @@ const CONTENT = {
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
       leaveChatConfirm: "確定離開？對話將保留給求助者決定。",
-      cancelWait: "取消等待"
+      cancelWait: "取消等待",
+      citizenSafetyReminder: "提醒：本平台義工非專業醫療人員。請優先考慮您的感受和隱私。若感到不適，您可以隨時點擊「結束」按鈕終止對話。",
     },
     memo: {
       cheerUp: "社區心聲",
@@ -496,7 +497,8 @@ const CONTENT = {
       scanBlock: "Message blocked: AI detected inappropriate content.",
       endChatConfirm: "End chat and delete history?",
       leaveChatConfirm: "Are you sure you want to leave? The chat will remain for the user.",
-      cancelWait: "Cancel Waiting"
+      cancelWait: "Cancel Waiting",
+      citizenSafetyReminder: "Reminder: Volunteers on this platform are non-professional peers. Prioritize your feelings and privacy. You can end the chat anytime if you feel uncomfortable.",
     },
     memo: {
       cheerUp: "Community Voices",
@@ -718,11 +720,13 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
+        // If Vercel fails, rely on strong local check
         return { safe: false, reason: `伺服器繁忙，請稍後再試 (Server Error ${response.status})` };
     }
 
   } catch (e) {
     console.error("Scan Connection Error", e);
+    // If network error, rely on strong local check
     return { safe: false, reason: "網絡錯誤，無法驗證內容" }; 
   }
 };
@@ -1941,6 +1945,13 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
          </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
+         {/* CITIZEN SAFETY REMINDER */}
+         {!isVolunteer && liveTicket.status === 'active' && (
+             <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl text-xs text-blue-700 dark:text-blue-400 mb-6 mx-auto max-w-lg border border-blue-100 dark:border-blue-900/30 text-center font-medium">
+                 {t.citizenSafetyReminder}
+             </div>
+         )}
+         
          {showWarning && (
              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-xl text-xs text-yellow-700 dark:text-yellow-400 mb-6 text-center mx-auto max-w-lg border border-yellow-100 dark:border-yellow-900/30 relative">
                 {t.chatReminder}

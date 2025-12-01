@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link, AlertOctagon, Share, PlusSquare, Menu 
+  Link, AlertOctagon, Share, PlusSquare, Menu, Settings // Added Settings import
 } from 'lucide-react';
 
 // Firebase Imports
@@ -279,7 +279,7 @@ const CONTENT = {
       humanCard: { title: "真人輔導", desc: "義工與社工 • 溫暖同行" },
       volunteerCard: { title: "加入義工團隊", desc: "成為別人的秘密樹窿" },
       feedback: "提供意見",
-      install: "安裝 App" // Added
+      install: "安裝 App"
     },
     landingNotice: {
       disclaimer: "免責聲明：本平台提供情緒支援，並非緊急醫療服務。",
@@ -400,7 +400,7 @@ const CONTENT = {
       musicOff: "靜音",
       playErr: "點擊播放音樂"
     },
-    install: { // New Section for Install Guide
+    install: {
       title: "安裝 App",
       desc: "將 MindTree 加到主畫面，隨時隨地使用。",
       iosTitle: "iOS (Safari)",
@@ -412,6 +412,12 @@ const CONTENT = {
       androidStep2: "選擇「安裝應用程式」或「加至主畫面」",
       androidStep3: "按照指示完成安裝",
       close: "我知道了"
+    },
+    settings: { // Added settings content
+      title: "設定",
+      lang: "語言 / Language",
+      theme: "外觀 / Theme",
+      close: "關閉"
     },
     footer: {
       legal: "免責聲明：本平台由志願者運營，僅提供同儕情緒支援，並非專業醫療機構或緊急救援服務。本平台不對任何因使用本服務而產生的後果負責。如遇生命危險或緊急情況，請立即致電 999 報警或前往最近急症室。使用者需自行承擔使用本服務之風險。"
@@ -452,7 +458,7 @@ const CONTENT = {
       humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
       volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
       feedback: "Feedback",
-      install: "Install App" // Added
+      install: "Install App"
     },
     landingNotice: {
       disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
@@ -485,7 +491,7 @@ const CONTENT = {
       cheerUp: "Community Voices",
       label: "Leave a Note",
       title: "Leave a Positive Note",
-      desc: "Your message will float on the home screen instantly. Spread positivity. (Messages last 5 mins). No hate/spam/trolling.",
+      desc: "Your message will float on the home screen instantly. Spread positivity.", 
       placeholder: "Write your blessing or feeling...",
       btn: "Post",
       success: "Posted successfully!",
@@ -585,6 +591,12 @@ const CONTENT = {
       androidStep2: "Tap 'Install app' or 'Add to Home screen'",
       androidStep3: "Follow instructions to install",
       close: "Got it"
+    },
+    settings: { // Added settings content
+      title: "Settings",
+      lang: "Language",
+      theme: "Theme",
+      close: "Close"
     },
     footer: {
       legal: "Disclaimer: Run by volunteers for peer support only. Not a medical service. In emergencies, call 999."
@@ -1047,7 +1059,45 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   );
 };
 
-// --- NEW INSTALL GUIDE MODAL ---
+// --- SETTINGS MODAL ---
+const SettingsModal = ({ onClose, lang, toggleLang, theme, toggleTheme }: { onClose: () => void, lang: Language, toggleLang: () => void, theme: 'light' | 'dark', toggleTheme: () => void }) => {
+  const t = CONTENT[lang].settings;
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 w-full max-w-xs shadow-2xl relative">
+         <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20}/></button>
+         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2"><Settings size={24} className="text-teal-500"/> {t.title}</h3>
+         
+         <div className="space-y-4">
+            {/* Language Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                <div className="flex items-center gap-3">
+                    <Globe size={20} className="text-slate-500" />
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{t.lang}</span>
+                </div>
+                <button onClick={toggleLang} className="px-3 py-1.5 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-xs font-bold text-teal-600 dark:text-teal-400 border border-slate-200 dark:border-slate-600">
+                    {lang === 'zh' ? 'EN' : '繁體'}
+                </button>
+            </div>
+
+            {/* Theme Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+                <div className="flex items-center gap-3">
+                    {theme === 'light' ? <Sun size={20} className="text-orange-400" /> : <Moon size={20} className="text-indigo-400" />}
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{t.theme}</span>
+                </div>
+                <button onClick={toggleTheme} className="px-3 py-1.5 bg-white dark:bg-slate-700 rounded-lg shadow-sm text-xs font-bold text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                    {theme === 'light' ? 'Dark' : 'Light'}
+                </button>
+            </div>
+         </div>
+         
+         <button onClick={onClose} className="w-full py-3 mt-6 bg-teal-600 text-white font-bold rounded-xl shadow-lg shadow-teal-500/20">{t.close}</button>
+      </div>
+    </div>
+  )
+}
+
 const InstallGuideModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].install;
   
@@ -1147,7 +1197,7 @@ const IntroScreen = ({ onStart, lang, toggleLang, theme, toggleTheme }: { onStar
       <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-emerald-500/20 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[80%] bg-teal-500/20 rounded-full blur-[120px] animate-pulse" />
       <div className="w-full flex justify-end gap-3 p-6 z-20 shrink-0">
-        <button onClick={toggleLang} className="flex items-center gap-1 bg-white/50 dark:bg-black/20 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold shadow-sm transition-all hover:bg-white/80 dark:text-white"><Globe size={12} /> {lang === 'zh' ? 'EN' : '繁體'}</button>
+        {/* Moved Language Button to Settings Modal */}
       </div>
       <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-md mx-auto w-full text-center z-10">
         <div className="mb-10 p-12 bg-white/30 dark:bg-white/5 backdrop-blur-xl rounded-[3rem] shadow-2xl shadow-teal-500/10 animate-float">
@@ -1175,7 +1225,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [showResources, setShowResources] = useState(false);
   const [showBreath, setShowBreath] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [showInstall, setShowInstall] = useState(false); // New State
+  const [showInstall, setShowInstall] = useState(false);
+  const [showSettings, setShowSettings] = useState(false); // New Settings State
   const [memoText, setMemoText] = useState("");
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
@@ -1193,10 +1244,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     }
   }, [theme]);
 
-  // Load Initial Quotes (Fixed random selection to avoid repetition if array is small, but now it's big)
+  // Load Initial Quotes
   useEffect(() => {
     const shuffledQuotes = [...AI_QUOTES].sort(() => 0.5 - Math.random());
-    const selectedQuotes = shuffledQuotes.slice(0, 15); // Increased count
+    const selectedQuotes = shuffledQuotes.slice(0, 15);
     const initialBubbles = selectedQuotes.map((quote, index) => {
         const randomSymbol = COMFORT_SYMBOLS[Math.floor(Math.random() * COMFORT_SYMBOLS.length)];
         const textWithSymbol = Math.random() > 0.5 ? `${randomSymbol} ${quote}` : `${quote} ${randomSymbol}`;
@@ -1208,12 +1259,10 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
     setFloatingBubbles(initialBubbles);
   }, []);
 
-  // Update when new public memos come in (Already filtered for 5 mins in AppContext)
+  // Update when new public memos come in
   useEffect(() => {
     if (publicMemos.length > 0) { 
         setFloatingBubbles(prev => {
-            // Keep initial bubbles, add new ones on top
-            // Filter out old user bubbles from prev state if any (though AppContext handles strict sync)
             const defaults = prev.filter(b => b.id.toString().startsWith('init-'));
             return [...publicMemos, ...defaults]; 
         }); 
@@ -1251,6 +1300,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
       {showInstall && <InstallGuideModal onClose={() => setShowInstall(false)} lang={lang} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} lang={lang} toggleLang={toggleLang} theme={theme} toggleTheme={toggleTheme} />}
       
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
       <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
@@ -1273,8 +1323,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
         <div className="flex gap-3">
            <button onClick={() => setShowInstall(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.install}><Download size={18} /></button>
            <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.feedback}><MessageSquare size={18} /></button>
-           <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md"><Globe size={18} /></button>
-           <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
+           <button onClick={() => setShowSettings(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md"><Settings size={18} /></button>
         </div>
       </div>
       <div className="flex-1 w-full overflow-y-auto z-10 px-6 pb-24 no-scrollbar">

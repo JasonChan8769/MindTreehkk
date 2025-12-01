@@ -364,7 +364,8 @@ const CONTENT = {
       notificationTitle: "新求助個案！",
       notificationBody: "優先級：{priority}，主訴：{issue}。是否願意提供幫助？",
       notificationPermission: "啟用桌面通知",
-      notificationStatus: "通知已啟用"
+      notificationStatus: "通知已啟用",
+      notificationMobileWarning: "行動設備上的通知可能不穩定，請保持網頁開啟。"
     },
     intake: {
       title: "求助登記",
@@ -554,7 +555,8 @@ const CONTENT = {
       notificationTitle: "New Request!",
       notificationBody: "Priority: {priority}, Issue: {issue}. Ready to help?",
       notificationPermission: "Enable Notifications",
-      notificationStatus: "Notifications Enabled"
+      notificationStatus: "Notifications Enabled",
+      notificationMobileWarning: "Notifications may be unstable on mobile devices. Please keep the app open."
     },
     intake: {
       title: "Intake Form",
@@ -1131,7 +1133,13 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   const toggleAudio = () => {
     if (audioRef.current) {
       if (isPlaying) { audioRef.current.pause(); setIsPlaying(false); } 
-      else { audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e)); }
+      else { 
+        // Use window.Notification for clarity if Notification is used elsewhere
+        if (typeof window !== 'undefined' && window.Notification && window.Notification.permission === 'granted') {
+             new Notification('Playing Music', { body: 'Relaxing sounds started.' });
+        }
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e)); 
+      }
     }
   };
 
@@ -1763,24 +1771,26 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
   useEffect(() => {
     // Check initial permission status
     if ('Notification' in window) {
-      setNotificationStatus(Notification.permission);
+      setNotificationStatus(window.Notification.permission);
     }
   }, []);
 
   useEffect(() => {
     // Only run if permission is granted and a new ticket appeared
     if (notificationStatus === 'granted' && waitingTickets.length > lastTicketCount && waitingTickets.length > 0) {
-      const newTicket = waitingTickets[0]; // Assuming newest ticket is at index 0 (due to sorting by createdAt in AppProvider)
+      // Find the *newest* waiting ticket (already sorted by createdAt descending in AppProvider)
+      const newTicket = waitingTickets[0]; 
       
       const body = t.notificationBody
         .replace('{priority}', t.priority[newTicket.priority])
         .replace('{issue}', newTicket.issue);
         
-      new Notification(t.notificationTitle, {
+      new window.Notification(t.notificationTitle, {
         body: body,
         icon: 'https://placehold.co/64x64/34d399/ffffff?text=MT' 
       });
     }
+    // Update last count after potential notification send
     setLastTicketCount(waitingTickets.length);
   }, [waitingTickets.length, notificationStatus]);
 
@@ -1790,7 +1800,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
       alert('Your browser does not support desktop notification.');
       return;
     }
-    const permission = await Notification.requestPermission();
+    const permission = await window.Notification.requestPermission();
     setNotificationStatus(permission);
   };
 
@@ -1841,11 +1851,14 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
          
          {/* Notification Bar (Only shown on Requests tab) */}
          {activeTab === 'requests' && notificationStatus !== 'granted' && (
-            <div className={`mb-4 p-3 rounded-xl flex items-center justify-between ${notificationStatus === 'denied' ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-blue-100 border-blue-200 text-blue-700'}`}>
-                <p className="text-xs font-medium flex items-center gap-2">
+            <div className={`mb-4 p-3 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between ${notificationStatus === 'denied' ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-blue-100 border-blue-200 text-blue-700'}`}>
+                <div className="text-xs font-medium flex items-center gap-2 mb-2 sm:mb-0">
                     {notificationStatus === 'denied' ? <AlertOctagon size={16} /> : <Clock size={16} />}
-                    {notificationStatus === 'denied' ? '通知權限被拒，請在瀏覽器設定中更改。' : '開啟通知，以免錯過新個案。'}
-                </p>
+                    <p>
+                        {notificationStatus === 'denied' ? '通知權限被拒，請在瀏覽器設定中更改。' : '開啟通知，以免錯過新個案。'}
+                        <span className='block sm:inline text-slate-500'> ({t.notificationMobileWarning})</span>
+                    </p>
+                </div>
                 <button 
                     onClick={requestNotificationPermission} 
                     className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${notificationStatus === 'denied' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
@@ -1943,7 +1956,11 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
 
   const handleCancelWait = async () => { await deleteTicket(ticketId); onLeave(); };
   
-  const handleRequeue = async () => { await updateTicketStatus(ticketId, 'waiting'); };
+  const handleRequeue = async () => { 
+    if(window.confirm("重新排隊等待下一位義工？ (Re-queue for a volunteer?)")) {
+        await updateTicketStatus(ticketId, 'waiting'); 
+    }
+  };
 
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (

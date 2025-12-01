@@ -59,16 +59,12 @@ const getFirebaseConfig = () => {
   } catch (e) {}
 
   // 2. Try parsing VITE_FIREBASE_CONFIG (From your Screenshot)
-  // This is the critical fix for your Vercel/Vite setup
   let envConfigString = null;
   
-  // Try accessing via process.env (standard Vercel/Node)
   if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
       envConfigString = process.env.VITE_FIREBASE_CONFIG;
   }
   
-  // Try accessing via import.meta.env (standard Vite)
-  // We use a try-catch block to prevent build errors in environments that don't support import.meta
   try {
       // @ts-ignore
       if (!envConfigString && import.meta && import.meta.env && import.meta.env.VITE_FIREBASE_CONFIG) {
@@ -76,17 +72,16 @@ const getFirebaseConfig = () => {
           envConfigString = import.meta.env.VITE_FIREBASE_CONFIG;
       }
   } catch (e) {
-      console.log("import.meta not available");
+      // Ignore import.meta errors
   }
 
   if (envConfigString) {
       try {
-          // Check if it's a JSON string or already an object
           if (typeof envConfigString === 'string' && envConfigString.trim().startsWith('{')) {
               console.log("Parsing VITE_FIREBASE_CONFIG JSON");
               return JSON.parse(envConfigString);
           }
-          return envConfigString; // It might be an object already in some build pipelines
+          return envConfigString; 
       } catch (e) {
           console.error("Failed to parse VITE_FIREBASE_CONFIG JSON", e);
       }
@@ -461,13 +456,15 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     `;
 
     // 2. Connect to Vercel (Primary)
+    // Fixed: Send systemInstruction separately, same as the working chat function
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             history: [
-                { role: 'user', parts: [{ text: systemInstruction + "\nReview this message: " + text }] }
-            ]
+                { role: 'user', parts: [{ text: `Review this message: "${text}"` }] }
+            ],
+            systemInstruction: systemInstruction
         })
     });
 
@@ -475,7 +472,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         const data = await response.json();
         let aiRes = "";
         
-        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             aiRes = data.candidates[0].content.parts[0].text.trim();
         } else if (data.text) {

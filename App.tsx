@@ -440,30 +440,67 @@ const CONTENT = {
 
 // --- 3. SERVICES ---
 
+// ENHANCED LOCAL SCANNER (Anti-Trolling & Abuse)
 const checkContentSafety = (text: string) => {
-  const badWords = ["die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", "笨", "白痴", "廢", "垃圾", "dlkh", "on9"];
+  const badWords = [
+    "die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", 
+    "笨", "白痴", "廢", "垃圾", "dlkh", "on9", "asshole", "cunt", "dick", "pussy", "whore", "slut", "faggot", 
+    "nigger", "retard", "kys", "rape"
+  ];
+  
   const lower = text.toLowerCase();
-  const hasBadWord = badWords.some(word => lower.includes(word));
+  
+  // 1. Keyword Check
+  const hasBadWord = badWords.some(word => {
+      // More robust word boundary check might be needed, but simple includes is safer for strict moderation
+      return lower.includes(word);
+  });
     
   if (text.trim().length < 2) return { safe: false, reason: "Message too short." };
-    
-  if (hasBadWord) {
-    return { safe: false, reason: "Content contains inappropriate words." };
+  if (hasBadWord) return { safe: false, reason: "Content contains inappropriate words." };
+
+  // 2. Anti-Trolling: Repeated Characters (e.g., "fuuuuuuck", "ahhhhhhh")
+  // Checks for same character repeated 5+ times
+  if (/(.)\1{4,}/.test(lower)) {
+      return { safe: false, reason: "Please stop spamming characters (Trolling detected)." };
   }
+
+  // 3. Anti-Trolling: All Caps Shouting (if message is long enough)
+  if (text.length > 10 && text === text.toUpperCase() && /[A-Z]/.test(text)) {
+      return { safe: false, reason: "Please stop shouting (Caps Lock)." };
+  }
+
+  // 4. Anti-Trolling: Keysmashing / Gibberish
+  // Checks for very long words without spaces (likely nonsense)
+  const words = text.split(" ");
+  if (words.some(w => w.length > 25)) {
+      return { safe: false, reason: "Message contains invalid words (Keysmash)." };
+  }
+
   return { safe: true, reason: null };
 };
 
 // STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // 1. Basic Local Check
+    // 1. Enhanced Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
 
     const systemInstruction = `
     You are a STRICT Content Moderator for a mental health support app called 'MindTree'.
+    
     YOUR GOAL: Only allow messages that are POSITIVE, WARM, SUPPORTIVE, or ENCOURAGING to appear on the public homepage.
-    STRICTLY FORBIDDEN: Hate, sexual, self-harm, ads, trolling, negative venting.
+    
+    STRICTLY FORBIDDEN: 
+    - Hate speech, insults, bullying.
+    - Sexual content or innuendo.
+    - Self-harm or suicide encouragement.
+    - Promotional content, ads, spam.
+    - Trolling, nonsense, keysmashing (e.g. "asdfghjkl").
+    - Baiting or sarcasm.
+    - Negative venting (public homepage must remain positive).
+    
     RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
     `;
 
@@ -495,19 +532,20 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
-        return { safe: false, reason: `伺服器錯誤 (Server Error ${response.status})` };
+        // FAIL-SAFE: If server is down, default to UNSAFE for public board to prevent abuse
+        return { safe: false, reason: `伺服器繁忙，請稍後再試 (Server Error ${response.status})` };
     }
 
   } catch (e) {
     console.error("Scan Connection Error", e);
-    return { safe: true, reason: null }; 
+    return { safe: false, reason: "網絡錯誤，無法驗證內容" }; 
   }
 };
 
 // NEW: Chat Safety Scanner for HumanChat (Allows venting but bans abuse)
 const scanChatSafety = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-      // 1. Local Check first
+      // 1. Enhanced Local Check
       const localCheck = checkContentSafety(text);
       if (!localCheck.safe) return localCheck;
 
@@ -520,7 +558,7 @@ const scanChatSafety = async (text: string): Promise<{ safe: boolean, reason: st
       - Hate speech, slurs, or verbal abuse towards the other party.
       - Sharing explicit personal contacts (Phone numbers, ID numbers) - discourage PII.
       - Promotional content, ads, spam.
-      - Trolling or nonsense aimed at wasting time.
+      - Trolling, baiting, or nonsense aimed at wasting time.
       
       RESPONSE FORMAT:
       - If content is safe for a support chat (even if sad/depressed): Return "PASS".
@@ -553,12 +591,14 @@ const scanChatSafety = async (text: string): Promise<{ safe: boolean, reason: st
            return { safe: false, reason: aiRes || "內容包含不當訊息 (Content flagged)" };
       }
       
-      // On server error, we allow the message through to avoid blocking help-seekers
-      console.warn("Chat Scan Server Error, passing through.");
+      // On server error for CHAT, we default to allowing it through IF local check passed
+      // This is a trade-off: better to let a user vent during a server outage than block them
+      console.warn("Chat Scan Server Error, passing through based on Local Check.");
       return { safe: true, reason: null };
 
   } catch (e) {
       console.error("Chat Scan Error", e);
+      // Network error -> Allow if local check passes
       return { safe: true, reason: null };
   }
 };
@@ -1614,13 +1654,9 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
   const handleSend = async () => {
     if (!text.trim()) return;
     
-    // 1. Basic Local Check
+    // 1. Enhanced Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) {
-      // Since HumanChat doesn't have its own notification state in UI, we can just clear text or show a brief alert.
-      // However, ideally we should show it. Let's try to use a simple alert for now as fallback
-      // or rely on the parent's notification if we lift state. 
-      // But for simplicity and speed requested:
       alert(localCheck.reason || "Content unsafe");
       return;
     }

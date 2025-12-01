@@ -355,12 +355,16 @@ const CONTENT = {
       accept: "接聽",
       topic: "主訴",
       priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
-      tabRequests: "待處理", // Updated
-      tabActive: "輔導中", // Added
-      tabAll: "全部", // Added
+      tabRequests: "待處理", 
+      tabActive: "輔導中", 
+      tabAll: "全部", 
       tabFeedback: "管理員專區",
       noFeedbacks: "暫時沒有意見",
-      exportCSV: "匯出 CSV (下載至裝置)"
+      exportCSV: "匯出 CSV (下載至裝置)",
+      notificationTitle: "新求助個案！",
+      notificationBody: "優先級：{priority}，主訴：{issue}。是否願意提供幫助？",
+      notificationPermission: "啟用桌面通知",
+      notificationStatus: "通知已啟用"
     },
     intake: {
       title: "求助登記",
@@ -408,7 +412,7 @@ const CONTENT = {
       musicOff: "靜音",
       playErr: "點擊播放音樂"
     },
-    install: {
+    install: { // Added for EN
       title: "安裝 App",
       desc: "將 MindTree 加到主畫面，隨時隨地使用。",
       iosTitle: "iOS (Safari)",
@@ -421,7 +425,7 @@ const CONTENT = {
       androidStep3: "按照指示完成安裝",
       close: "我知道了"
     },
-    settings: {
+    settings: { // Added settings content
       title: "設定",
       lang: "語言 / Language",
       theme: "外觀 / Theme",
@@ -546,7 +550,11 @@ const CONTENT = {
       tabAll: "All",
       tabFeedback: "Feedback",
       noFeedbacks: "No feedback yet",
-      exportCSV: "Export CSV"
+      exportCSV: "Export CSV",
+      notificationTitle: "New Request!",
+      notificationBody: "Priority: {priority}, Issue: {issue}. Ready to help?",
+      notificationPermission: "Enable Notifications",
+      notificationStatus: "Notifications Enabled"
     },
     intake: {
       title: "Intake Form",
@@ -1746,7 +1754,45 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
   const t = CONTENT[lang].volunteer;
   const { tickets, volunteerProfile, feedbacks } = useAppContext();
   const [activeTab, setActiveTab] = useState<'requests' | 'active' | 'all' | 'feedback'>('requests');
+  const [notificationStatus, setNotificationStatus] = useState<'default' | 'granted' | 'denied'>('default');
   const isAdmin = volunteerProfile.role === 'admin';
+  const waitingTickets = tickets.filter(t => t.status === 'waiting');
+  const [lastTicketCount, setLastTicketCount] = useState(waitingTickets.length);
+
+  // --- Notification Logic ---
+  useEffect(() => {
+    // Check initial permission status
+    if ('Notification' in window) {
+      setNotificationStatus(Notification.permission);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only run if permission is granted and a new ticket appeared
+    if (notificationStatus === 'granted' && waitingTickets.length > lastTicketCount && waitingTickets.length > 0) {
+      const newTicket = waitingTickets[0]; // Assuming newest ticket is at index 0 (due to sorting by createdAt in AppProvider)
+      
+      const body = t.notificationBody
+        .replace('{priority}', t.priority[newTicket.priority])
+        .replace('{issue}', newTicket.issue);
+        
+      new Notification(t.notificationTitle, {
+        body: body,
+        icon: 'https://placehold.co/64x64/34d399/ffffff?text=MT' 
+      });
+    }
+    setLastTicketCount(waitingTickets.length);
+  }, [waitingTickets.length, notificationStatus]);
+
+
+  const requestNotificationPermission = async () => {
+    if (!('Notification' in window)) {
+      alert('Your browser does not support desktop notification.');
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotificationStatus(permission);
+  };
 
   const downloadCSV = () => {
       const headers = "ID,Timestamp,Message\n";
@@ -1792,6 +1838,24 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
        </div>
        
        <div className="flex-1 overflow-y-auto p-6">
+         
+         {/* Notification Bar (Only shown on Requests tab) */}
+         {activeTab === 'requests' && notificationStatus !== 'granted' && (
+            <div className={`mb-4 p-3 rounded-xl flex items-center justify-between ${notificationStatus === 'denied' ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-blue-100 border-blue-200 text-blue-700'}`}>
+                <p className="text-xs font-medium flex items-center gap-2">
+                    {notificationStatus === 'denied' ? <AlertOctagon size={16} /> : <Clock size={16} />}
+                    {notificationStatus === 'denied' ? '通知權限被拒，請在瀏覽器設定中更改。' : '開啟通知，以免錯過新個案。'}
+                </p>
+                <button 
+                    onClick={requestNotificationPermission} 
+                    className={`text-xs font-bold px-3 py-1 rounded-lg transition-colors ${notificationStatus === 'denied' ? 'bg-rose-500 text-white hover:bg-rose-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                    disabled={notificationStatus === 'granted'}
+                >
+                    {t.notificationPermission}
+                </button>
+            </div>
+         )}
+         
          {(activeTab !== 'feedback') ? (
              <>
                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{activeTab === 'requests' ? t.tabRequests : (activeTab === 'active' ? t.tabActive : t.tabAll)} ({filteredTickets.length})</h3>
@@ -1804,14 +1868,15 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
                        <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
                          <div className="flex justify-between items-start">
                             <div className="flex gap-2">
-                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
+                               <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{t.priority[ticket.priority]}</span>
                                <span className="text-slate-400 text-xs">{ticket.time}</span>
                                {ticket.status === 'paused' && <span className="text-orange-500 text-[10px] font-bold border border-orange-200 bg-orange-50 px-2 py-1 rounded">PAUSED</span>}
+                               {ticket.status === 'active' && <span className="text-emerald-500 text-[10px] font-bold border border-emerald-200 bg-emerald-50 px-2 py-1 rounded">ACTIVE</span>}
                             </div>
                          </div>
                          <div><div className="font-bold text-lg dark:text-white">{ticket.name}</div><div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div></div>
                          <div className="flex gap-2 mt-2">{ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}</div>
-                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{ticket.status === 'active' ? 'Join' : t.accept}</button>
+                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{ticket.status === 'active' ? 'Re-Join' : t.accept}</button>
                        </div>
                      ))}
                    </div>

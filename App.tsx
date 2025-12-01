@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link, AlertOctagon, Share, PlusSquare, Menu, Settings 
+  Link, AlertOctagon, Share, PlusSquare, Menu, Settings, Filter, LogOut 
 } from 'lucide-react';
 
 // Firebase Imports
@@ -17,6 +17,7 @@ import {
 // --- GLOBAL DECLARATIONS ---
 declare const process: any;
 declare const __firebase_config: string;
+declare const __app_id: string;
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
@@ -152,7 +153,7 @@ export interface Ticket {
   name: string;
   issue: string;
   priority: Priority;
-  status: 'waiting' | 'active' | 'resolved';
+  status: 'waiting' | 'active' | 'resolved' | 'paused'; // Added 'paused' state
   time: string;
   createdAt: number;
   tags: string[];
@@ -302,10 +303,14 @@ const CONTENT = {
       report: "檢舉用戶",
       reportSuccess: "已檢舉該用戶。管理員將會審查對話紀錄。",
       caseResolved: "對話已結束。數據已銷毀。",
+      volunteerLeft: "輔導員已離開",
+      leftDesc: "輔導員已離開對話。你可以選擇重新排隊等待下一位義工，或結束對話。",
+      requeue: "繼續等待",
       placeholder: "輸入訊息...",
       chatReminder: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。",
       scanBlock: "訊息未能發送：AI 偵測到不當或攻擊性內容。",
       endChatConfirm: "確定結束並刪除紀錄？",
+      leaveChatConfirm: "確定離開？對話將保留給求助者決定。",
       cancelWait: "取消等待"
     },
     memo: {
@@ -349,7 +354,9 @@ const CONTENT = {
       accept: "接聽",
       topic: "主訴",
       priority: { critical: "緊急", high: "高", medium: "中", low: "低" },
-      tabRequests: "求助個案",
+      tabRequests: "待處理", // Updated
+      tabActive: "輔導中", // Added
+      tabAll: "全部", // Added
       tabFeedback: "管理員專區",
       noFeedbacks: "暫時沒有意見",
       exportCSV: "匯出 CSV (下載至裝置)"
@@ -400,6 +407,191 @@ const CONTENT = {
       musicOff: "靜音",
       playErr: "點擊播放音樂"
     },
+    install: {
+      title: "安裝 App",
+      desc: "將 MindTree 加到主畫面，隨時隨地使用。",
+      iosTitle: "iOS (Safari)",
+      iosStep1: "點擊底部工具列的「分享」按鈕",
+      iosStep2: "向下滑動，選擇「加至主畫面」",
+      iosStep3: "點擊右上角的「加入」",
+      androidTitle: "Android (Chrome)",
+      androidStep1: "點擊右上角的選單圖示 (⋮)",
+      androidStep2: "選擇「安裝應用程式」或「加至主畫面」",
+      androidStep3: "按照指示完成安裝",
+      close: "我知道了"
+    },
+    settings: {
+      title: "設定",
+      lang: "語言 / Language",
+      theme: "外觀 / Theme",
+      close: "關閉"
+    },
+    footer: {
+      legal: "免責聲明：本平台由志願者運營，僅提供同儕情緒支援，並非專業醫療機構或緊急救援服務。本平台不對任何因使用本服務而產生的後果負責。如遇生命危險或緊急情況，請立即致電 999 報警或前往最近急症室。使用者需自行承擔使用本服務之風險。"
+    },
+    actions: {
+      back: "返回",
+      cancel: "取消",
+      endChat: "結束",
+      leaveChat: "離開"
+    },
+    dialogs: {
+      volLeaveMsg: "Return case to queue?",
+      citEndMsg: "End this session?"
+    },
+    chatWarning: {
+      text: "⚠️ 提醒：請保持尊重與禮貌。嚴禁任何非法、騷擾或侵犯隱私的行為。為了保障雙方安全，請勿透露個人敏感資料（如全名、地址、電話、身份證號碼）。"
+    }
+  },
+  en: {
+    appTitle: "MindTree",
+    appSubtitle: "Your Safe Haven • Support for All",
+    nav: { home: "Home", chat: "AI Treehole", human: "Human Support", resources: "Resources" },
+    intro: {
+      welcome: "Welcome to MindTree",
+      desc: "A safe, private, and secure space for mental support.\nNo matter how you feel, we are here with you.",
+      slide1Title: "AI & Human Collaboration",
+      slide1Desc: "Advanced AI listening 24/7, with professional volunteers ready to help.",
+      slide2Title: "Absolute Privacy",
+      slide2Desc: "End-to-end encryption concepts used. Only the treehole knows your secrets.",
+      startBtn: "Start Journey"
+    },
+    landing: {
+      servicesTitle: "Select Service",
+      breathTitle: "Breathing Exercise",
+      breathDesc: "Guided • 60s Relax",
+      startBreath: "Start",
+      aiCard: { title: "AI Treehole", desc: "24/7 Listening • Instant Reply" },
+      humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
+      volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
+      feedback: "Feedback",
+      install: "Install App"
+    },
+    landingNotice: {
+      disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
+      rules: "Please be respectful. In case of emergency, call 999."
+    },
+    aiRole: {
+      title: "AI Treehole",
+      welcome: "Hello, I'm MindTree. I know things might be tough lately. Want to talk about it?",
+      placeholder: "Type your thoughts here...",
+      disclaimer: "AI content for reference only."
+    },
+    humanRole: {
+      title: "Counselor",
+      waitingTitle: "Matching you with a volunteer...",
+      waitingMessage: "We are contacting online volunteers, please wait a moment...",
+      joinedTitle: "Counselor Joined",
+      systemJoin: "System: Counselor has joined",
+      headerVerified: "Social Worker",
+      headerPeer: "Peer Volunteer",
+      report: "Report User",
+      reportSuccess: "User reported. Admins will review logs.",
+      caseResolved: "Chat ended. Data destroyed.",
+      volunteerLeft: "Counselor Left",
+      leftDesc: "The counselor has left the chat. You can wait for the next one or end the chat.",
+      requeue: "Keep Waiting",
+      placeholder: "Type a message...",
+      chatReminder: "⚠️ Reminder: Please be respectful. Illegal behavior, harassment, or privacy violations are prohibited. Do not reveal sensitive personal info (Full Name, Address, Phone, ID).",
+      scanBlock: "Message blocked: AI detected inappropriate content.",
+      endChatConfirm: "End chat and delete history?",
+      leaveChatConfirm: "Are you sure you want to leave? The chat will remain for the user.",
+      cancelWait: "Cancel Waiting"
+    },
+    memo: {
+      cheerUp: "Community Voices",
+      label: "Leave a Note",
+      title: "Leave a Positive Note",
+      desc: "Your message will float on the home screen instantly. Spread positivity.", 
+      placeholder: "Write your blessing or feeling...",
+      btn: "Post",
+      success: "Posted successfully!",
+      scanning: "AI is reviewing content...",
+      unsafe: "Failed: Content may contain inappropriate language.",
+      guidance: "Please stay positive and kind."
+    },
+    volunteer: {
+      login: "Volunteer Login",
+      authTitle: "Volunteer Portal",
+      disclaimer: "Thank you for your dedication. Please ensure you are ready to listen.", 
+      nameLabel: "Display Name",
+      namePlaceholder: "e.g. Alex",
+      joinBtn: "Enter Platform",
+      proJoinTitle: "Professional Access",
+      codePlaceholder: "Access Code",
+      verifyBtn: "Enter Platform", 
+      errorMsg: "Invalid Code",
+      reminder: "Reminder: Always maintain empathy and respect. We are building a safe, inclusive space.",
+      guidelinesTitle: "Support Guidelines",
+      guidelinesDesc: "3 Steps to be a better listener",
+      rule1Title: "Step 1: Listen",
+      rule1Desc: "Give them space. Don't interrupt or rush to advise. Use 'I see', 'I understand' to show acceptance.",
+      rule2Title: "Step 2: Empathize",
+      rule2Desc: "Validate feelings. Say 'That sounds tough', 'I hear you'. Avoid 'Just get over it'.",
+      rule3Title: "Step 3: Assess Safety",
+      rule3Desc: "Stay alert. If self-harm/suicide is mentioned, stay calm. Recommend professional help (999) and report to admin immediately.",
+      acknowledgeBtn: "I Understand & Agree",
+      portalTitle: "Dashboard",
+      welcome: "Welcome back",
+      exit: "Logout",
+      activeRequests: "Active Cases",
+      noRequests: "No new cases",
+      accept: "Accept",
+      topic: "Issue",
+      priority: { critical: "Urgent", high: "High", medium: "Med", low: "Low" },
+      tabRequests: "Waiting",
+      tabActive: "Active",
+      tabAll: "All",
+      tabFeedback: "Feedback",
+      noFeedbacks: "No feedback yet",
+      exportCSV: "Export CSV"
+    },
+    intake: {
+      title: "Intake Form",
+      desc: "Help us understand your needs",
+      q1: "Nickname (Anonymous)",
+      q1_placeholder: "Nickname",
+      q_age: "Age Group",
+      q_age_opts: ["Under 18", "18-30", "31-50", "51-70", "70+"],
+      q_gender: "Gender",
+      q_gender_opts: ["Male", "Female", "Other"],
+      q3: "Distress Level (1-5)",
+      q4: "Main Issue",
+      q4_opt1: "Anxiety / Panic",
+      q4_opt2: "Low Mood / Depression",
+      q4_opt3: "Family / Housing",
+      q4_opt4: "Self-harm Thoughts (Urgent)",
+      q5: "Details (Optional)",
+      q5_placeholder: "Brief description...",
+      submit: "Start Matching",
+      calm: "Calm",
+      crisis: "Crisis"
+    },
+    links: {
+      btn: "Resources",
+      title: "Community Resources",
+      desc: "Mental support, blood donation, and useful info.",
+      close: "Close",
+      catMental: "Mental Support",
+      catBlood: "Blood Donation",
+      catInfo: "Useful Info"
+    },
+    feedback: {
+      title: "Feedback",
+      desc: "Your feedback matters to us.",
+      placeholder: "Type your feedback...",
+      submit: "Send",
+      thanks: "Thank you! We will look into it."
+    },
+    breath: {
+      inhale: "Inhale",
+      hold: "Hold",
+      exhale: "Exhale",
+      relax: "Relax",
+      musicOn: "Music On",
+      musicOff: "Mute",
+      playErr: "Tap to Play Music"
+    },
     install: { // Added for EN
       title: "Install App",
       desc: "Add MindTree to your home screen for easy access.",
@@ -440,7 +632,6 @@ const CONTENT = {
 
 // --- 3. SERVICES ---
 
-// ENHANCED LOCAL SCANNER (Anti-Trolling & Abuse)
 const checkContentSafety = (text: string) => {
   const badWords = [
     "die", "kill", "死", "自殺", "殺", "idiot", "stupid", "hate", "fuck", "shit", "bitch", "porn", "sex", 
@@ -452,7 +643,6 @@ const checkContentSafety = (text: string) => {
   
   // 1. Keyword Check
   const hasBadWord = badWords.some(word => {
-      // More robust word boundary check might be needed, but simple includes is safer for strict moderation
       return lower.includes(word);
   });
     
@@ -460,7 +650,6 @@ const checkContentSafety = (text: string) => {
   if (hasBadWord) return { safe: false, reason: "Content contains inappropriate words." };
 
   // 2. Anti-Trolling: Repeated Characters (e.g., "fuuuuuuck", "ahhhhhhh")
-  // Checks for same character repeated 5+ times
   if (/(.)\1{4,}/.test(lower)) {
       return { safe: false, reason: "Please stop spamming characters (Trolling detected)." };
   }
@@ -471,7 +660,6 @@ const checkContentSafety = (text: string) => {
   }
 
   // 4. Anti-Trolling: Keysmashing / Gibberish
-  // Checks for very long words without spaces (likely nonsense)
   const words = text.split(" ");
   if (words.some(w => w.length > 25)) {
       return { safe: false, reason: "Message contains invalid words (Keysmash)." };
@@ -483,7 +671,6 @@ const checkContentSafety = (text: string) => {
 // STRICT AI CONTENT MODERATOR - VERCEL CONNECTION ONLY
 const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-    // 1. Enhanced Local Check
     const localCheck = checkContentSafety(text);
     if (!localCheck.safe) return localCheck;
 
@@ -504,7 +691,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
     RESPONSE FORMAT: If safe: "PASS". If unsafe: A short, polite reason in Traditional Chinese.
     `;
 
-    // 2. Connect to Vercel (Primary)
     const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -532,7 +718,6 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
         return { safe: false, reason: aiRes || "AI 審查未通過" };
     } else {
         console.error("Vercel Scan Error:", response.status);
-        // FAIL-SAFE: If server is down, default to UNSAFE for public board to prevent abuse
         return { safe: false, reason: `伺服器繁忙，請稍後再試 (Server Error ${response.status})` };
     }
 
@@ -542,27 +727,17 @@ const scanContentWithAI = async (text: string): Promise<{ safe: boolean, reason:
   }
 };
 
-// NEW: Chat Safety Scanner for HumanChat (Allows venting but bans abuse)
+// NEW: Chat Safety Scanner for HumanChat
 const scanChatSafety = async (text: string): Promise<{ safe: boolean, reason: string | null }> => {
   try {
-      // 1. Enhanced Local Check
       const localCheck = checkContentSafety(text);
       if (!localCheck.safe) return localCheck;
 
       const systemInstruction = `
       You are a Safety Moderator for a private mental health chat.
       Users are here to vent. Negative emotions, distress, and crying are ALLOWED.
-      
-      STRICTLY FORBIDDEN (Return 'BLOCK'):
-      - Sexual content, grooming, or harassment.
-      - Hate speech, slurs, or verbal abuse towards the other party.
-      - Sharing explicit personal contacts (Phone numbers, ID numbers) - discourage PII.
-      - Promotional content, ads, spam.
-      - Trolling, baiting, or nonsense aimed at wasting time.
-      
-      RESPONSE FORMAT:
-      - If content is safe for a support chat (even if sad/depressed): Return "PASS".
-      - If content violates safety rules: Return a short reason in Traditional Chinese.
+      STRICTLY FORBIDDEN (Return 'BLOCK'): Sexual, hate speech, slurs, personal contacts, ads, trolling.
+      RESPONSE FORMAT: If safe: "PASS". If unsafe: Short reason in Traditional Chinese.
       `;
 
       const response = await fetch('/api/chat', {
@@ -591,14 +766,11 @@ const scanChatSafety = async (text: string): Promise<{ safe: boolean, reason: st
            return { safe: false, reason: aiRes || "內容包含不當訊息 (Content flagged)" };
       }
       
-      // On server error for CHAT, we default to allowing it through IF local check passed
-      // This is a trade-off: better to let a user vent during a server outage than block them
       console.warn("Chat Scan Server Error, passing through based on Local Check.");
       return { safe: true, reason: null };
 
   } catch (e) {
       console.error("Chat Scan Error", e);
-      // Network error -> Allow if local check passes
       return { safe: true, reason: null };
   }
 };
@@ -616,7 +788,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
   }));
 
   try {
-    // SECURITY UPDATE: Only connect to Vercel. NO HARDCODED KEY.
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -628,7 +799,6 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 
     if (response.ok) {
         const data = await response.json();
-        // Handle various response structures
         if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
             return data.candidates[0].content.parts[0].text;
         } else if (data.text) {
@@ -657,9 +827,10 @@ const generateAIResponse = async (history: Message[], lang: 'zh' | 'en'): Promis
 interface AppContextType {
   tickets: Ticket[];
   createTicket: (name: string, issue: string, priority: Priority, tags: string[]) => Promise<string>;
-  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => void;
+  updateTicketStatus: (id: string, status: 'waiting' | 'active' | 'resolved' | 'paused', volId?: string, volName?: string) => void;
   deleteTicket: (id: string) => Promise<void>;
   endSession: (ticketId: string) => Promise<void>;
+  leaveSession: (ticketId: string) => Promise<void>; 
   messages: Message[]; 
   addMessage: (ticketId: string, message: Omit<Message, "id">) => void;
   getMessages: (ticketId: string) => Message[];
@@ -768,7 +939,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return docRef.id;
   };
 
-  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved', volId?: string, volName?: string) => {
+  const updateTicketStatus = async (id: string, status: 'waiting' | 'active' | 'resolved' | 'paused', volId?: string, volName?: string) => {
      if (!db) return;
      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tickets', id), { 
          status, 
@@ -793,6 +964,18 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
        batch.delete(ref);
     });
     try { await batch.commit(); } catch(e) { console.error("Deletion error:", e); }
+  };
+
+  const leaveSession = async (ticketId: string) => {
+    await updateTicketStatus(ticketId, 'paused');
+    if (!db) return;
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), { 
+        text: "系統：輔導員已離開對話。", 
+        isUser: false, 
+        sender: "System", 
+        timestamp: Date.now(),
+        ticketId 
+    });
   };
 
   const addMessage = async (ticketId: string, message: Omit<Message, "id">) => {
@@ -825,7 +1008,7 @@ const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
+    <AppContext.Provider value={{ tickets, createTicket, updateTicketStatus, deleteTicket, endSession, leaveSession, messages, addMessage, getMessages, volunteerProfile, setVolunteerProfile, publicMemos, addPublicMemo, feedbacks, submitFeedback, user }}>
       {children}
     </AppContext.Provider>
   );
@@ -1558,7 +1741,7 @@ const VolunteerGuidelines = ({ onConfirm, onBack, lang }: { onConfirm: () => voi
 const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, onJoinChat: (t: Ticket) => void, lang: Language }) => {
   const t = CONTENT[lang].volunteer;
   const { tickets, volunteerProfile, feedbacks } = useAppContext();
-  const [activeTab, setActiveTab] = useState<'requests' | 'feedback'>('requests');
+  const [activeTab, setActiveTab] = useState<'requests' | 'active' | 'all' | 'feedback'>('requests');
   const isAdmin = volunteerProfile.role === 'admin';
 
   const downloadCSV = () => {
@@ -1574,6 +1757,13 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
       document.body.removeChild(link);
   };
 
+  const filteredTickets = tickets.filter(ticket => {
+      if (activeTab === 'requests') return ticket.status === 'waiting';
+      if (activeTab === 'active') return ticket.status === 'active' || ticket.status === 'paused';
+      if (activeTab === 'all') return ticket.status !== 'resolved';
+      return false;
+  });
+
   return (
     <div className="h-full bg-slate-50 dark:bg-slate-950 flex flex-col">
        <div className="p-6 bg-white dark:bg-slate-900 shadow-sm flex flex-col gap-4 z-10">
@@ -1587,32 +1777,37 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
             </div>
             <button onClick={onBack} className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-500">{t.exit}</button>
           </div>
-          {isAdmin && (
-              <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-                  <button onClick={() => setActiveTab('requests')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{(t as any).tabRequests}</button>
-                  <button onClick={() => setActiveTab('feedback')} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{(t as any).tabFeedback}</button>
-              </div>
-          )}
+          
+          {/* Filters */}
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-x-auto no-scrollbar">
+             <button onClick={() => setActiveTab('requests')} className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${activeTab === 'requests' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{t.tabRequests}</button>
+             <button onClick={() => setActiveTab('active')} className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${activeTab === 'active' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{t.tabActive}</button>
+             <button onClick={() => setActiveTab('all')} className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${activeTab === 'all' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{t.tabAll}</button>
+             {isAdmin && <button onClick={() => setActiveTab('feedback')} className={`flex-1 py-2 px-4 text-xs font-bold rounded-lg whitespace-nowrap transition-all ${activeTab === 'feedback' ? 'bg-white dark:bg-slate-700 shadow text-emerald-600' : 'text-slate-400'}`}>{t.tabFeedback}</button>}
+          </div>
        </div>
+       
        <div className="flex-1 overflow-y-auto p-6">
-         {(activeTab === 'requests' || !isAdmin) ? (
+         {(activeTab !== 'feedback') ? (
              <>
-                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{t.activeRequests} ({tickets.filter(x => x.status === 'waiting').length})</h3>
-                 {tickets.filter(x => x.status === 'waiting').length === 0 ? (
+                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">{activeTab === 'requests' ? t.tabRequests : (activeTab === 'active' ? t.tabActive : t.tabAll)} ({filteredTickets.length})</h3>
+                 
+                 {filteredTickets.length === 0 ? (
                    <div className="text-center py-20 opacity-50"><Bot size={48} className="mx-auto mb-4 text-slate-300"/><p>{t.noRequests}</p></div>
                  ) : (
                    <div className="grid gap-4">
-                     {tickets.filter(t => t.status === 'waiting').map(ticket => (
+                     {filteredTickets.map(ticket => (
                        <div key={ticket.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-md border border-slate-100 dark:border-slate-800 flex flex-col gap-4">
                          <div className="flex justify-between items-start">
                             <div className="flex gap-2">
                                <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${ticket.priority === 'critical' || ticket.priority === 'high' ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-600'}`}>{ticket.priority}</span>
                                <span className="text-slate-400 text-xs">{ticket.time}</span>
+                               {ticket.status === 'paused' && <span className="text-orange-500 text-[10px] font-bold border border-orange-200 bg-orange-50 px-2 py-1 rounded">PAUSED</span>}
                             </div>
                          </div>
                          <div><div className="font-bold text-lg dark:text-white">{ticket.name}</div><div className="text-slate-600 dark:text-slate-400 text-sm mt-1">{ticket.issue}</div></div>
                          <div className="flex gap-2 mt-2">{ticket.tags.map((tag, i) => <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full text-slate-500">{tag}</span>)}</div>
-                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{t.accept}</button>
+                         <button onClick={() => onJoinChat(ticket)} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl mt-2">{ticket.status === 'active' ? 'Join' : t.accept}</button>
                        </div>
                      ))}
                    </div>
@@ -1640,7 +1835,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
 
 const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId: string, ticket: Ticket, onLeave: () => void, isVolunteer: boolean, lang: Language }) => {
   const t = CONTENT[lang].humanRole;
-  const { messages, addMessage, volunteerProfile, tickets, endSession, deleteTicket } = useAppContext();
+  const { messages, addMessage, volunteerProfile, tickets, endSession, leaveSession, updateTicketStatus, deleteTicket } = useAppContext();
   const [text, setText] = useState("");
   const [showWarning, setShowWarning] = useState(true);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -1656,28 +1851,30 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
     
     // 1. Enhanced Local Check
     const localCheck = checkContentSafety(text);
-    if (!localCheck.safe) {
-      alert(localCheck.reason || "Content unsafe");
-      return;
-    }
+    if (!localCheck.safe) { alert(localCheck.reason || "Content unsafe"); return; }
 
     // 2. AI Scan
     const aiCheck = await scanChatSafety(text);
-    if (!aiCheck.safe) {
-        alert(aiCheck.reason || "AI blocked this message");
-        return;
-    }
+    if (!aiCheck.safe) { alert(aiCheck.reason || "AI blocked this message"); return; }
 
     const senderName = isVolunteer ? volunteerProfile.name : "User";
     addMessage(ticketId, { text, isUser: !isVolunteer, sender: senderName, timestamp: Date.now(), isVerified: isVolunteer && volunteerProfile.isVerified });
     setText(""); setShowSuggestions(false);
   };
 
+  // New Handler for Volunteer Leaving (Pausing)
+  const handleVolunteerLeave = async () => {
+      if(window.confirm(t.leaveChatConfirm)) { await leaveSession(ticketId); onLeave(); }
+  };
+  
+  // Old End Handler (Destroys data)
   const handleEndChat = async () => {
       if(window.confirm(t.endChatConfirm)) { await endSession(ticketId); onLeave(); }
   };
 
   const handleCancelWait = async () => { await deleteTicket(ticketId); onLeave(); };
+  
+  const handleRequeue = async () => { await updateTicketStatus(ticketId, 'waiting'); };
 
   if (!isVolunteer && liveTicket.status === 'waiting') {
       return (
@@ -1693,6 +1890,23 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
                   <div className="text-sm text-slate-600 dark:text-slate-300 flex items-center gap-2"><Music size={16}/> 試下深呼吸練習放鬆心情</div>
               </div>
               <button onClick={handleCancelWait} className="mt-8 text-slate-400 text-sm hover:text-slate-600">{(t as any).cancelWait || "取消等待"}</button>
+          </div>
+      );
+  }
+  
+  // NEW: Paused State UI for Citizen
+  if (!isVolunteer && liveTicket.status === 'paused') {
+      return (
+          <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 p-8 text-center animate-fade-in">
+              <div className="w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-6">
+                  <LogOut size={40} className="text-orange-500"/>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">{t.volunteerLeft}</h2>
+              <p className="text-slate-500 max-w-xs mx-auto mb-8 leading-relaxed">{t.leftDesc}</p>
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                  <button onClick={handleRequeue} className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg">{t.requeue}</button>
+                  <button onClick={handleEndChat} className="w-full py-3 bg-slate-200 text-slate-600 font-bold rounded-xl">{CONTENT[lang].actions.endChat}</button>
+              </div>
           </div>
       );
   }
@@ -1721,7 +1935,10 @@ const HumanChat = ({ ticketId, ticket, onLeave, isVolunteer, lang }: { ticketId:
              <span className="text-xs text-emerald-500 font-bold flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/> Live Session</span>
            </div>
          </div>
-         <button onClick={handleEndChat} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-500 text-xs font-bold rounded-full transition-colors flex items-center gap-1"><Trash2 size={14}/> {CONTENT[lang].actions.endChat}</button>
+         <button onClick={isVolunteer ? handleVolunteerLeave : handleEndChat} className={`px-4 py-2 text-xs font-bold rounded-full transition-colors flex items-center gap-1 ${isVolunteer ? 'bg-orange-50 hover:bg-orange-100 text-orange-600' : 'bg-rose-50 hover:bg-rose-100 text-rose-500'}`}>
+             {isVolunteer ? <LogOut size={14}/> : <Trash2 size={14}/>} 
+             {isVolunteer ? CONTENT[lang].actions.leaveChat : CONTENT[lang].actions.endChat}
+         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 bg-slate-100 dark:bg-slate-950">
          {showWarning && (

@@ -4,7 +4,7 @@ import {
   BadgeCheck, ArrowRight, ArrowLeft, Trees, Moon, Sun, MessageSquare, Globe,
   Play, Volume2, Music, Leaf, Cloud, SunDim, Sprout, Droplet, FileText,
   ChevronRight, MessageSquarePlus, XCircle, UserCheck, Loader2, Trash2, Inbox, Download, Sparkles, HandHeart,
-  Link, AlertOctagon 
+  Link, AlertOctagon, Share, PlusSquare, Menu 
 } from 'lucide-react';
 
 // Firebase Imports
@@ -54,11 +54,9 @@ class ErrorBoundary extends Component<{ children: React.ReactNode }, { hasError:
 // --- FIREBASE CONFIGURATION ---
 const getFirebaseConfig = () => {
   try {
-    // 1. Try standard injection (Preview environment)
     if (typeof __firebase_config !== 'undefined') return JSON.parse(__firebase_config);
   } catch (e) {}
 
-  // 2. Try parsing VITE_FIREBASE_CONFIG
   let envConfigString = null;
   if (typeof process !== 'undefined' && process.env?.VITE_FIREBASE_CONFIG) {
       envConfigString = process.env.VITE_FIREBASE_CONFIG;
@@ -83,7 +81,6 @@ const getFirebaseConfig = () => {
       }
   }
 
-  // 3. Try individual keys (Fallback)
   let apiKey = null;
   if (typeof process !== 'undefined') {
       apiKey = process.env?.NEXT_PUBLIC_FIREBASE_API_KEY || process.env?.VITE_FIREBASE_API_KEY;
@@ -117,7 +114,6 @@ const getFirebaseConfig = () => {
 
 const firebaseConfig = getFirebaseConfig();
 
-// Initialize Firebase
 let app = null;
 let auth = null;
 let db = null;
@@ -282,7 +278,8 @@ const CONTENT = {
       aiCard: { title: "AI 樹洞", desc: "24/7 智能聆聽 • 即時回應" },
       humanCard: { title: "真人輔導", desc: "義工與社工 • 溫暖同行" },
       volunteerCard: { title: "加入義工團隊", desc: "成為別人的秘密樹窿" },
-      feedback: "提供意見"
+      feedback: "提供意見",
+      install: "安裝 App" // Added
     },
     landingNotice: {
       disclaimer: "免責聲明：本平台提供情緒支援，並非緊急醫療服務。",
@@ -315,7 +312,7 @@ const CONTENT = {
       cheerUp: "社區心聲",
       label: "留低一句",
       title: "留低一句鼓勵",
-      desc: "你的訊息將會「即時」顯示在首頁，為他人打氣。", // Updated as requested
+      desc: "你的訊息將會「即時」顯示在首頁，為他人打氣。", 
       placeholder: "寫下你的祝福或感受...",
       btn: "發佈",
       success: "發佈成功！訊息已上傳。",
@@ -403,6 +400,19 @@ const CONTENT = {
       musicOff: "靜音",
       playErr: "點擊播放音樂"
     },
+    install: { // New Section for Install Guide
+      title: "安裝 App",
+      desc: "將 MindTree 加到主畫面，隨時隨地使用。",
+      iosTitle: "iOS (Safari)",
+      iosStep1: "點擊底部工具列的「分享」按鈕",
+      iosStep2: "向下滑動，選擇「加至主畫面」",
+      iosStep3: "點擊右上角的「加入」",
+      androidTitle: "Android (Chrome)",
+      androidStep1: "點擊右上角的選單圖示 (⋮)",
+      androidStep2: "選擇「安裝應用程式」或「加至主畫面」",
+      androidStep3: "按照指示完成安裝",
+      close: "我知道了"
+    },
     footer: {
       legal: "免責聲明：本平台由志願者運營，僅提供同儕情緒支援，並非專業醫療機構或緊急救援服務。本平台不對任何因使用本服務而產生的後果負責。如遇生命危險或緊急情況，請立即致電 999 報警或前往最近急症室。使用者需自行承擔使用本服務之風險。"
     },
@@ -441,7 +451,8 @@ const CONTENT = {
       aiCard: { title: "AI Treehole", desc: "24/7 Listening • Instant Reply" },
       humanCard: { title: "Human Support", desc: "Volunteers & Social Workers" },
       volunteerCard: { title: "Join Volunteer Team", desc: "Be someone's listening ear" },
-      feedback: "Feedback"
+      feedback: "Feedback",
+      install: "Install App" // Added
     },
     landingNotice: {
       disclaimer: "Disclaimer: This platform provides emotional support, not emergency medical services.",
@@ -561,6 +572,19 @@ const CONTENT = {
       musicOn: "Music On",
       musicOff: "Mute",
       playErr: "Tap to Play Music"
+    },
+    install: { // Added for EN
+      title: "Install App",
+      desc: "Add MindTree to your home screen for easy access.",
+      iosTitle: "iOS (Safari)",
+      iosStep1: "Tap the Share icon in the toolbar",
+      iosStep2: "Scroll down and tap 'Add to Home Screen'",
+      iosStep3: "Tap 'Add' at the top right",
+      androidTitle: "Android (Chrome)",
+      androidStep1: "Tap the menu icon (three dots)",
+      androidStep2: "Tap 'Install app' or 'Add to Home screen'",
+      androidStep3: "Follow instructions to install",
+      close: "Got it"
     },
     footer: {
       legal: "Disclaimer: Run by volunteers for peer support only. Not a medical service. In emergencies, call 999."
@@ -1023,6 +1047,57 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
   );
 };
 
+// --- NEW INSTALL GUIDE MODAL ---
+const InstallGuideModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
+  const t = CONTENT[lang].install;
+  
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 w-full max-w-md shadow-2xl relative overflow-y-auto max-h-[85vh]">
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"><X size={20}/></button>
+        
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400">
+             <Download size={32} />
+          </div>
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">{t.title}</h3>
+          <p className="text-slate-500 text-sm">{t.desc}</p>
+        </div>
+
+        <div className="space-y-6">
+           {/* iOS Section */}
+           <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                 <Share size={16} className="text-blue-500" /> {t.iosTitle}
+              </h4>
+              <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-300 list-decimal pl-4 marker:text-slate-400">
+                 <li>{t.iosStep1}</li>
+                 <li>{t.iosStep2} <PlusSquare size={14} className="inline mx-1"/></li>
+                 <li>{t.iosStep3}</li>
+              </ol>
+           </div>
+
+           {/* Android Section */}
+           <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <h4 className="font-bold text-slate-800 dark:text-white mb-3 flex items-center gap-2">
+                 <Menu size={16} className="text-green-500" /> {t.androidTitle}
+              </h4>
+              <ol className="space-y-3 text-sm text-slate-600 dark:text-slate-300 list-decimal pl-4 marker:text-slate-400">
+                 <li>{t.androidStep1}</li>
+                 <li>{t.androidStep2}</li>
+                 <li>{t.androidStep3}</li>
+              </ol>
+           </div>
+        </div>
+
+        <button onClick={onClose} className="w-full py-4 mt-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+           {t.close}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const FeedbackModal = ({ onClose, lang }: { onClose: () => void, lang: Language }) => {
   const t = CONTENT[lang].feedback;
   const { submitFeedback } = useAppContext();
@@ -1100,6 +1175,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
   const [showResources, setShowResources] = useState(false);
   const [showBreath, setShowBreath] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showInstall, setShowInstall] = useState(false); // New State
   const [memoText, setMemoText] = useState("");
   const [notification, setNotification] = useState<{message: string, type: 'error' | 'info' | 'loading'} | null>(null);
   const [floatingBubbles, setFloatingBubbles] = useState<Memo[]>([]);
@@ -1174,6 +1250,8 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <Notification message={notification?.message || ""} type={notification?.type || 'info'} onClose={() => setNotification(null)} />
       {showBreath && <BreathingExercise onClose={() => setShowBreath(false)} lang={lang} />}
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} lang={lang} />}
+      {showInstall && <InstallGuideModal onClose={() => setShowInstall(false)} lang={lang} />}
+      
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-slate-900 dark:via-teal-950 dark:to-emerald-950 z-0" />
       <div className="absolute top-10 left-[-50px] text-teal-100/50 dark:text-emerald-900/10 pointer-events-none opacity-50 rotate-45"><Leaf size={300} /></div>
       <div className="absolute bottom-[-50px] right-[-50px] text-emerald-100/50 dark:text-teal-900/10 pointer-events-none opacity-50 -rotate-12"><Cloud size={400} /></div>
@@ -1193,6 +1271,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
            <span className="text-teal-600 dark:text-teal-400 text-[10px] font-bold uppercase tracking-wider pl-12">{t.appSubtitle}</span>
         </div>
         <div className="flex gap-3">
+           <button onClick={() => setShowInstall(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.install}><Download size={18} /></button>
            <button onClick={() => setShowFeedback(true)} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md" title={t.landing.feedback}><MessageSquare size={18} /></button>
            <button onClick={toggleLang} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md"><Globe size={18} /></button>
            <button onClick={toggleTheme} className="w-10 h-10 rounded-full bg-white/60 dark:bg-slate-800 shadow-sm flex items-center justify-center text-teal-600 dark:text-teal-300 hover:scale-105 transition-transform backdrop-blur-md">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>

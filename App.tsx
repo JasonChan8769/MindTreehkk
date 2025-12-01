@@ -1136,7 +1136,7 @@ const BreathingExercise = ({ onClose, lang }: { onClose: () => void, lang: Langu
       else { 
         // Use window.Notification for clarity if Notification is used elsewhere
         if (typeof window !== 'undefined' && window.Notification && window.Notification.permission === 'granted') {
-             new Notification('Playing Music', { body: 'Relaxing sounds started.' });
+             new window.Notification('Playing Music', { body: 'Relaxing sounds started.' });
         }
         audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.error("Play failed:", e)); 
       }
@@ -1432,7 +1432,7 @@ const LandingScreen = ({ onSelectRole, lang, toggleLang, theme, toggleTheme, onS
       <div className="absolute inset-0 overflow-hidden z-0 pointer-events-none">
         <div className="relative w-full h-full">
             {floatingBubbles.map((memo) => (
-            <div key={memo.id} className="absolute text-center animate-float select-none will-change-transform opacity-70" style={{ left: memo.style.left, animationDuration: memo.style.animationDuration, animationDelay: memo.style.animationDelay, bottom: -80 }}>
+            <div key={memo.id} className="absolute text-center animate-float select-none will-change-transform opacity-70" style={{ left: memo.style.left, animationDuration: `${memo.style.animationDuration}`, animationDelay: `${memo.style.animationDelay}`, bottom: -80 }}>
                 <span className="inline-block bg-white/60 dark:bg-white/10 backdrop-blur-sm rounded-full px-5 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm border border-white/20" style={{ transform: `scale(${memo.style.scale})` }}>{memo.text}</span>
             </div>
             ))}
@@ -1773,13 +1773,14 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
     if ('Notification' in window) {
       setNotificationStatus(window.Notification.permission);
     }
-  }, []);
+    // Initialize lastTicketCount on mount using the initial waiting list count
+    setLastTicketCount(tickets.filter(t => t.status === 'waiting').length);
+  }, [tickets.length]); // Dependency on tickets.length to re-run on data fetch
 
   useEffect(() => {
-    // Only run if permission is granted and a new ticket appeared
+    // Logic: Send notification if granted AND the current waiting list is larger than the last check
     if (notificationStatus === 'granted' && waitingTickets.length > lastTicketCount && waitingTickets.length > 0) {
-      // Find the *newest* waiting ticket (already sorted by createdAt descending in AppProvider)
-      const newTicket = waitingTickets[0]; 
+      const newTicket = waitingTickets[0]; // Assuming newest ticket is at index 0 (due to sorting by createdAt descending in AppProvider)
       
       const body = t.notificationBody
         .replace('{priority}', t.priority[newTicket.priority])
@@ -1790,7 +1791,7 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
         icon: 'https://placehold.co/64x64/34d399/ffffff?text=MT' 
       });
     }
-    // Update last count after potential notification send
+    // Update last count after potential notification send (This must run every time tickets update)
     setLastTicketCount(waitingTickets.length);
   }, [waitingTickets.length, notificationStatus]);
 
@@ -1802,6 +1803,17 @@ const VolunteerDashboard = ({ onBack, onJoinChat, lang }: { onBack: () => void, 
     }
     const permission = await window.Notification.requestPermission();
     setNotificationStatus(permission);
+    if (permission === 'granted' && waitingTickets.length > 0) {
+        // If granted, send notification for the existing case immediately
+        const existingTicket = waitingTickets[0];
+        const body = t.notificationBody
+            .replace('{priority}', t.priority[existingTicket.priority])
+            .replace('{issue}', existingTicket.issue);
+        new window.Notification(t.notificationTitle, {
+            body: body,
+            icon: 'https://placehold.co/64x64/34d399/ffffff?text=MT' 
+        });
+    }
   };
 
   const downloadCSV = () => {
